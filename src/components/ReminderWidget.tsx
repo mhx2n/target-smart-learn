@@ -54,7 +54,7 @@ const ReminderWidget = () => {
             return (
               <div key={r.id} className="rounded-lg md:rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-lg overflow-hidden">
                 <div className="h-1" style={{ backgroundColor: r.color || "hsl(var(--primary))" }} />
-                <div className="p-3">
+                <div className="p-2 md:p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-foreground truncate">{r.title}</p>
