@@ -5,9 +5,9 @@ const StudentProfile = () => {
   const results = store.getResults();
   const totalAttempts = results.length;
   const avgScore = totalAttempts > 0
-    ? Math.round(results.reduce((s, r) => s + r.score, 0) / totalAttempts)
+    ? Math.round(results.reduce((s, r) => s + r.percentage, 0) / totalAttempts)
     : 0;
-  const bestScore = totalAttempts > 0 ? Math.max(...results.map((r) => r.score)) : 0;
+  const bestScore = totalAttempts > 0 ? Math.max(...results.map((r) => r.percentage)) : 0;
   const uniqueExams = new Set(results.map((r) => r.examId)).size;
 
   return (
