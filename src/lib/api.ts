@@ -453,14 +453,21 @@ export async function saveWrongAnswers(entries: WrongAnswerEntry[]): Promise<voi
   if (!entries.length) return;
   const sessionId = getSessionId();
   
-  // Delete old wrong answers for the same exam to avoid duplicates
-  const examIds = [...new Set(entries.map(e => e.examId))];
-  for (const examId of examIds) {
-    await supabase.from("wrong_answers").delete().eq("session_id", sessionId).eq("exam_id", examId);
-  }
+  // Fetch existing wrong answers for this session to avoid duplicates
+  const { data: existing } = await supabase
+    .from("wrong_answers")
+    .select("question_id")
+    .eq("session_id", sessionId);
+  
+  const existingQuestionIds = new Set((existing || []).map((r: any) => r.question_id));
+  
+  // Only insert questions that are not already in the wrong answers bank
+  const newEntries = entries.filter(e => !existingQuestionIds.has(e.questionId));
+  
+  if (!newEntries.length) return;
 
   const { error } = await supabase.from("wrong_answers").insert(
-    entries.map(e => ({
+    newEntries.map(e => ({
       session_id: sessionId,
       exam_id: e.examId,
       exam_title: e.examTitle,
