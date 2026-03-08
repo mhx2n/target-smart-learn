@@ -58,6 +58,7 @@ const App = () => (
             <Route path="/exams/:id" element={<ExamDetails />} />
             <Route path="/exams/:id/attempt" element={<ExamAttempt />} />
             <Route path="/results" element={<ResultsPage />} />
+            <Route path="/wrong-answers" element={<WrongAnswersBank />} />
             <Route path="/notices" element={<NoticesPage />} />
             <Route path="/notices/:id" element={<NoticeDetails />} />
             <Route path="/profile" element={<ProfilePage />} />
