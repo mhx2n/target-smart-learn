@@ -9,6 +9,7 @@ import {
 const navItems = [
   { to: "/admin/dashboard", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
   { to: "/admin/exams", label: "পরীক্ষা", icon: FileText },
+  { to: "/admin/sections", label: "সেকশন", icon: FolderOpen },
   { to: "/admin/questions", label: "প্রশ্ন ব্যাংক", icon: HelpCircle },
   { to: "/admin/upload-csv", label: "CSV আপলোড", icon: Upload },
   { to: "/admin/notices", label: "নোটিস", icon: Bell },
