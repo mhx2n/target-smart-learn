@@ -29,6 +29,7 @@ const NoticeDetails = () => {
           <span className="text-xs text-muted-foreground">{notice.createdAt}</span>
         </div>
         <h1 className="text-2xl font-bold mb-4">{notice.title}</h1>
+        {notice.image && <img src={notice.image} alt={notice.title} className="w-full rounded-xl object-cover max-h-80 mb-4" />}
         <div className="text-muted-foreground leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(notice.content) }} />
       </div>
     </div>

@@ -84,6 +84,7 @@ export interface Notice {
   id: string;
   title: string;
   content: string;
+  image?: string; // base64 data URL (recommended: 800x450px, 16:9 ratio)
   pinned: boolean;
   createdAt: string;
 }
