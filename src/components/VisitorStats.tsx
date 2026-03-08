@@ -79,7 +79,7 @@ const VisitorStats = () => {
             <div className="flex items-center gap-2 mb-1">
               <stat.icon className={`w-4 h-4 ${stat.color}`} />
             </div>
-            <p className="text-xl font-bold">{stat.value}</p>
+            <p className="text-xl font-bold text-foreground">{stat.value}</p>
             <p className="text-[10px] text-muted-foreground">{stat.label}</p>
             {stat.pulse && (
               <div className="absolute top-2 right-2">
