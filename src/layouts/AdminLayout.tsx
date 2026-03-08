@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { store } from "@/lib/store";
 import { useEffect, useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   LayoutDashboard, FileText, Bell, Upload, BookOpen, Settings, LogOut, Menu, X, HelpCircle,
 } from "lucide-react";
