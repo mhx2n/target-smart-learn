@@ -57,6 +57,9 @@ export const store = {
   getSections: (): Section[] => load(SECTIONS_KEY, []),
   setSections: (sections: Section[]) => save(SECTIONS_KEY, sections),
 
+  getSiteSettings: (): SiteSettings => load(SITE_SETTINGS_KEY, defaultSiteSettings),
+  setSiteSettings: (settings: SiteSettings) => save(SITE_SETTINGS_KEY, settings),
+
   isAdmin: (): boolean => load(ADMIN_KEY, false),
   setAdmin: (val: boolean) => save(ADMIN_KEY, val),
 };
