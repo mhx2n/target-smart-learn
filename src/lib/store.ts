@@ -27,6 +27,11 @@ const defaultSiteSettings: SiteSettings = {
   socialLinks: [
     { label: "Telegram", url: "https://t.me/FX_Ur_Target" },
   ],
+  brandName: "Target",
+  brandEmoji: "🎯",
+  heroTagline: "সীমাহীন অনুশীলন, নিখুঁত প্রস্তুতি",
+  heroSubtitle: "",
+  activeThemeId: "ocean-blue",
 };
 
 function load<T>(key: string, fallback: T): T {
