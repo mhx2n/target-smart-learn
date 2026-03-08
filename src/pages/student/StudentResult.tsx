@@ -4,6 +4,37 @@ import { CheckCircle2, XCircle, MinusCircle, RotateCcw, ChevronDown, ChevronUp, 
 import { useState } from "react";
 import { store } from "@/lib/store";
 
+const normalizeAnswerValue = (value: string) => value.trim().toLowerCase().replace(/\s+/g, "");
+
+const resolveOptionText = (question: Question, value?: string) => {
+  if (!value) return "";
+
+  const normalized = normalizeAnswerValue(value);
+  const keyToIndex: Record<string, number> = {
+    a: 0,
+    b: 1,
+    c: 2,
+    d: 3,
+    e: 4,
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "5": 4,
+    option1: 0,
+    option2: 1,
+    option3: 2,
+    option4: 3,
+    option5: 4,
+  };
+
+  const mappedIndex = keyToIndex[normalized];
+  if (mappedIndex !== undefined) return question.options[mappedIndex] ?? value;
+
+  const matchedOption = question.options.find((opt) => normalizeAnswerValue(opt) === normalized);
+  return matchedOption ?? value;
+};
+
 const StudentResult = () => {
   const location = useLocation();
   const { result, questions } = (location.state || {}) as { result?: ExamResult; questions?: Question[] };
