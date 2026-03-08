@@ -26,7 +26,7 @@ const Index = () => {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative pt-28 pb-20 px-4" style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}>
-        <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background dark:from-background/70 dark:via-background/90 dark:to-background" />
         <div className="container relative z-10 text-center max-w-2xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 animate-fade-in">
             <span className="gradient-text">{settings.brandName}</span> {settings.brandEmoji}

@@ -39,32 +39,32 @@ const VisitorStats = () => {
       icon: Globe,
       label: "মোট ভিজিট",
       value: data.totalVisits.toLocaleString("bn-BD"),
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
     },
     {
       icon: Eye,
       label: "আজকের ভিজিট",
       value: data.todayVisits.toLocaleString("bn-BD"),
-      color: "text-green-500",
-      bgColor: "bg-green-500/10",
+      color: "text-success",
+      bgColor: "bg-success/10",
     },
     {
       icon: Users,
       label: "এখন অনলাইন",
       value: data.activeNow.toLocaleString("bn-BD"),
-      color: "text-orange-500",
-      bgColor: "bg-orange-500/10",
+      color: "text-warning",
+      bgColor: "bg-warning/10",
       pulse: true,
     },
   ];
 
   return (
-    <div className="glass-strong rounded-2xl p-4 backdrop-blur-xl border border-white/10">
+    <div className="glass-strong rounded-2xl p-4 backdrop-blur-xl border border-border/50">
       <div className="flex items-center gap-2 mb-4">
         <div className="relative">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <div className="absolute inset-0 w-2 h-2 bg-green-500 rounded-full animate-ping" />
+          <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
+          <div className="absolute inset-0 w-2 h-2 bg-success rounded-full animate-ping" />
         </div>
         <span className="text-xs font-medium text-muted-foreground">লাইভ পরিসংখ্যান</span>
         {loading && <span className="text-[10px] text-muted-foreground">(লোড হচ্ছে...)</span>}
@@ -79,13 +79,13 @@ const VisitorStats = () => {
             <div className="flex items-center gap-2 mb-1">
               <stat.icon className={`w-4 h-4 ${stat.color}`} />
             </div>
-            <p className="text-xl font-bold">{stat.value}</p>
+            <p className="text-xl font-bold text-foreground">{stat.value}</p>
             <p className="text-[10px] text-muted-foreground">{stat.label}</p>
             {stat.pulse && (
               <div className="absolute top-2 right-2">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
                 </span>
               </div>
             )}

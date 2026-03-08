@@ -87,12 +87,12 @@ const ExamsPage = () => {
             className="w-full glass-strong rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
         </div>
         {tab === "subjects" && (
-          <select value={subject} onChange={(e) => setSubject(e.target.value)} className="glass-strong rounded-xl px-3 py-2.5 text-sm focus:outline-none">
-            {subjects.map((s) => <option key={s} value={s}>{s === "all" ? getLabel("allSubjects") : s}</option>)}
+          <select value={subject} onChange={(e) => setSubject(e.target.value)} className="glass-strong rounded-xl px-3 py-2.5 text-sm focus:outline-none text-foreground bg-card">
+            {subjects.map((s) => <option key={s} value={s} className="bg-card text-foreground">{s === "all" ? getLabel("allSubjects") : s}</option>)}
           </select>
         )}
-        <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="glass-strong rounded-xl px-3 py-2.5 text-sm focus:outline-none">
-          {["all", "easy", "medium", "hard"].map((d) => <option key={d} value={d}>{diffLabels[d]}</option>)}
+        <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="glass-strong rounded-xl px-3 py-2.5 text-sm focus:outline-none text-foreground bg-card">
+          {["all", "easy", "medium", "hard"].map((d) => <option key={d} value={d} className="bg-card text-foreground">{diffLabels[d]}</option>)}
         </select>
       </div>
 
