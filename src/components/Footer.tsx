@@ -18,6 +18,8 @@ const Footer = () => (
           <div className="flex flex-col gap-2">
             <Link to="/exams" className="text-sm text-muted-foreground hover:text-foreground transition-colors">পরীক্ষা সমূহ</Link>
             <Link to="/notices" className="text-sm text-muted-foreground hover:text-foreground transition-colors">নোটিস বোর্ড</Link>
+            <Link to="/student" className="text-sm text-muted-foreground hover:text-foreground transition-colors">স্টুডেন্ট প্যানেল</Link>
+            <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">সম্পর্কে</Link>
           </div>
         </div>
         <div>
