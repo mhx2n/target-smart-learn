@@ -1,16 +1,19 @@
 import { Link } from "react-router-dom";
 import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock, X as XIcon } from "lucide-react";
-import { store } from "@/lib/store";
+import { useExams, useNotices, useResults } from "@/hooks/useSupabaseData";
+import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import ExamCard from "@/components/ExamCard";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useState } from "react";
 import { getLabel } from "@/lib/labels";
 
 const Index = () => {
-  const settings = store.getSiteSettings();
-  const exams = store.getExams().filter((e) => e.published).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const notices = store.getNotices();
-  const results = store.getResults();
+  const settings = useSiteSettingsContext();
+  const { data: allExams = [] } = useExams();
+  const { data: notices = [] } = useNotices();
+  const { data: results = [] } = useResults();
+
+  const exams = allExams.filter((e) => e.published).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const featured = exams.filter((e) => e.featured);
   const [search, setSearch] = useState("");
   const recentResults = results.slice(0, 3);
