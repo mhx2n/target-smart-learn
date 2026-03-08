@@ -129,9 +129,10 @@ const StudentResult = () => {
             <div className="space-y-3 animate-fade-in">
               {questions.map((q, i) => {
                 const userAns = result.answers[q.id] || "";
-                const correctAnswer = resolveCorrectOptionText(q);
+                const sourceQuestion = originalQuestionMap.get(q.id) ?? q;
+                const correctAnswer = resolveCorrectOptionText(sourceQuestion);
                 const isSkipped = !userAns;
-                const isCorrect = Boolean(userAns) && userAns === correctAnswer;
+                const isCorrect = Boolean(userAns) && isAnswerMatch(userAns, correctAnswer);
                 const isWrong = Boolean(userAns) && !isCorrect;
                 const statusBadge = isCorrect
                   ? { text: "✅ সঠিক", cls: "bg-success/15 text-success border-success/30" }
