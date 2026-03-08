@@ -9,6 +9,7 @@ const SECTIONS_KEY = "target_sections";
 const SITE_SETTINGS_KEY = "target_site_settings";
 const SUBJECTS_KEY = "target_subjects";
 const CATEGORIES_KEY = "target_categories";
+const REMINDERS_KEY = "target_reminders";
 
 const defaultSiteSettings: SiteSettings = {
   aboutTitle: "Target 🎯 কী?",
