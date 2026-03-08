@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock, X as XIcon, BookX } from "lucide-react";
-import { useExams, useNotices, useResults } from "@/hooks/useSupabaseData";
+import { Search, ArrowRight, BookOpen, FolderOpen, Bell, BarChart3, Clock, X as XIcon, BookX } from "lucide-react";
+import { useExams, useNotices, useResults, useSections } from "@/hooks/useSupabaseData";
 import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import ExamCard from "@/components/ExamCard";
 import heroBg from "@/assets/hero-bg.jpg";
