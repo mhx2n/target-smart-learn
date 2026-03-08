@@ -22,7 +22,7 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="relative pt-28 pb-20 px-4 overflow-hidden" style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+      <section className="relative pt-28 pb-20 px-4" style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}>
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background" />
         <div className="container relative z-10 text-center max-w-2xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 animate-fade-in">
