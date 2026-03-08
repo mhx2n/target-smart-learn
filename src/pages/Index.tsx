@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock } from "lucide-react";
 import { store } from "@/lib/store";
 import ExamCard from "@/components/ExamCard";
+import VisitorStats from "@/components/VisitorStats";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useState } from "react";
 
@@ -26,36 +27,43 @@ const Index = () => {
       {/* Hero */}
       <section className="relative pt-28 pb-20 px-4 overflow-hidden" style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}>
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background" />
-        <div className="container relative z-10 text-center max-w-2xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 animate-fade-in">
-            <span className="gradient-text">Target</span> 🎯
-          </h1>
-          <p className="text-lg text-muted-foreground mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            সীমাহীন অনুশীলন, নিখুঁত প্রস্তুতি
-          </p>
+        <div className="container relative z-10 max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-4 animate-fade-in">
+              <span className="gradient-text">Target</span> 🎯
+            </h1>
+            <p className="text-lg text-muted-foreground mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+              সীমাহীন অনুশীলন, নিখুঁত প্রস্তুতি
+            </p>
 
-          {/* Search */}
-          <div className="relative max-w-md mx-auto mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-            <input type="text" placeholder="পরীক্ষা খুঁজুন..." value={search} onChange={(e) => setSearch(e.target.value)}
-              className="w-full glass-strong rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            {search && filtered.length > 0 && (
-              <div className="absolute top-full mt-2 left-0 right-0 glass-strong rounded-2xl p-3 max-h-60 overflow-y-auto z-20">
-                {filtered.map((e) => (
-                  <Link key={e.id} to={`/exams/${e.id}`} className="block px-3 py-2 rounded-xl text-sm hover:bg-primary/10 transition-colors">{e.title}</Link>
-                ))}
-              </div>
-            )}
+            {/* Search */}
+            <div className="relative max-w-md mx-auto mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+              <input type="text" placeholder="পরীক্ষা খুঁজুন..." value={search} onChange={(e) => setSearch(e.target.value)}
+                className="w-full glass-strong rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              {search && filtered.length > 0 && (
+                <div className="absolute top-full mt-2 left-0 right-0 glass-strong rounded-2xl p-3 max-h-60 overflow-y-auto z-20">
+                  {filtered.map((e) => (
+                    <Link key={e.id} to={`/exams/${e.id}`} className="block px-3 py-2 rounded-xl text-sm hover:bg-primary/10 transition-colors">{e.title}</Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in" style={{ animationDelay: "0.3s" }}>
+              <Link to="/exams" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">
+                <BookOpen size={18} /> পরীক্ষা দিন
+              </Link>
+              <Link to="/results" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold glass hover:bg-muted/80 transition-all">
+                <BarChart3 size={18} /> ফলাফল দেখুন
+              </Link>
+            </div>
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            <Link to="/exams" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">
-              <BookOpen size={18} /> পরীক্ষা দিন
-            </Link>
-            <Link to="/results" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold glass hover:bg-muted/80 transition-all">
-              <BarChart3 size={18} /> ফলাফল দেখুন
-            </Link>
+          {/* Visitor Stats - Professional Real-time Look */}
+          <div className="max-w-md mx-auto animate-fade-in" style={{ animationDelay: "0.4s" }}>
+            <VisitorStats />
           </div>
         </div>
       </section>
