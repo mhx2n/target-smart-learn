@@ -19,21 +19,75 @@ const AdminCSVUpload = () => {
   const [dragOver, setDragOver] = useState(false);
   const [importSummary, setImportSummary] = useState<{ total: number; imported: number; skipped: number; errors: string[] } | null>(null);
 
+  // Proper CSV field parser that handles quoted fields with commas
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else if (ch === '"') {
+          inQuotes = false;
+        } else {
+          current += ch;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          result.push(current.trim());
+          current = "";
+        } else {
+          current += ch;
+        }
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  // Reassemble lines that have quotes spanning multiple lines
+  const reassembleCSVLines = (text: string): string[] => {
+    const rawLines = text.split("\n");
+    const result: string[] = [];
+    let buffer = "";
+    let open = false;
+    for (const line of rawLines) {
+      if (!open) {
+        buffer = line;
+      } else {
+        buffer += "\n" + line;
+      }
+      const quoteCount = (buffer.match(/"/g) || []).length;
+      open = quoteCount % 2 !== 0;
+      if (!open) {
+        if (buffer.trim()) result.push(buffer);
+        buffer = "";
+      }
+    }
+    if (buffer.trim()) result.push(buffer);
+    return result;
+  };
+
   const parseCSV = (text: string) => {
-    const lines = text.split("\n").filter((l) => l.trim());
+    const lines = reassembleCSVLines(text);
     if (lines.length < 2) {
       toast({ title: "ত্রুটি", description: "CSV ফাইলে ডেটা নেই", variant: "destructive" });
       return;
     }
 
-    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+    const headers = parseCSVLine(lines[0]).map((h) => h.toLowerCase());
     const questions: Question[] = [];
     const errors: string[] = [];
     const seen = new Set<string>();
     let skippedCount = 0;
 
     for (let i = 1; i < lines.length; i++) {
-      const vals = lines[i].split(",").map((v) => v.trim());
+      const vals = parseCSVLine(lines[i]);
       if (vals.length < 6) { errors.push(`Row ${i + 1}: অপর্যাপ্ত কলাম`); skippedCount++; continue; }
 
       const qIdx = headers.indexOf("questions");
