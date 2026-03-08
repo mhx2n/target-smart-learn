@@ -12,7 +12,7 @@ const Index = () => {
   const { data: allExams = [] } = useExams();
   const { data: notices = [] } = useNotices();
   const { data: results = [] } = useResults();
-
+  const { data: sections = [] } = useSections();
   const exams = allExams.filter((e) => e.published).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const featured = exams.filter((e) => e.featured);
   const [search, setSearch] = useState("");
