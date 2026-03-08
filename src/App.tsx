@@ -67,6 +67,7 @@ const App = () => (
             <Route path="/admin/notices" element={<AdminNotices />} />
             <Route path="/admin/subjects" element={<AdminSubjects />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

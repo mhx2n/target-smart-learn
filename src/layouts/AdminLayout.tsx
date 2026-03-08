@@ -14,6 +14,7 @@ const navItems = [
   { to: "/admin/upload-csv", label: "CSV আপলোড", icon: Upload },
   { to: "/admin/notices", label: "নোটিস", icon: Bell },
   { to: "/admin/subjects", label: "বিষয়সমূহ", icon: BookOpen },
+  { to: "/admin/site-settings", label: "সাইট কাস্টমাইজ", icon: Globe },
   { to: "/admin/settings", label: "সেটিংস", icon: Settings },
 ];
 
