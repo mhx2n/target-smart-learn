@@ -150,8 +150,8 @@ const StudentResult = () => {
           {showReview && (
             <div className="space-y-3 animate-fade-in">
               {questions.map((q, i) => {
-                const userAns = resolveOptionText(q, result.answers[q.id]);
-                const correctAnswer = resolveOptionText(q, q.answer);
+                const userAns = result.answers[q.id] || "";
+                const correctAnswer = resolveCorrectOptionText(q);
                 const isSkipped = !userAns;
                 const isCorrect = Boolean(userAns) && userAns === correctAnswer;
                 const isWrong = Boolean(userAns) && !isCorrect;
