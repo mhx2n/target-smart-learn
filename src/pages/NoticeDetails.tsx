@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { store } from "@/lib/store";
 import { ArrowLeft } from "lucide-react";
+import DOMPurify from "dompurify";
 
 const NoticeDetails = () => {
   const { id } = useParams();
