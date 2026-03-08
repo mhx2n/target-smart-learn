@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock, X as XIcon, BookX } from "lucide-react";
-import { useExams, useNotices, useResults } from "@/hooks/useSupabaseData";
+import { Search, ArrowRight, BookOpen, FolderOpen, Bell, BarChart3, Clock, X as XIcon, BookX } from "lucide-react";
+import { useExams, useNotices, useResults, useSections } from "@/hooks/useSupabaseData";
 import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import ExamCard from "@/components/ExamCard";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -12,7 +12,7 @@ const Index = () => {
   const { data: allExams = [] } = useExams();
   const { data: notices = [] } = useNotices();
   const { data: results = [] } = useResults();
-
+  const { data: sections = [] } = useSections();
   const exams = allExams.filter((e) => e.published).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const featured = exams.filter((e) => e.featured);
   const [search, setSearch] = useState("");
@@ -91,7 +91,7 @@ const Index = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 -mt-8 relative z-10">
           {[
             { icon: BookOpen, label: getLabel("statTotalExams"), val: exams.length, link: "/exams" },
-            { icon: Award, label: getLabel("statSubjects"), val: new Set(exams.map((e) => e.subject)).size, link: "/exams" },
+            { icon: FolderOpen, label: "প্রশ্ন ব্যাংক", val: sections.length, link: "/exams?tab=sections" },
             { icon: BarChart3, label: getLabel("statPractice"), val: results.length, link: "/results" },
             { icon: Bell, label: getLabel("statNotices"), val: notices.length, link: "/notices" },
           ].map((s, i) => (
