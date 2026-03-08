@@ -18,7 +18,7 @@ const ExamCard = ({ exam }: { exam: Exam }) => {
         <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${diff.className}`}>{diff.label}</span>
       </div>
       <h3 className="font-semibold text-foreground leading-snug">{exam.title}</h3>
-      <p className="text-xs text-muted-foreground">{exam.category} • {exam.chapter}</p>
+      {exam.category && <p className="text-xs text-muted-foreground">{exam.category}</p>}
       <div className="flex items-center gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1"><HelpCircle size={13} /> {exam.questionCount} প্রশ্ন</span>
         <span className="flex items-center gap-1"><Clock size={13} /> {exam.duration} মিনিট</span>

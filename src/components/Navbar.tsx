@@ -2,10 +2,12 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import ThemeToggle from "./ThemeToggle";
+import { store } from "@/lib/store";
 
 const Navbar = () => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const settings = store.getSiteSettings();
 
   const links = [
     { to: "/", label: "হোম" },
@@ -22,8 +24,8 @@ const Navbar = () => {
     <nav className="glass-nav fixed top-0 left-0 right-0 z-50">
       <div className="container flex items-center justify-between h-16">
         <Link to="/" className="flex items-center gap-2 text-xl font-bold">
-          <span className="text-2xl">🎯</span>
-          <span className="gradient-text">Target</span>
+          <span className="text-2xl">{settings.brandEmoji}</span>
+          <span className="gradient-text">{settings.brandName}</span>
         </Link>
 
         {/* Desktop */}
