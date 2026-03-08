@@ -152,10 +152,20 @@ const StudentResult = () => {
               {questions.map((q, i) => {
                 const userAns = resolveOptionText(q, result.answers[q.id]);
                 const correctAnswer = resolveOptionText(q, q.answer);
+                const isSkipped = !userAns;
                 const isCorrect = Boolean(userAns) && userAns === correctAnswer;
+                const isWrong = Boolean(userAns) && !isCorrect;
+                const statusBadge = isCorrect
+                  ? { text: "✅ সঠিক", cls: "bg-success/15 text-success border-success/30" }
+                  : isWrong
+                  ? { text: "❌ ভুল", cls: "bg-destructive/15 text-destructive border-destructive/30" }
+                  : { text: "⏭ স্কিপ", cls: "bg-muted text-muted-foreground border-border" };
                 return (
                   <div key={q.id} className="glass-card-static p-4">
-                    <p className="text-sm font-semibold mb-3"><span className="text-muted-foreground mr-2">{i + 1}.</span>{q.question}</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-semibold"><span className="text-muted-foreground mr-2">{i + 1}.</span>{q.question}</p>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ml-2 ${statusBadge.cls}`}>{statusBadge.text}</span>
+                    </div>
                     <div className="space-y-1.5 mb-3">
                       {q.options.map((opt) => {
                         const isAnswer = opt === correctAnswer;
