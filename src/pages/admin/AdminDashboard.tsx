@@ -1,17 +1,20 @@
 import { store } from "@/lib/store";
-import { BookOpen, HelpCircle, Bell, Upload, Clock } from "lucide-react";
+import { BookOpen, HelpCircle, Bell, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
+import VisitorStats from "@/components/VisitorStats";
 
 const AdminDashboard = () => {
   const exams = store.getExams();
   const notices = store.getNotices();
   const totalQuestions = exams.reduce((a, e) => a + e.questionCount, 0);
   const publishedExams = exams.filter((e) => e.published).length;
-  const subjects = new Set(exams.map((e) => e.subject)).size;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-xl font-bold">🔧 অ্যাডমিন ড্যাশবোর্ড</h1>
+
+      {/* Visitor Stats - Only visible to Admin */}
+      <VisitorStats />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
