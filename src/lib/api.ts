@@ -198,10 +198,26 @@ export async function deleteSection(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// ============ SESSION ============
+
+function getSessionId(): string {
+  let id = localStorage.getItem("target_session_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem("target_session_id", id);
+  }
+  return id;
+}
+
 // ============ RESULTS ============
 
 export async function fetchResults(): Promise<ExamResult[]> {
-  const { data, error } = await supabase.from("results").select("*").order("created_at", { ascending: false });
+  const sessionId = getSessionId();
+  const { data, error } = await supabase
+    .from("results")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: false });
   if (error) throw error;
   return (data || []).map((r) => ({
     examId: r.exam_id,
@@ -232,7 +248,7 @@ export async function addResult(result: ExamResult): Promise<void> {
     max_score: result.maxScore,
     percentage: result.percentage,
     answers: result.answers as any,
-    session_id: localStorage.getItem("target_session_id"),
+    session_id: getSessionId(),
   });
   if (error) throw error;
 }
