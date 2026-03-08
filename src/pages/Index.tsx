@@ -38,14 +38,29 @@ const Index = () => {
           )}
 
           <div className="relative max-w-md mx-auto mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground z-10" size={18} />
             <input type="text" placeholder={getLabel("searchPlaceholder")} value={search} onChange={(e) => setSearch(e.target.value)}
-              className="w-full glass-strong rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            {search && filtered.length > 0 && (
-              <div className="absolute top-full mt-2 left-0 right-0 glass-strong rounded-2xl p-3 max-h-60 overflow-y-auto z-20">
-                {filtered.map((e) => (
-                  <Link key={e.id} to={`/exams/${e.id}`} className="block px-3 py-2 rounded-xl text-sm hover:bg-primary/10 transition-colors">{e.title}</Link>
-                ))}
+              className="w-full rounded-2xl border border-border/60 bg-background/90 backdrop-blur-md pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-sm" />
+            {search && (
+              <div className="absolute top-full mt-2 left-0 right-0 rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-lg max-h-72 overflow-y-auto z-50">
+                {filtered.length > 0 ? (
+                  <div className="p-2 space-y-0.5">
+                    {filtered.map((e) => (
+                      <Link key={e.id} to={`/exams/${e.id}`} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-primary/10 transition-colors">
+                        <BookOpen size={15} className="text-primary shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate">{e.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">{e.subject} • {e.questionCount} {getLabel("questions", "প্রশ্ন")}</p>
+                        </div>
+                        <ArrowRight size={14} className="text-muted-foreground shrink-0" />
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-sm text-muted-foreground">
+                    কোনো পরীক্ষা পাওয়া যায়নি
+                  </div>
+                )}
               </div>
             )}
           </div>
