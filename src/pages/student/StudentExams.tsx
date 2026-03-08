@@ -46,7 +46,7 @@ const StudentExams = () => {
         <div className="glass-card-static p-12 text-center text-muted-foreground">কোনো পরীক্ষা পাওয়া যায়নি</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((e) => <ExamCard key={e.id} exam={e} basePath="/student" />)}
+          {filtered.map((e) => <ExamCard key={e.id} exam={e} />)}
         </div>
       )}
     </div>
