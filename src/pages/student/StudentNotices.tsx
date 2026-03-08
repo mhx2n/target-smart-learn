@@ -24,7 +24,7 @@ const StudentNotices = () => {
               </div>
               <h3 className="font-semibold mb-1">{n.title}</h3>
               {expanded === n.id && (
-                <p className="text-sm text-muted-foreground mt-2 leading-relaxed animate-fade-in">{n.content}</p>
+                <div className="text-sm text-muted-foreground mt-2 leading-relaxed animate-fade-in" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(n.content) }} />
               )}
             </div>
           ))}

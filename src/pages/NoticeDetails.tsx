@@ -29,7 +29,7 @@ const NoticeDetails = () => {
           <span className="text-xs text-muted-foreground">{notice.createdAt}</span>
         </div>
         <h1 className="text-2xl font-bold mb-4">{notice.title}</h1>
-        <p className="text-muted-foreground leading-relaxed">{notice.content}</p>
+        <div className="text-muted-foreground leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(notice.content) }} />
       </div>
     </div>
   );

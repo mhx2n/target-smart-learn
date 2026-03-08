@@ -62,6 +62,12 @@ export const store = {
   getSiteSettings: (): SiteSettings => load(SITE_SETTINGS_KEY, defaultSiteSettings),
   setSiteSettings: (settings: SiteSettings) => save(SITE_SETTINGS_KEY, settings),
 
+  getSubjects: (): string[] => load(SUBJECTS_KEY, defaultSubjects),
+  setSubjects: (s: string[]) => save(SUBJECTS_KEY, s),
+
+  getCategories: (): string[] => load(CATEGORIES_KEY, defaultCategories),
+  setCategories: (c: string[]) => save(CATEGORIES_KEY, c),
+
   isAdmin: (): boolean => load(ADMIN_KEY, false),
   setAdmin: (val: boolean) => save(ADMIN_KEY, val),
 };

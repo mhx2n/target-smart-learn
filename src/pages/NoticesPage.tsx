@@ -1,6 +1,7 @@
 import { store } from "@/lib/store";
 import { Link } from "react-router-dom";
 import { Bell, Pin } from "lucide-react";
+import DOMPurify from "dompurify";
 
 const NoticesPage = () => {
   const notices = store.getNotices();
