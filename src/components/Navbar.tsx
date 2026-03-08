@@ -2,13 +2,13 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import ThemeToggle from "./ThemeToggle";
-import { store } from "@/lib/store";
+import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import { getLabel } from "@/lib/labels";
 
 const Navbar = () => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
-  const settings = store.getSiteSettings();
+  const settings = useSiteSettingsContext();
 
   const links = [
     { to: "/", label: getLabel("navHome") },

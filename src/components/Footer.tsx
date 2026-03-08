@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
-import { store } from "@/lib/store";
+import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import { getLabel } from "@/lib/labels";
 
 const Footer = () => {
-  const settings = store.getSiteSettings();
+  const settings = useSiteSettingsContext();
 
   return (
     <footer className="glass-nav mt-16 py-10">
