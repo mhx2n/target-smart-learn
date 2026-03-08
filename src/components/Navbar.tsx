@@ -10,11 +10,13 @@ const Navbar = () => {
   const links = [
     { to: "/", label: "হোম" },
     { to: "/exams", label: "পরীক্ষা" },
+    { to: "/results", label: "ফলাফল" },
     { to: "/notices", label: "নোটিস" },
+    { to: "/profile", label: "প্রোফাইল" },
     { to: "/about", label: "সম্পর্কে" },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
   return (
     <nav className="glass-nav fixed top-0 left-0 right-0 z-50">
@@ -32,9 +34,6 @@ const Navbar = () => {
             </Link>
           ))}
           <ThemeToggle />
-          <Link to="/student" className="text-xs px-3 py-1.5 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
-            স্টুডেন্ট প্যানেল
-          </Link>
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
@@ -52,9 +51,6 @@ const Navbar = () => {
               {l.label}
             </Link>
           ))}
-          <Link to="/student" onClick={() => setOpen(false)} className="block py-3 text-sm font-medium text-primary">
-            স্টুডেন্ট প্যানেল →
-          </Link>
         </div>
       )}
     </nav>

@@ -13,13 +13,13 @@ const StudentResult = () => {
   if (!result) {
     const results = store.getResults();
     return (
-      <div className="animate-fade-in">
+      <div className="pt-24 pb-8 container animate-fade-in">
         <h1 className="text-xl font-bold mb-5">📊 ফলাফল ইতিহাস</h1>
         {results.length === 0 ? (
           <div className="glass-card-static p-12 text-center text-muted-foreground">
             এখনও কোনো পরীক্ষা দেওয়া হয়নি
             <br />
-            <Link to="/student/exams" className="text-primary text-sm mt-2 inline-block">পরীক্ষা দিন →</Link>
+            <Link to="/exams" className="text-primary text-sm mt-2 inline-block">পরীক্ষা দিন →</Link>
           </div>
         ) : (
           <div className="space-y-3">
@@ -35,7 +35,7 @@ const StudentResult = () => {
                 </div>
                 <div className="text-right">
                   <span className={`text-lg font-bold ${r.percentage >= 60 ? "text-success" : "text-destructive"}`}>{r.percentage}%</span>
-                  <Link to={`/student/exams/${r.examId}/attempt`} className="block text-xs text-primary mt-1">আবার দিন →</Link>
+                  <Link to={`/exams/${r.examId}/attempt`} className="block text-xs text-primary mt-1">আবার দিন →</Link>
                 </div>
               </div>
             ))}
@@ -54,7 +54,7 @@ const StudentResult = () => {
   const msg = getMessage();
 
   return (
-    <div className="max-w-2xl mx-auto animate-fade-in">
+    <div className="pt-24 pb-8 container max-w-2xl mx-auto animate-fade-in">
       <div className="glass-card-static p-8 text-center mb-6">
         <div className="text-5xl font-extrabold gradient-text mb-2">{result.percentage}%</div>
         <p className={`text-lg font-bold ${msg.color} mb-1`}>{msg.text}</p>
@@ -104,10 +104,10 @@ const StudentResult = () => {
       </div>
 
       <div className="flex gap-3 mb-6">
-        <Link to={`/student/exams/${result.examId}/attempt`} className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+        <Link to={`/exams/${result.examId}/attempt`} className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
           <RotateCcw size={16} /> আবার চেষ্টা করুন
         </Link>
-        <Link to="/student/exams" className="flex-1 btn-glass text-sm text-center font-semibold">অন্য পরীক্ষা</Link>
+        <Link to="/exams" className="flex-1 inline-flex items-center justify-center text-sm text-center font-semibold rounded-xl px-4 py-3 glass hover:bg-muted/80 transition-all">অন্য পরীক্ষা</Link>
       </div>
 
       {questions && (
