@@ -89,6 +89,15 @@ export interface Notice {
   createdAt: string;
 }
 
+export interface Reminder {
+  id: string;
+  title: string;
+  description: string;
+  targetDate: string; // ISO date-time string
+  color: string; // hex color for accent
+  createdAt: string;
+}
+
 export interface ExamResult {
   examId: string;
   examTitle: string;

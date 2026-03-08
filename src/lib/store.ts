@@ -74,6 +74,9 @@ export const store = {
   getCategories: (): string[] => load(CATEGORIES_KEY, defaultCategories),
   setCategories: (c: string[]) => save(CATEGORIES_KEY, c),
 
+  getReminders: (): Reminder[] => load(REMINDERS_KEY, []),
+  setReminders: (r: Reminder[]) => save(REMINDERS_KEY, r),
+
   isAdmin: (): boolean => load(ADMIN_KEY, false),
   setAdmin: (val: boolean) => save(ADMIN_KEY, val),
 };
