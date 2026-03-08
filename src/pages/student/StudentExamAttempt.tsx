@@ -27,6 +27,8 @@ const StudentExamAttempt = () => {
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState((exam?.duration || 10) * 60);
+  const timeLeftRef = useRef(timeLeft);
+  timeLeftRef.current = timeLeft;
   const [showPalette, setShowPalette] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
