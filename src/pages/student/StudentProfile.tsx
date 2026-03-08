@@ -5,9 +5,9 @@ const StudentProfile = () => {
   const results = store.getResults();
   const totalAttempts = results.length;
   const avgScore = totalAttempts > 0
-    ? Math.round(results.reduce((s, r) => s + r.score, 0) / totalAttempts)
+    ? Math.round(results.reduce((s, r) => s + r.percentage, 0) / totalAttempts)
     : 0;
-  const bestScore = totalAttempts > 0 ? Math.max(...results.map((r) => r.score)) : 0;
+  const bestScore = totalAttempts > 0 ? Math.max(...results.map((r) => r.percentage)) : 0;
   const uniqueExams = new Set(results.map((r) => r.examId)).size;
 
   return (
@@ -45,7 +45,7 @@ const StudentProfile = () => {
                   <p className="text-sm font-medium">{r.examTitle}</p>
                   <p className="text-xs text-muted-foreground">{new Date(r.timestamp).toLocaleDateString("bn-BD")}</p>
                 </div>
-                <span className={`font-bold ${r.score >= 60 ? "text-success" : "text-destructive"}`}>{r.score}%</span>
+                <span className={`font-bold ${r.percentage >= 60 ? "text-success" : "text-destructive"}`}>{r.percentage}%</span>
               </div>
             ))}
           </div>

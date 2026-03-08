@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { BookOpen, FileText, Bell, User, BarChart3, Home, Menu, X } from "lucide-react";
 import { useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const navItems = [
   { to: "/student", label: "ড্যাশবোর্ড", icon: Home, end: true },
@@ -19,7 +20,6 @@ const StudentLayout = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Top nav */}
       <header className="glass-nav fixed top-0 left-0 right-0 z-50">
         <div className="container flex items-center justify-between h-14">
           <div className="flex items-center gap-3">
@@ -32,14 +32,16 @@ const StudentLayout = () => {
               <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full font-medium">Student</span>
             </Link>
           </div>
-          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-            হোমপেজ →
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              হোমপেজ →
+            </Link>
+          </div>
         </div>
       </header>
 
       <div className="flex flex-1 pt-14">
-        {/* Sidebar - desktop */}
         <aside className="hidden md:flex flex-col w-56 glass-strong border-r border-border/50 p-4 gap-1 fixed top-14 bottom-0 overflow-y-auto">
           {navItems.map((item) => (
             <Link
@@ -57,7 +59,6 @@ const StudentLayout = () => {
           ))}
         </aside>
 
-        {/* Mobile nav overlay */}
         {mobileOpen && (
           <div className="md:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
             <aside className="w-64 h-full glass-strong p-4 pt-20 space-y-1 animate-fade-in" onClick={(e) => e.stopPropagation()}>
@@ -80,7 +81,6 @@ const StudentLayout = () => {
           </div>
         )}
 
-        {/* Main content */}
         <main className="flex-1 md:ml-56 p-4 md:p-6">
           <Outlet />
         </main>

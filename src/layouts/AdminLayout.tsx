@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { store } from "@/lib/store";
 import { useEffect, useState } from "react";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   LayoutDashboard, FileText, Bell, Upload, BookOpen, Settings, LogOut, Menu, X, HelpCircle,
 } from "lucide-react";
@@ -45,9 +46,12 @@ const AdminLayout = () => {
               <span className="text-xs bg-destructive/10 text-destructive px-2 py-0.5 rounded-full font-medium">Admin</span>
             </Link>
           </div>
-          <button onClick={logout} className="flex items-center gap-1.5 text-xs text-destructive hover:underline font-medium">
-            <LogOut size={14} /> লগআউট
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button onClick={logout} className="flex items-center gap-1.5 text-xs text-destructive hover:underline font-medium">
+              <LogOut size={14} /> লগআউট
+            </button>
+          </div>
         </div>
       </header>
 

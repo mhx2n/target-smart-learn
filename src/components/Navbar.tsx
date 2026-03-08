@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import ThemeToggle from "./ThemeToggle";
 
 const Navbar = () => {
   const location = useLocation();
@@ -30,14 +31,18 @@ const Navbar = () => {
               {l.label}
             </Link>
           ))}
+          <ThemeToggle />
           <Link to="/student" className="text-xs px-3 py-1.5 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
             স্টুডেন্ট প্যানেল
           </Link>
         </div>
 
-        <button className="md:hidden p-2" onClick={() => setOpen(!open)}>
-          {open ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <ThemeToggle />
+          <button className="p-2" onClick={() => setOpen(!open)}>
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {open && (

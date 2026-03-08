@@ -54,6 +54,54 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
+  .dark {
+    --background: 220 20% 8%;
+    --foreground: 210 20% 92%;
+
+    --card: 220 18% 12%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 220 18% 12%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 210 100% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 210 20% 85%;
+
+    --muted: 220 15% 16%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 210 40% 20%;
+    --accent-foreground: 210 80% 75%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 18%;
+    --ring: 210 100% 55%;
+
+    --glass-bg: 220 18% 12% / 0.7;
+    --glass-border: 220 15% 20% / 0.5;
+    --glass-shadow: 220 30% 10%;
+
+    --success: 145 65% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 100%;
+
+    --sidebar-background: 220 18% 10%;
+    --sidebar-foreground: 210 20% 85%;
+    --sidebar-primary: 210 100% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 16%;
+    --sidebar-accent-foreground: 210 20% 85%;
+    --sidebar-border: 220 15% 18%;
+    --sidebar-ring: 210 100% 55%;
+  }
 }
 
 @layer base {
@@ -69,30 +117,30 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/60 backdrop-blur-xl border border-white/30 shadow-lg;
+    @apply bg-[hsl(var(--glass-bg))] backdrop-blur-xl border border-[hsl(var(--glass-border))] shadow-lg;
   }
 
   .glass-strong {
-    @apply bg-white/80 backdrop-blur-2xl border border-white/40 shadow-xl;
+    @apply bg-card/80 backdrop-blur-2xl border border-[hsl(var(--glass-border))] shadow-xl;
   }
 
   .glass-nav {
-    @apply bg-white/70 backdrop-blur-2xl border-b border-white/30 shadow-sm;
+    @apply bg-card/70 backdrop-blur-2xl border-b border-[hsl(var(--glass-border))] shadow-sm;
   }
 
   .glass-card {
-    @apply bg-white/60 backdrop-blur-xl border border-white/30 shadow-lg rounded-2xl transition-all duration-300 hover:shadow-xl hover:bg-white/70 hover:-translate-y-0.5;
+    @apply bg-[hsl(var(--glass-bg))] backdrop-blur-xl border border-[hsl(var(--glass-border))] shadow-lg rounded-2xl transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5;
   }
 
   .glass-card-static {
-    @apply bg-white/60 backdrop-blur-xl border border-white/30 shadow-lg rounded-2xl;
+    @apply bg-[hsl(var(--glass-bg))] backdrop-blur-xl border border-[hsl(var(--glass-border))] shadow-lg rounded-2xl;
   }
 
   .gradient-text {
-    @apply bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent;
   }
 
   .btn-glass {
-    @apply glass rounded-xl px-6 py-3 font-medium transition-all duration-300 hover:bg-white/80 hover:shadow-lg active:scale-[0.98];
+    @apply glass rounded-xl px-6 py-3 font-medium transition-all duration-300 hover:shadow-lg active:scale-[0.98];
   }
 }

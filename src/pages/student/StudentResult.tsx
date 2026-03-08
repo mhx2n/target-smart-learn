@@ -1,6 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { ExamResult, Question } from "@/lib/types";
-import { CheckCircle2, XCircle, MinusCircle, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, XCircle, MinusCircle, RotateCcw, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { store } from "@/lib/store";
 
@@ -28,11 +28,13 @@ const StudentResult = () => {
                 <div>
                   <p className="text-sm font-semibold">{r.examTitle}</p>
                   <p className="text-xs text-muted-foreground">
-                    সঠিক: {r.correct} | ভুল: {r.wrong} | বাদ: {r.skipped} • {new Date(r.timestamp).toLocaleDateString("bn-BD")}
+                    সঠিক: {r.correct} | ভুল: {r.wrong} | বাদ: {r.skipped}
+                    {r.negativeMarks > 0 && ` | নেগেটিভ: -${r.negativeMarks.toFixed(2)}`}
+                    {" • "}{new Date(r.timestamp).toLocaleDateString("bn-BD")}
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className={`text-lg font-bold ${r.score >= 60 ? "text-success" : "text-destructive"}`}>{r.score}%</span>
+                  <span className={`text-lg font-bold ${r.percentage >= 60 ? "text-success" : "text-destructive"}`}>{r.percentage}%</span>
                   <Link to={`/student/exams/${r.examId}/attempt`} className="block text-xs text-primary mt-1">আবার দিন →</Link>
                 </div>
               </div>
@@ -44,9 +46,9 @@ const StudentResult = () => {
   }
 
   const getMessage = () => {
-    if (result.score >= 80) return { text: "অসাধারণ! 🏆", color: "text-success" };
-    if (result.score >= 60) return { text: "ভালো করেছেন! 👏", color: "text-primary" };
-    if (result.score >= 40) return { text: "আরও চেষ্টা করুন 💪", color: "text-warning" };
+    if (result.percentage >= 80) return { text: "অসাধারণ! 🏆", color: "text-success" };
+    if (result.percentage >= 60) return { text: "ভালো করেছেন! 👏", color: "text-primary" };
+    if (result.percentage >= 40) return { text: "আরও চেষ্টা করুন 💪", color: "text-warning" };
     return { text: "আবার চেষ্টা করুন 📚", color: "text-destructive" };
   };
   const msg = getMessage();
@@ -54,12 +56,12 @@ const StudentResult = () => {
   return (
     <div className="max-w-2xl mx-auto animate-fade-in">
       <div className="glass-card-static p-8 text-center mb-6">
-        <div className="text-5xl font-extrabold gradient-text mb-2">{result.score}%</div>
+        <div className="text-5xl font-extrabold gradient-text mb-2">{result.percentage}%</div>
         <p className={`text-lg font-bold ${msg.color} mb-1`}>{msg.text}</p>
         <p className="text-sm text-muted-foreground">{result.examTitle}</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="glass-card-static p-4 text-center">
           <CheckCircle2 className="mx-auto mb-1 text-success" size={22} />
           <p className="text-xl font-bold">{result.correct}</p>
@@ -74,6 +76,30 @@ const StudentResult = () => {
           <MinusCircle className="mx-auto mb-1 text-muted-foreground" size={22} />
           <p className="text-xl font-bold">{result.skipped}</p>
           <p className="text-xs text-muted-foreground">বাদ</p>
+        </div>
+        <div className="glass-card-static p-4 text-center">
+          <AlertTriangle className="mx-auto mb-1 text-warning" size={22} />
+          <p className="text-xl font-bold text-destructive">-{result.negativeMarks.toFixed(2)}</p>
+          <p className="text-xs text-muted-foreground">নেগেটিভ</p>
+        </div>
+      </div>
+
+      {/* Score breakdown */}
+      <div className="glass-card-static p-5 mb-6">
+        <h3 className="text-sm font-semibold mb-3">📊 স্কোর বিশ্লেষণ</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">সঠিক উত্তর</span>
+            <span className="font-medium">+{result.correct}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">নেগেটিভ মার্ক ({result.wrong} × নেগেটিভ)</span>
+            <span className="font-medium text-destructive">-{result.negativeMarks.toFixed(2)}</span>
+          </div>
+          <div className="border-t border-border pt-2 flex justify-between">
+            <span className="font-semibold">চূড়ান্ত স্কোর</span>
+            <span className="font-bold text-primary">{result.finalScore.toFixed(2)} / {result.maxScore}</span>
+          </div>
         </div>
       </div>
 

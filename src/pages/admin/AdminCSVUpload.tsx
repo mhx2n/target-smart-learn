@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { store } from "@/lib/store";
 import { Exam, Question } from "@/lib/types";
-import { Upload, Plus } from "lucide-react";
+import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -15,7 +15,9 @@ const AdminCSVUpload = () => {
   const [newExamSubject, setNewExamSubject] = useState("");
   const [newExamDifficulty, setNewExamDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [newExamDuration, setNewExamDuration] = useState(15);
+  const [newExamNegativeMarking, setNewExamNegativeMarking] = useState(0.25);
   const [dragOver, setDragOver] = useState(false);
+  const [importSummary, setImportSummary] = useState<{ total: number; imported: number; skipped: number; errors: string[] } | null>(null);
 
   const parseCSV = (text: string) => {
     const lines = text.split("\n").filter((l) => l.trim());
@@ -27,10 +29,12 @@ const AdminCSVUpload = () => {
     const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
     const questions: Question[] = [];
     const errors: string[] = [];
+    const seen = new Set<string>();
+    let skippedCount = 0;
 
     for (let i = 1; i < lines.length; i++) {
       const vals = lines[i].split(",").map((v) => v.trim());
-      if (vals.length < 7) { errors.push(`Row ${i + 1}: অপর্যাপ্ত কলাম`); continue; }
+      if (vals.length < 6) { errors.push(`Row ${i + 1}: অপর্যাপ্ত কলাম`); skippedCount++; continue; }
 
       const qIdx = headers.indexOf("questions");
       const o1 = headers.indexOf("option1"), o2 = headers.indexOf("option2");
@@ -40,29 +44,42 @@ const AdminCSVUpload = () => {
       const secIdx = headers.indexOf("section");
 
       const questionText = vals[qIdx >= 0 ? qIdx : 0];
-      if (!questionText) { errors.push(`Row ${i + 1}: প্রশ্ন খালি`); continue; }
+      if (!questionText) { errors.push(`Row ${i + 1}: প্রশ্ন খালি`); skippedCount++; continue; }
+
+      // Duplicate detection
+      if (seen.has(questionText.toLowerCase())) {
+        errors.push(`Row ${i + 1}: ডুপ্লিকেট প্রশ্ন`);
+        skippedCount++;
+        continue;
+      }
+      seen.add(questionText.toLowerCase());
 
       const options = [vals[o1 >= 0 ? o1 : 1], vals[o2 >= 0 ? o2 : 2], vals[o3 >= 0 ? o3 : 3], vals[o4 >= 0 ? o4 : 4]].filter(Boolean);
       if (o5 >= 0 && vals[o5]) options.push(vals[o5]);
+
+      if (options.length < 2) { errors.push(`Row ${i + 1}: অপর্যাপ্ত অপশন`); skippedCount++; continue; }
 
       questions.push({
         id: `csv-${Date.now()}-${i}`,
         question: questionText,
         options,
         answer: vals[ansIdx >= 0 ? ansIdx : 5] || options[0],
-        explanation: vals[expIdx >= 0 ? expIdx : 6] || "",
+        explanation: expIdx >= 0 ? (vals[expIdx] || "") : "",
         type: "mcq",
-        section: vals[secIdx >= 0 ? secIdx : 8] || "General",
+        section: (secIdx >= 0 ? vals[secIdx] : "") || "1",
       });
     }
 
+    const totalRows = lines.length - 1;
+    setImportSummary({ total: totalRows, imported: questions.length, skipped: skippedCount, errors });
+
     if (errors.length > 0) {
-      toast({ title: `${errors.length} সমস্যা পাওয়া গেছে`, description: errors.slice(0, 3).join("; "), variant: "destructive" });
+      toast({ title: `${skippedCount} সারি বাদ পড়েছে`, description: errors.slice(0, 3).join("; "), variant: "destructive" });
     }
 
     setCsvQuestions(questions);
     setCsvPreview(true);
-    toast({ title: "সফল!", description: `${questions.length}টি প্রশ্ন লোড হয়েছে` });
+    toast({ title: "সফল!", description: `${questions.length}টি প্রশ্ন লোড হয়েছে (${skippedCount}টি বাদ)` });
   };
 
   const handleFile = (file: File) => {
@@ -94,10 +111,11 @@ const AdminCSVUpload = () => {
       title: newExamTitle,
       subject: newExamSubject || "সাধারণ",
       category: "আমদানি",
-      chapter: csvQuestions[0]?.section || "General",
+      chapter: csvQuestions[0]?.section || "1",
       difficulty: newExamDifficulty,
       questionCount: csvQuestions.length,
       duration: newExamDuration,
+      negativeMarking: newExamNegativeMarking,
       questions: csvQuestions,
       published: true,
       featured: false,
@@ -110,11 +128,11 @@ const AdminCSVUpload = () => {
     setCsvPreview(false);
     setNewExamTitle("");
     setNewExamSubject("");
+    setImportSummary(null);
     toast({ title: "পরীক্ষা তৈরি হয়েছে!", description: newExam.title });
     navigate("/admin/exams");
   };
 
-  // Section summary
   const sections = [...new Set(csvQuestions.map((q) => q.section))];
 
   return (
@@ -133,7 +151,7 @@ const AdminCSVUpload = () => {
         <Upload className="mx-auto mb-3 text-primary" size={36} />
         <p className="text-sm font-medium mb-1">CSV ফাইল আপলোড করুন বা ড্র্যাগ করুন</p>
         <p className="text-xs text-muted-foreground mb-4">
-          কলাম: questions, option1, option2, option3, option4, answer, explanation, type, section
+          কলাম: questions, option1, option2, option3, option4, option5, answer, explanation, type, section
         </p>
         <label className="cursor-pointer inline-block px-5 py-2.5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
           ফাইল নির্বাচন করুন
@@ -141,12 +159,42 @@ const AdminCSVUpload = () => {
         </label>
       </div>
 
+      {/* Import Summary */}
+      {importSummary && (
+        <div className="glass-card-static p-4 mb-5">
+          <h3 className="font-semibold text-sm mb-3">📊 আমদানি সারাংশ</h3>
+          <div className="grid grid-cols-3 gap-3 text-center text-sm">
+            <div className="p-3 rounded-xl bg-muted">
+              <p className="text-lg font-bold">{importSummary.total}</p>
+              <p className="text-xs text-muted-foreground">মোট সারি</p>
+            </div>
+            <div className="p-3 rounded-xl bg-success/10">
+              <p className="text-lg font-bold text-success">{importSummary.imported}</p>
+              <p className="text-xs text-muted-foreground">আমদানি</p>
+            </div>
+            <div className="p-3 rounded-xl bg-destructive/10">
+              <p className="text-lg font-bold text-destructive">{importSummary.skipped}</p>
+              <p className="text-xs text-muted-foreground">বাদ</p>
+            </div>
+          </div>
+          {importSummary.errors.length > 0 && (
+            <details className="mt-3">
+              <summary className="text-xs text-destructive cursor-pointer">ত্রুটি তালিকা ({importSummary.errors.length})</summary>
+              <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
+                {importSummary.errors.map((e, i) => (
+                  <p key={i} className="text-xs text-destructive/80 bg-destructive/5 p-1.5 rounded">{e}</p>
+                ))}
+              </div>
+            </details>
+          )}
+        </div>
+      )}
+
       {/* Preview */}
       {csvPreview && csvQuestions.length > 0 && (
         <div className="glass-card-static p-5">
           <h3 className="font-semibold text-sm mb-3">📋 {csvQuestions.length}টি প্রশ্ন লোড হয়েছে</h3>
 
-          {/* Section summary */}
           {sections.length > 1 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {sections.map((s) => (
@@ -181,6 +229,13 @@ const AdminCSVUpload = () => {
             </select>
             <input type="number" placeholder="সময় (মিনিট)" value={newExamDuration} onChange={(e) => setNewExamDuration(Number(e.target.value))}
               className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            <select value={newExamNegativeMarking} onChange={(e) => setNewExamNegativeMarking(Number(e.target.value))}
+              className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none">
+              <option value={0}>নেগেটিভ মার্ক: ০</option>
+              <option value={0.25}>নেগেটিভ মার্ক: ০.২৫</option>
+              <option value={0.5}>নেগেটিভ মার্ক: ০.৫</option>
+              <option value={1}>নেগেটিভ মার্ক: ১</option>
+            </select>
           </div>
 
           <button onClick={createExamFromCSV} className="w-full py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
