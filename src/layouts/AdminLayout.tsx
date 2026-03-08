@@ -28,7 +28,7 @@ const AdminLayout = () => {
 
   const logout = () => {
     store.setAdmin(false);
-    navigate("/admin");
+    navigate("/secure-admin-login");
   };
 
   return (

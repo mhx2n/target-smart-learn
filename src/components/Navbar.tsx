@@ -50,9 +50,6 @@ const Navbar = () => {
           <Link to="/student" onClick={() => setOpen(false)} className="block py-3 text-sm font-medium text-primary">
             স্টুডেন্ট প্যানেল →
           </Link>
-          <Link to="/admin" onClick={() => setOpen(false)} className="block py-3 text-sm font-medium text-muted-foreground">
-            Admin Panel
-          </Link>
         </div>
       )}
     </nav>

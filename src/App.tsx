@@ -67,8 +67,8 @@ const App = () => (
             <Route path="/student/profile" element={<StudentProfile />} />
           </Route>
 
-          {/* Admin routes */}
-          <Route path="/admin" element={<AdminLoginPage />} />
+          {/* Admin routes — hidden from public UI */}
+          <Route path="/secure-admin-login" element={<AdminLoginPage />} />
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/exams" element={<AdminExams />} />
