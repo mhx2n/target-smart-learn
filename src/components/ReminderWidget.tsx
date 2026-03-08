@@ -52,7 +52,7 @@ const ReminderWidget = () => {
             const timeLeft = getTimeLeft(r.targetDate);
             if (!timeLeft) return null;
             return (
-              <div key={r.id} className="rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-lg overflow-hidden">
+              <div key={r.id} className="rounded-lg md:rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-lg overflow-hidden">
                 <div className="h-1" style={{ backgroundColor: r.color || "hsl(var(--primary))" }} />
                 <div className="p-3">
                   <div className="flex items-start justify-between gap-2">
