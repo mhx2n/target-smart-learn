@@ -414,6 +414,54 @@ export type Database = {
         }
         Relationships: []
       }
+      wrong_answers: {
+        Row: {
+          correct_answer: string
+          created_at: string
+          exam_id: string
+          exam_title: string
+          explanation: string | null
+          id: string
+          option_images: Json | null
+          options: Json
+          question_id: string
+          question_image: string | null
+          question_text: string
+          session_id: string
+          user_answer: string
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string
+          exam_id: string
+          exam_title: string
+          explanation?: string | null
+          id?: string
+          option_images?: Json | null
+          options?: Json
+          question_id: string
+          question_image?: string | null
+          question_text: string
+          session_id: string
+          user_answer?: string
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string
+          exam_id?: string
+          exam_title?: string
+          explanation?: string | null
+          id?: string
+          option_images?: Json | null
+          options?: Json
+          question_id?: string
+          question_image?: string | null
+          question_text?: string
+          session_id?: string
+          user_answer?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
