@@ -1,4 +1,4 @@
-import { store } from "./store";
+import { getCachedSettings } from "@/contexts/SiteSettingsContext";
 
 // Default labels - these are the fallback values
 export const defaultLabels: Record<string, string> = {
@@ -59,7 +59,7 @@ export const defaultLabels: Record<string, string> = {
 };
 
 export function getLabel(key: string, fallback?: string): string {
-  const settings = store.getSiteSettings();
+  const settings = getCachedSettings();
   const custom = settings.uiLabels?.[key];
   if (custom) return custom;
   return defaultLabels[key] || fallback || key;
