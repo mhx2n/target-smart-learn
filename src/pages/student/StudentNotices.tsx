@@ -1,6 +1,7 @@
 import { store } from "@/lib/store";
 import { Bell } from "lucide-react";
 import { useState } from "react";
+import DOMPurify from "dompurify";
 
 const StudentNotices = () => {
   const notices = store.getNotices();
