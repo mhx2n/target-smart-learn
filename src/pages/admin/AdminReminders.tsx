@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { store } from "@/lib/store";
+import { useReminders, useUpsertReminder, useDeleteReminder } from "@/hooks/useSupabaseData";
 import { Reminder } from "@/lib/types";
 import { Plus, Trash2, Clock, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +9,9 @@ const colorOptions = [
 ];
 
 const AdminReminders = () => {
-  const [reminders, setReminders] = useState<Reminder[]>(store.getReminders());
+  const { data: reminders = [], isLoading } = useReminders();
+  const upsertReminder = useUpsertReminder();
+  const deleteReminderMut = useDeleteReminder();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [targetDate, setTargetDate] = useState("");
@@ -24,35 +26,31 @@ const AdminReminders = () => {
       return;
     }
     const reminder: Reminder = {
-      id: `rem-${Date.now()}`,
+      id: crypto.randomUUID(),
       title: title.trim(),
       description: description.trim(),
       targetDate: target.toISOString(),
       color,
       createdAt: new Date().toISOString(),
     };
-    const updated = [...reminders, reminder];
-    setReminders(updated);
-    store.setReminders(updated);
-    setTitle("");
-    setDescription("");
-    setTargetDate("");
-    toast({ title: "রিমাইন্ডার যোগ করা হয়েছে ✅" });
+    upsertReminder.mutate(reminder, {
+      onSuccess: () => {
+        setTitle(""); setDescription(""); setTargetDate("");
+        toast({ title: "রিমাইন্ডার যোগ করা হয়েছে ✅" });
+      },
+    });
   };
 
-  const deleteReminder = (id: string) => {
-    const updated = reminders.filter((r) => r.id !== id);
-    setReminders(updated);
-    store.setReminders(updated);
-    toast({ title: "রিমাইন্ডার মুছে ফেলা হয়েছে" });
+  const handleDelete = (id: string) => {
+    deleteReminderMut.mutate(id, {
+      onSuccess: () => toast({ title: "রিমাইন্ডার মুছে ফেলা হয়েছে" }),
+    });
   };
 
   const active = reminders.filter((r) => new Date(r.targetDate).getTime() > Date.now());
-  const expired = reminders.filter((r) => new Date(r.targetDate).getTime() <= Date.now());
 
-  // Auto-clean expired
-  if (expired.length > 0) {
-    store.setReminders(active);
+  if (isLoading) {
+    return <div className="animate-fade-in p-12 text-center text-muted-foreground">লোড হচ্ছে...</div>;
   }
 
   return (
@@ -62,65 +60,39 @@ const AdminReminders = () => {
         রিমাইন্ডার যোগ করুন — নির্দিষ্ট তারিখ ও সময় সেট করুন। ওয়েবসাইটের নিচে ডান কোণায় কাউন্টডাউন দেখাবে। সময় শেষ হলে অটো মুছে যাবে।
       </p>
 
-      {/* Add form */}
       <div className="glass-card-static p-5 mb-6">
         <h2 className="text-sm font-semibold mb-3">➕ নতুন রিমাইন্ডার</h2>
         <div className="space-y-3">
-          <input
-            type="text"
-            placeholder="শিরোনাম (যেমন: পরীক্ষা শুরু হচ্ছে!)"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-          <input
-            type="text"
-            placeholder="বিবরণ (ঐচ্ছিক)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
+          <input type="text" placeholder="শিরোনাম (যেমন: পরীক্ষা শুরু হচ্ছে!)" value={title} onChange={(e) => setTitle(e.target.value)}
+            className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          <input type="text" placeholder="বিবরণ (ঐচ্ছিক)" value={description} onChange={(e) => setDescription(e.target.value)}
+            className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <label className="text-xs text-muted-foreground mb-1 block">📅 তারিখ ও সময়</label>
-              <input
-                type="datetime-local"
-                value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
+              <input type="datetime-local" value={targetDate} onChange={(e) => setTargetDate(e.target.value)}
+                className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                <Palette size={12} /> রঙ বেছে নিন
-              </label>
+              <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Palette size={12} /> রঙ বেছে নিন</label>
               <div className="flex gap-2 mt-1">
                 {colorOptions.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setColor(c)}
+                  <button key={c} onClick={() => setColor(c)}
                     className={`w-7 h-7 rounded-full border-2 transition-all ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
-                    style={{ backgroundColor: c }}
-                  />
+                    style={{ backgroundColor: c }} />
                 ))}
               </div>
             </div>
           </div>
-          <button
-            onClick={addReminder}
-            disabled={!title.trim() || !targetDate}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all"
-          >
+          <button onClick={addReminder} disabled={!title.trim() || !targetDate || upsertReminder.isPending}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all">
             <Plus size={16} /> যোগ করুন
           </button>
         </div>
       </div>
 
-      {/* Active reminders */}
       {active.length === 0 ? (
-        <div className="glass-card-static p-12 text-center text-muted-foreground">
-          কোনো সক্রিয় রিমাইন্ডার নেই
-        </div>
+        <div className="glass-card-static p-12 text-center text-muted-foreground">কোনো সক্রিয় রিমাইন্ডার নেই</div>
       ) : (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold">সক্রিয় রিমাইন্ডার ({active.length})</h2>
@@ -133,16 +105,10 @@ const AdminReminders = () => {
                   <h3 className="text-sm font-bold">{r.title}</h3>
                   {r.description && <p className="text-xs text-muted-foreground mt-0.5">{r.description}</p>}
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock size={12} />
-                      {new Date(r.targetDate).toLocaleString("bn-BD")}
-                    </span>
+                    <span className="flex items-center gap-1"><Clock size={12} />{new Date(r.targetDate).toLocaleString("bn-BD")}</span>
                   </div>
                 </div>
-                <button
-                  onClick={() => deleteReminder(r.id)}
-                  className="p-2 rounded-lg hover:bg-destructive/10 transition-colors flex-shrink-0"
-                >
+                <button onClick={() => handleDelete(r.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors flex-shrink-0">
                   <Trash2 size={16} className="text-destructive" />
                 </button>
               </div>

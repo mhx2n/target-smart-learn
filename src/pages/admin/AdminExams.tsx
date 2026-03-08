@@ -1,44 +1,41 @@
 import { useState } from "react";
-import { store } from "@/lib/store";
+import { useExams, useSections, useDeleteExam, useUpdateExamField } from "@/hooks/useSupabaseData";
 import { Exam } from "@/lib/types";
 import { Eye, EyeOff, Trash2, FolderOpen, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QuestionEditor from "@/components/QuestionEditor";
 
 const AdminExams = () => {
-  const [exams, setExams] = useState<Exam[]>(store.getExams());
-  const sections = store.getSections();
+  const { data: exams = [], isLoading } = useExams();
+  const { data: sections = [] } = useSections();
+  const deleteExamMut = useDeleteExam();
+  const updateFieldMut = useUpdateExamField();
   const { toast } = useToast();
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
 
   const sorted = [...exams].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const togglePublish = (examId: string) => {
-    const updated = exams.map((e) => e.id === examId ? { ...e, published: !e.published } : e);
-    setExams(updated);
-    store.setExams(updated);
+  const togglePublish = (examId: string, current: boolean) => {
+    updateFieldMut.mutate({ id: examId, field: "published", value: !current }, {
+      onSuccess: () => toast({ title: current ? "অপ্রকাশিত হয়েছে" : "প্রকাশিত হয়েছে" }),
+    });
   };
 
   const deleteExam = (examId: string) => {
-    const updated = exams.filter((e) => e.id !== examId);
-    setExams(updated);
-    store.setExams(updated);
-    toast({ title: "পরীক্ষা মুছে ফেলা হয়েছে" });
+    deleteExamMut.mutate(examId, {
+      onSuccess: () => toast({ title: "পরীক্ষা মুছে ফেলা হয়েছে" }),
+    });
   };
 
   const assignSection = (examId: string, sectionId: string) => {
-    const updated = exams.map((e) =>
-      e.id === examId ? { ...e, sectionId: sectionId || undefined } : e
-    );
-    setExams(updated);
-    store.setExams(updated);
-    toast({ title: "সেকশন আপডেট হয়েছে" });
+    updateFieldMut.mutate({ id: examId, field: "sectionId", value: sectionId || null }, {
+      onSuccess: () => toast({ title: "সেকশন আপডেট হয়েছে" }),
+    });
   };
 
-  const handleSaved = (updatedExam: Exam) => {
-    setExams((prev) => prev.map((e) => (e.id === updatedExam.id ? updatedExam : e)));
-    setEditingExam(null);
-  };
+  if (isLoading) {
+    return <div className="animate-fade-in p-12 text-center text-muted-foreground">লোড হচ্ছে...</div>;
+  }
 
   return (
     <div className="animate-fade-in">
@@ -66,7 +63,7 @@ const AdminExams = () => {
                   <button onClick={() => setEditingExam(e)} className="p-2 rounded-lg hover:bg-primary/10 transition-colors" title="প্রশ্ন সম্পাদনা">
                     <Pencil size={16} className="text-primary" />
                   </button>
-                  <button onClick={() => togglePublish(e.id)} className="p-2 rounded-lg hover:bg-muted transition-colors">
+                  <button onClick={() => togglePublish(e.id, e.published)} className="p-2 rounded-lg hover:bg-muted transition-colors">
                     {e.published ? <Eye size={16} className="text-success" /> : <EyeOff size={16} className="text-muted-foreground" />}
                   </button>
                   <button onClick={() => deleteExam(e.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors">
@@ -95,7 +92,7 @@ const AdminExams = () => {
       )}
 
       {editingExam && (
-        <QuestionEditor exam={editingExam} onClose={() => setEditingExam(null)} onSaved={handleSaved} />
+        <QuestionEditor exam={editingExam} onClose={() => setEditingExam(null)} onSaved={() => setEditingExam(null)} />
       )}
     </div>
   );

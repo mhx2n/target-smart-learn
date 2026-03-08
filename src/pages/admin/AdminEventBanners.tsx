@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { store } from "@/lib/store";
+import { useEventBanners, useUpsertEventBanner, useDeleteEventBanner } from "@/hooks/useSupabaseData";
 import { EventBanner } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Eye, EyeOff, Image } from "lucide-react";
 import { compressImage } from "@/lib/imageUtils";
 
 const AdminEventBanners = () => {
-  const [banners, setBanners] = useState<EventBanner[]>(store.getEventBanners());
+  const { data: banners = [], isLoading } = useEventBanners();
+  const upsertBanner = useUpsertEventBanner();
+  const deleteBannerMut = useDeleteEventBanner();
   const [caption, setCaption] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [image, setImage] = useState("");
@@ -32,27 +34,27 @@ const AdminEventBanners = () => {
       active: true,
       createdAt: new Date().toISOString(),
     };
-    const updated = [banner, ...banners];
-    setBanners(updated);
-    store.setEventBanners(updated);
-    setCaption("");
-    setTargetDate("");
-    setImage("");
-    toast({ title: "ব্যানার যোগ হয়েছে ✅" });
+    upsertBanner.mutate(banner, {
+      onSuccess: () => {
+        setCaption(""); setTargetDate(""); setImage("");
+        toast({ title: "ব্যানার যোগ হয়েছে ✅" });
+      },
+    });
   };
 
   const remove = (id: string) => {
-    const updated = banners.filter((b) => b.id !== id);
-    setBanners(updated);
-    store.setEventBanners(updated);
-    toast({ title: "ব্যানার মুছে ফেলা হয়েছে" });
+    deleteBannerMut.mutate(id, {
+      onSuccess: () => toast({ title: "ব্যানার মুছে ফেলা হয়েছে" }),
+    });
   };
 
-  const toggleActive = (id: string) => {
-    const updated = banners.map((b) => (b.id === id ? { ...b, active: !b.active } : b));
-    setBanners(updated);
-    store.setEventBanners(updated);
+  const toggleActive = (banner: EventBanner) => {
+    upsertBanner.mutate({ ...banner, active: !banner.active });
   };
+
+  if (isLoading) {
+    return <div className="animate-fade-in p-12 text-center text-muted-foreground">লোড হচ্ছে...</div>;
+  }
 
   return (
     <div className="animate-fade-in max-w-2xl mx-auto">
@@ -63,21 +65,13 @@ const AdminEventBanners = () => {
         <div className="space-y-3">
           <div>
             <label className="text-xs font-semibold text-muted-foreground mb-1 block">ক্যাপশন *</label>
-            <input
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              placeholder="যেমন: ঈদুল ফিতর মোবারক!"
-              className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
+            <input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="যেমন: ঈদুল ফিতর মোবারক!"
+              className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground mb-1 block">তারিখ ও সময় *</label>
-            <input
-              type="datetime-local"
-              value={targetDate}
-              onChange={(e) => setTargetDate(e.target.value)}
-              className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
+            <input type="datetime-local" value={targetDate} onChange={(e) => setTargetDate(e.target.value)}
+              className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
           </div>
           <div>
             <label className="text-xs font-semibold text-muted-foreground mb-1 block">ছবি (ঐচ্ছিক)</label>
@@ -89,10 +83,8 @@ const AdminEventBanners = () => {
               {image && <img src={image} alt="" className="w-10 h-10 rounded-lg object-cover" />}
             </div>
           </div>
-          <button
-            onClick={add}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
-          >
+          <button onClick={add} disabled={upsertBanner.isPending}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all">
             <Plus size={16} /> যোগ করুন
           </button>
         </div>
@@ -115,7 +107,7 @@ const AdminEventBanners = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => toggleActive(b.id)} className="p-2 rounded-lg hover:bg-muted transition-colors" title={b.active ? "নিষ্ক্রিয়" : "সক্রিয়"}>
+                  <button onClick={() => toggleActive(b)} className="p-2 rounded-lg hover:bg-muted transition-colors" title={b.active ? "নিষ্ক্রিয়" : "সক্রিয়"}>
                     {b.active ? <Eye size={16} className="text-primary" /> : <EyeOff size={16} className="text-muted-foreground" />}
                   </button>
                   <button onClick={() => remove(b.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors">

@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { store } from "@/lib/store";
+import { useNotices, useUpsertNotice, useDeleteNotice } from "@/hooks/useSupabaseData";
 import { Notice } from "@/lib/types";
 import { Plus, Trash2, Pin, Bold, Italic, Link, ImagePlus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -41,7 +41,9 @@ const RichTextToolbar = ({ editorRef }: { editorRef: React.RefObject<HTMLDivElem
 };
 
 const AdminNotices = () => {
-  const [notices, setNotices] = useState<Notice[]>(store.getNotices());
+  const { data: notices = [], isLoading } = useNotices();
+  const upsertNotice = useUpsertNotice();
+  const deleteNoticeMut = useDeleteNotice();
   const [title, setTitle] = useState("");
   const [image, setImage] = useState<string | undefined>();
   const contentRef = useRef<HTMLDivElement>(null);
@@ -64,34 +66,36 @@ const AdminNotices = () => {
     if (!title) return;
     const content = contentRef.current?.innerHTML || "";
     const n: Notice = {
-      id: `n-${Date.now()}`,
+      id: crypto.randomUUID(),
       title,
       content,
       image,
       pinned: false,
       createdAt: new Date().toISOString().split("T")[0],
     };
-    const updated = [n, ...notices];
-    setNotices(updated);
-    store.setNotices(updated);
-    setTitle("");
-    setImage(undefined);
-    if (contentRef.current) contentRef.current.innerHTML = "";
-    toast({ title: "নোটিস যুক্ত হয়েছে" });
+    upsertNotice.mutate(n, {
+      onSuccess: () => {
+        setTitle("");
+        setImage(undefined);
+        if (contentRef.current) contentRef.current.innerHTML = "";
+        toast({ title: "নোটিস যুক্ত হয়েছে" });
+      },
+    });
   };
 
-  const deleteNotice = (id: string) => {
-    const updated = notices.filter((n) => n.id !== id);
-    setNotices(updated);
-    store.setNotices(updated);
-    toast({ title: "নোটিস মুছে ফেলা হয়েছে" });
+  const handleDelete = (id: string) => {
+    deleteNoticeMut.mutate(id, {
+      onSuccess: () => toast({ title: "নোটিস মুছে ফেলা হয়েছে" }),
+    });
   };
 
-  const togglePin = (id: string) => {
-    const updated = notices.map((n) => n.id === id ? { ...n, pinned: !n.pinned } : n);
-    setNotices(updated);
-    store.setNotices(updated);
+  const togglePin = (notice: Notice) => {
+    upsertNotice.mutate({ ...notice, pinned: !notice.pinned });
   };
+
+  if (isLoading) {
+    return <div className="animate-fade-in p-12 text-center text-muted-foreground">লোড হচ্ছে...</div>;
+  }
 
   return (
     <div className="animate-fade-in">
@@ -113,7 +117,6 @@ const AdminNotices = () => {
           />
         </div>
 
-        {/* Image Upload */}
         <div className="mb-3">
           <input ref={fileRef} type="file" accept="image/*" onChange={handleImage} className="hidden" />
           {image ? (
@@ -131,7 +134,7 @@ const AdminNotices = () => {
           )}
         </div>
 
-        <button onClick={addNotice} className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+        <button onClick={addNotice} disabled={upsertNotice.isPending} className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-50">
           <Plus size={14} className="inline mr-1" /> যুক্ত করুন
         </button>
       </div>
@@ -148,10 +151,10 @@ const AdminNotices = () => {
               {n.image && <img src={n.image} alt="" className="mt-2 rounded-lg max-h-20 object-cover" />}
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <button onClick={() => togglePin(n.id)} className="p-2 rounded-lg hover:bg-muted transition-colors">
+              <button onClick={() => togglePin(n)} className="p-2 rounded-lg hover:bg-muted transition-colors">
                 <Pin size={14} className={n.pinned ? "text-primary" : "text-muted-foreground"} />
               </button>
-              <button onClick={() => deleteNotice(n.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors">
+              <button onClick={() => handleDelete(n.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors">
                 <Trash2 size={14} className="text-destructive" />
               </button>
             </div>

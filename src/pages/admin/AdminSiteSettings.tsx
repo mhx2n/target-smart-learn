@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { store } from "@/lib/store";
+import { useState, useEffect } from "react";
+import { useSiteSettings, useSaveSiteSettings } from "@/hooks/useSupabaseData";
 import { SiteSettings } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Save, Plus, Trash2, Bold, Italic, Link as LinkIcon, List, ChevronDown, ChevronRight } from "lucide-react";
@@ -33,7 +33,6 @@ const RichEditor = ({ label, value, onChange }: { label: string; value: string; 
   );
 };
 
-// Group labels by category for organized editing
 const labelGroups: { title: string; keys: string[] }[] = [
   { title: "🧭 নেভিগেশন", keys: ["navHome", "navExams", "navResults", "navNotices", "navProfile", "navAbout"] },
   { title: "🏠 হোমপেজ", keys: ["searchPlaceholder", "ctaExams", "ctaResults", "statTotalExams", "statSubjects", "statPractice", "statNotices", "recentResults", "viewAll", "noticeBoard", "featuredExams", "allExams", "viewMore", "pinned"] },
@@ -43,22 +42,35 @@ const labelGroups: { title: string; keys: string[] }[] = [
 ];
 
 const AdminSiteSettings = () => {
-  const [settings, setSettings] = useState<SiteSettings>(store.getSiteSettings());
+  const { data: loadedSettings, isLoading } = useSiteSettings();
+  const saveMut = useSaveSiteSettings();
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [labelsOpen, setLabelsOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
-  const update = (key: keyof SiteSettings, value: any) => setSettings((prev) => ({ ...prev, [key]: value }));
+  useEffect(() => {
+    if (loadedSettings && !settings) setSettings(loadedSettings);
+  }, [loadedSettings]);
+
+  if (isLoading || !settings) {
+    return <div className="animate-fade-in p-12 text-center text-muted-foreground">লোড হচ্ছে...</div>;
+  }
+
+  const update = (key: keyof SiteSettings, value: any) => setSettings((prev) => prev ? { ...prev, [key]: value } : prev);
 
   const uiLabels = settings.uiLabels || {};
   const updateLabel = (key: string, val: string) => {
     const updated = { ...uiLabels, [key]: val };
-    // Remove if matches default (saves storage)
     if (val === defaultLabels[key] || val === "") delete updated[key];
     update("uiLabels", updated);
   };
 
-  const save = () => { store.setSiteSettings(settings); toast({ title: "সেটিংস সেভ হয়েছে ✅" }); };
+  const save = () => {
+    saveMut.mutate(settings, {
+      onSuccess: () => toast({ title: "সেটিংস সেভ হয়েছে ✅" }),
+    });
+  };
 
   const addFooterLink = () => update("footerLinks", [...settings.footerLinks, { label: "", url: "" }]);
   const removeFooterLink = (i: number) => update("footerLinks", settings.footerLinks.filter((_, idx) => idx !== i));
@@ -77,13 +89,12 @@ const AdminSiteSettings = () => {
     <div className="animate-fade-in max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold">🌐 সাইট কাস্টমাইজ</h1>
-        <button onClick={save} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+        <button onClick={save} disabled={saveMut.isPending} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all">
           <Save size={16} /> সেভ করুন
         </button>
       </div>
 
       <div className="space-y-6">
-        {/* About Section */}
         <div className="glass-card-static p-5 space-y-4">
           <h2 className="text-sm font-bold">📖 আমাদের সম্পর্কে পেজ</h2>
           <div className="space-y-2">
@@ -106,7 +117,6 @@ const AdminSiteSettings = () => {
           <RichEditor label="যোগাযোগ তথ্য" value={settings.contactContent} onChange={(v) => update("contactContent", v)} />
         </div>
 
-        {/* Footer */}
         <div className="glass-card-static p-5 space-y-4">
           <h2 className="text-sm font-bold">📋 ফুটার সেটিংস</h2>
           <div className="space-y-2">
@@ -118,10 +128,8 @@ const AdminSiteSettings = () => {
             <label className="text-sm font-semibold">দ্রুত লিঙ্কসমূহ</label>
             {settings.footerLinks.map((link, i) => (
               <div key={i} className="flex gap-2 items-center">
-                <input placeholder="লেবেল" value={link.label} onChange={(e) => updateFooterLink(i, "label", e.target.value)}
-                  className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none" />
-                <input placeholder="URL (/exams)" value={link.url} onChange={(e) => updateFooterLink(i, "url", e.target.value)}
-                  className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                <input placeholder="লেবেল" value={link.label} onChange={(e) => updateFooterLink(i, "label", e.target.value)} className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                <input placeholder="URL (/exams)" value={link.url} onChange={(e) => updateFooterLink(i, "url", e.target.value)} className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none" />
                 <button onClick={() => removeFooterLink(i)} className="p-2 hover:bg-destructive/10 rounded-lg"><Trash2 size={14} className="text-destructive" /></button>
               </div>
             ))}
@@ -131,10 +139,8 @@ const AdminSiteSettings = () => {
             <label className="text-sm font-semibold">সোশ্যাল লিঙ্কসমূহ</label>
             {settings.socialLinks.map((link, i) => (
               <div key={i} className="flex gap-2 items-center">
-                <input placeholder="লেবেল (Telegram)" value={link.label} onChange={(e) => updateSocialLink(i, "label", e.target.value)}
-                  className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none" />
-                <input placeholder="URL" value={link.url} onChange={(e) => updateSocialLink(i, "url", e.target.value)}
-                  className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                <input placeholder="লেবেল (Telegram)" value={link.label} onChange={(e) => updateSocialLink(i, "label", e.target.value)} className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none" />
+                <input placeholder="URL" value={link.url} onChange={(e) => updateSocialLink(i, "url", e.target.value)} className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none" />
                 <button onClick={() => removeSocialLink(i)} className="p-2 hover:bg-destructive/10 rounded-lg"><Trash2 size={14} className="text-destructive" /></button>
               </div>
             ))}
@@ -142,7 +148,6 @@ const AdminSiteSettings = () => {
           </div>
         </div>
 
-        {/* UI Labels Customization */}
         <div className="glass-card-static p-5 space-y-4">
           <button onClick={() => setLabelsOpen(!labelsOpen)} className="w-full flex items-center justify-between">
             <h2 className="text-sm font-bold">🏷️ সকল টেক্সট/লেবেল কাস্টমাইজ</h2>
@@ -153,8 +158,7 @@ const AdminSiteSettings = () => {
               <p className="text-xs text-muted-foreground">ওয়েবসাইটের সকল টেক্সট এখান থেকে পরিবর্তন করুন। খালি রাখলে ডিফল্ট ব্যবহার হবে।</p>
               {labelGroups.map((group) => (
                 <div key={group.title} className="border border-border rounded-xl overflow-hidden">
-                  <button onClick={() => toggleGroup(group.title)}
-                    className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <button onClick={() => toggleGroup(group.title)} className="w-full flex items-center justify-between p-3 bg-muted/30 hover:bg-muted/50 transition-colors">
                     <span className="text-sm font-semibold">{group.title}</span>
                     {openGroups[group.title] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                   </button>
@@ -163,12 +167,8 @@ const AdminSiteSettings = () => {
                       {group.keys.map((key) => (
                         <div key={key} className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground w-32 shrink-0 truncate" title={key}>{key}</span>
-                          <input
-                            value={uiLabels[key] || ""}
-                            placeholder={defaultLabels[key] || key}
-                            onChange={(e) => updateLabel(key, e.target.value)}
-                            className="flex-1 glass-strong rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30"
-                          />
+                          <input value={uiLabels[key] || ""} placeholder={defaultLabels[key] || key} onChange={(e) => updateLabel(key, e.target.value)}
+                            className="flex-1 glass-strong rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/30" />
                         </div>
                       ))}
                     </div>
@@ -181,7 +181,7 @@ const AdminSiteSettings = () => {
       </div>
 
       <div className="mt-6 text-center">
-        <button onClick={save} className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+        <button onClick={save} disabled={saveMut.isPending} className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all">
           <Save size={16} /> সব সেভ করুন
         </button>
       </div>

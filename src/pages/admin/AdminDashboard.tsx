@@ -1,22 +1,24 @@
-import { store } from "@/lib/store";
+import { useExams, useNotices } from "@/hooks/useSupabaseData";
 import { BookOpen, HelpCircle, Bell, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 import VisitorStats from "@/components/VisitorStats";
 
 const AdminDashboard = () => {
-  const exams = store.getExams();
-  const notices = store.getNotices();
+  const { data: exams = [], isLoading: examsLoading } = useExams();
+  const { data: notices = [], isLoading: noticesLoading } = useNotices();
   const totalQuestions = exams.reduce((a, e) => a + e.questionCount, 0);
   const publishedExams = exams.filter((e) => e.published).length;
+
+  if (examsLoading || noticesLoading) {
+    return <div className="animate-fade-in p-12 text-center text-muted-foreground">লোড হচ্ছে...</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-xl font-bold">🔧 অ্যাডমিন ড্যাশবোর্ড</h1>
 
-      {/* Visitor Stats - Only visible to Admin */}
       <VisitorStats />
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { icon: BookOpen, label: "মোট পরীক্ষা", value: exams.length, color: "text-primary" },
@@ -32,7 +34,6 @@ const AdminDashboard = () => {
         ))}
       </div>
 
-      {/* Quick actions */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <Link to="/admin/upload-csv" className="glass-card p-5 text-center">
           <Upload className="mx-auto mb-2 text-primary" size={24} />
@@ -51,7 +52,6 @@ const AdminDashboard = () => {
         </Link>
       </div>
 
-      {/* Recent exams */}
       <section>
         <h2 className="text-sm font-bold mb-3">📝 সাম্প্রতিক পরীক্ষা</h2>
         <div className="space-y-2">
