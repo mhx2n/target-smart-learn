@@ -507,3 +507,49 @@ export async function deleteWrongAnswersByExam(examId: string): Promise<void> {
   const { error } = await supabase.from("wrong_answers").delete().eq("session_id", sessionId).eq("exam_id", examId);
   if (error) throw error;
 }
+
+// ============ PAGE VISITS ============
+
+export async function trackPageVisit(pagePath: string): Promise<void> {
+  const sessionId = getSessionId();
+  const { error } = await supabase.from("page_visits").insert({
+    session_id: sessionId,
+    page_path: pagePath,
+  });
+  if (error) console.error("Failed to track visit:", error);
+}
+
+export async function fetchVisitorStats(): Promise<{
+  totalVisits: number;
+  todayVisits: number;
+  activeNow: number;
+}> {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
+
+  // Total visits (unique sessions)
+  const { count: totalVisits } = await supabase
+    .from("page_visits")
+    .select("session_id", { count: "exact", head: true });
+
+  // Today's visits (unique sessions today)  
+  const { data: todayData } = await supabase
+    .from("page_visits")
+    .select("session_id")
+    .gte("created_at", todayStart);
+  const todayUnique = new Set((todayData || []).map(r => r.session_id)).size;
+
+  // Active now (unique sessions in last 5 minutes)
+  const { data: activeData } = await supabase
+    .from("page_visits")
+    .select("session_id")
+    .gte("created_at", fiveMinAgo);
+  const activeUnique = new Set((activeData || []).map(r => r.session_id)).size;
+
+  return {
+    totalVisits: totalVisits || 0,
+    todayVisits: todayUnique,
+    activeNow: activeUnique,
+  };
+}
