@@ -1,6 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { ExamResult, Question } from "@/lib/types";
-import { CheckCircle2, XCircle, MinusCircle, RotateCcw, AlertTriangle, BookX } from "lucide-react";
+import { CheckCircle2, XCircle, MinusCircle, RotateCcw, AlertTriangle } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 import { useResults } from "@/hooks/useSupabaseData";
 import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
