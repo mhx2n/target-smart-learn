@@ -254,10 +254,6 @@ const StudentResult = () => {
         <Link to="/exams" className="flex-1 inline-flex items-center justify-center text-sm text-center font-semibold rounded-xl px-4 py-3 glass hover:bg-muted/80 transition-all">অন্য পরীক্ষা</Link>
       </div>
 
-      {/* Wrong answers bank link */}
-      <Link to="/wrong-answers" className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-all">
-        <BookX size={16} /> ভুল উত্তর ব্যাংক দেখুন
-      </Link>
     </div>
   );
 };
