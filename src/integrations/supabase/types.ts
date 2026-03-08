@@ -14,16 +14,421 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      event_banners: {
+        Row: {
+          active: boolean
+          caption: string
+          created_at: string
+          id: string
+          image: string
+          target_date: string
+        }
+        Insert: {
+          active?: boolean
+          caption?: string
+          created_at?: string
+          id?: string
+          image: string
+          target_date: string
+        }
+        Update: {
+          active?: boolean
+          caption?: string
+          created_at?: string
+          id?: string
+          image?: string
+          target_date?: string
+        }
+        Relationships: []
+      }
+      exams: {
+        Row: {
+          category: string
+          chapter: string
+          created_at: string
+          difficulty: string
+          duration: number
+          featured: boolean
+          id: string
+          negative_marking: number
+          published: boolean
+          question_count: number
+          section_id: string | null
+          subject: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          chapter?: string
+          created_at?: string
+          difficulty?: string
+          duration?: number
+          featured?: boolean
+          id?: string
+          negative_marking?: number
+          published?: boolean
+          question_count?: number
+          section_id?: string | null
+          subject: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          chapter?: string
+          created_at?: string
+          difficulty?: string
+          duration?: number
+          featured?: boolean
+          id?: string
+          negative_marking?: number
+          published?: boolean
+          question_count?: number
+          section_id?: string | null
+          subject?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exams_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notices: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          image: string | null
+          pinned: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          image?: string | null
+          pinned?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          image?: string | null
+          pinned?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          answer: string
+          created_at: string
+          exam_id: string
+          explanation: string
+          id: string
+          option_images: Json | null
+          options: Json
+          question: string
+          question_image: string | null
+          section: string
+          sort_order: number
+          type: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          exam_id: string
+          explanation?: string
+          id?: string
+          option_images?: Json | null
+          options?: Json
+          question: string
+          question_image?: string | null
+          section?: string
+          sort_order?: number
+          type?: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          exam_id?: string
+          explanation?: string
+          id?: string
+          option_images?: Json | null
+          options?: Json
+          question?: string
+          question_image?: string | null
+          section?: string
+          sort_order?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reminders: {
+        Row: {
+          color: string
+          created_at: string
+          description: string
+          id: string
+          target_date: string
+          title: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string
+          id?: string
+          target_date: string
+          title: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string
+          id?: string
+          target_date?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      results: {
+        Row: {
+          answers: Json
+          correct: number
+          created_at: string
+          exam_id: string
+          exam_title: string
+          final_score: number
+          id: string
+          max_score: number
+          negative_marks: number
+          percentage: number
+          session_id: string | null
+          skipped: number
+          total_questions: number
+          wrong: number
+        }
+        Insert: {
+          answers?: Json
+          correct?: number
+          created_at?: string
+          exam_id: string
+          exam_title: string
+          final_score?: number
+          id?: string
+          max_score?: number
+          negative_marks?: number
+          percentage?: number
+          session_id?: string | null
+          skipped?: number
+          total_questions: number
+          wrong?: number
+        }
+        Update: {
+          answers?: Json
+          correct?: number
+          created_at?: string
+          exam_id?: string
+          exam_title?: string
+          final_score?: number
+          id?: string
+          max_score?: number
+          negative_marks?: number
+          percentage?: number
+          session_id?: string | null
+          skipped?: number
+          total_questions?: number
+          wrong?: number
+        }
+        Relationships: []
+      }
+      sections: {
+        Row: {
+          caption: string | null
+          created_at: string
+          description: string
+          id: string
+          image: string | null
+          name: string
+          order: number
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          image?: string | null
+          name: string
+          order?: number
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          image?: string | null
+          name?: string
+          order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          about_content: string
+          about_title: string
+          active_theme_id: string
+          brand_emoji: string
+          brand_name: string
+          contact_content: string
+          contact_title: string
+          created_at: string
+          custom_theme: Json | null
+          features_content: string
+          features_title: string
+          footer_description: string
+          footer_links: Json
+          hero_subtitle: string
+          hero_tagline: string
+          id: string
+          social_links: Json
+          ui_labels: Json | null
+          updated_at: string
+        }
+        Insert: {
+          about_content?: string
+          about_title?: string
+          active_theme_id?: string
+          brand_emoji?: string
+          brand_name?: string
+          contact_content?: string
+          contact_title?: string
+          created_at?: string
+          custom_theme?: Json | null
+          features_content?: string
+          features_title?: string
+          footer_description?: string
+          footer_links?: Json
+          hero_subtitle?: string
+          hero_tagline?: string
+          id?: string
+          social_links?: Json
+          ui_labels?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          about_content?: string
+          about_title?: string
+          active_theme_id?: string
+          brand_emoji?: string
+          brand_name?: string
+          contact_content?: string
+          contact_title?: string
+          created_at?: string
+          custom_theme?: Json | null
+          features_content?: string
+          features_title?: string
+          footer_description?: string
+          footer_links?: Json
+          hero_subtitle?: string
+          hero_tagline?: string
+          id?: string
+          social_links?: Json
+          ui_labels?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +555,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
