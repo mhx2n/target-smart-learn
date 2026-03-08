@@ -1,0 +1,73 @@
+import { useState, useEffect } from "react";
+import { store } from "@/lib/store";
+import { EventBanner } from "@/lib/types";
+import { X } from "lucide-react";
+
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return "সময় শেষ!";
+  const d = Math.floor(ms / 86400000);
+  const h = Math.floor((ms % 86400000) / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  const parts: string[] = [];
+  if (d > 0) parts.push(`${d}দিন`);
+  parts.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
+  return parts.join(" ");
+}
+
+const EventBannerDisplay = () => {
+  const [banners, setBanners] = useState<EventBanner[]>([]);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const load = () => {
+      const all = store.getEventBanners().filter((b) => b.active && new Date(b.targetDate).getTime() > Date.now());
+      setBanners(all);
+    };
+    load();
+    const interval = setInterval(() => {
+      load();
+      setTick((t) => t + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const visible = banners.filter((b) => !dismissed.has(b.id));
+  if (visible.length === 0) return null;
+
+  return (
+    <div className="w-full bg-gradient-to-r from-primary/10 via-accent/20 to-primary/10 border-b border-border/50 backdrop-blur-sm">
+      {visible.map((banner) => {
+        const remaining = new Date(banner.targetDate).getTime() - Date.now();
+        return (
+          <div key={banner.id} className="container py-2 flex items-center gap-3 justify-center relative">
+            {banner.image && (
+              <img
+                src={banner.image}
+                alt={banner.caption}
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg object-cover shrink-0"
+              />
+            )}
+            <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-center min-w-0">
+              <span className="text-xs sm:text-sm font-semibold text-foreground truncate max-w-[200px] sm:max-w-none">
+                {banner.caption}
+              </span>
+              <span className="text-xs font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full whitespace-nowrap">
+                {formatCountdown(remaining)}
+              </span>
+            </div>
+            <button
+              onClick={() => setDismissed((p) => new Set(p).add(banner.id))}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted/50 transition-colors text-muted-foreground"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export default EventBannerDisplay;
