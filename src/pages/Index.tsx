@@ -6,6 +6,7 @@ import heroBg from "@/assets/hero-bg.jpg";
 import { useState } from "react";
 
 const Index = () => {
+  const settings = store.getSiteSettings();
   const exams = store.getExams().filter((e) => e.published).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const notices = store.getNotices();
   const results = store.getResults();
