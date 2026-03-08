@@ -11,7 +11,7 @@ const StudentProfile = () => {
   const uniqueExams = new Set(results.map((r) => r.examId)).size;
 
   return (
-    <div className="max-w-2xl mx-auto animate-fade-in">
+    <div className="pt-24 pb-8 container max-w-2xl mx-auto animate-fade-in">
       <div className="glass-card-static p-8 text-center mb-6">
         <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
           <User size={28} className="text-primary" />

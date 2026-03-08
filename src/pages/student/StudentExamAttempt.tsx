@@ -70,7 +70,7 @@ const StudentExamAttempt = () => {
       timestamp: new Date().toISOString(),
     };
     store.addResult(result);
-    navigate("/student/results", { state: { result, questions } });
+    navigate("/results", { state: { result, questions } });
   }, [submitted, exam, questions, negativeMarking, navigate]);
 
   useEffect(() => {
@@ -95,8 +95,8 @@ const StudentExamAttempt = () => {
   const selectAnswer = (qId: string, opt: string) => setAnswers((prev) => ({ ...prev, [qId]: opt }));
 
   return (
-    <div className="max-w-3xl mx-auto animate-fade-in relative pb-24">
-      {/* Floating Timer - rendered via portal to ensure it's always visible */}
+    <div className="pt-24 pb-24 container max-w-3xl mx-auto animate-fade-in relative">
+      {/* Floating Timer */}
       {createPortal(
         <div
           style={{ position: "fixed", top: 16, right: 16, zIndex: 9999 }}

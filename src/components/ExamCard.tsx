@@ -8,9 +8,8 @@ const difficultyConfig = {
   hard: { label: "কঠিন", className: "bg-rose-100 text-rose-700" },
 };
 
-const ExamCard = ({ exam, basePath = "" }: { exam: Exam; basePath?: string }) => {
+const ExamCard = ({ exam }: { exam: Exam }) => {
   const diff = difficultyConfig[exam.difficulty];
-  const linkTo = basePath ? `${basePath}/exams/${exam.id}` : `/exams/${exam.id}`;
 
   return (
     <div className="glass-card p-5 flex flex-col gap-3">
@@ -25,7 +24,7 @@ const ExamCard = ({ exam, basePath = "" }: { exam: Exam; basePath?: string }) =>
         <span className="flex items-center gap-1"><Clock size={13} /> {exam.duration} মিনিট</span>
       </div>
       <Link
-        to={linkTo}
+        to={`/exams/${exam.id}`}
         className="mt-auto inline-flex items-center justify-center gap-2 text-sm font-medium rounded-xl px-4 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]"
       >
         পরীক্ষা শুরু করুন

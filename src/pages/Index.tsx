@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, BookOpen, Award, Bell, GraduationCap } from "lucide-react";
+import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock } from "lucide-react";
 import { store } from "@/lib/store";
 import ExamCard from "@/components/ExamCard";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -8,8 +8,14 @@ import { useState } from "react";
 const Index = () => {
   const exams = store.getExams().filter((e) => e.published);
   const notices = store.getNotices();
+  const results = store.getResults();
   const featured = exams.filter((e) => e.featured);
   const [search, setSearch] = useState("");
+  const recentResults = results.slice(0, 5);
+
+  const avgScore = results.length > 0
+    ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / results.length)
+    : 0;
 
   const filtered = search
     ? exams.filter((e) => e.title.toLowerCase().includes(search.toLowerCase()) || e.subject.toLowerCase().includes(search.toLowerCase()))
@@ -44,11 +50,11 @@ const Index = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            <Link to="/student" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">
-              <GraduationCap size={18} /> স্টুডেন্ট প্যানেল
+            <Link to="/exams" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">
+              <BookOpen size={18} /> পরীক্ষা দিন
             </Link>
-            <Link to="/exams" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold glass hover:bg-muted/80 transition-all">
-              <BookOpen size={18} /> পরীক্ষা দেখুন
+            <Link to="/results" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold glass hover:bg-muted/80 transition-all">
+              <BarChart3 size={18} /> ফলাফল দেখুন
             </Link>
           </div>
         </div>
@@ -56,10 +62,11 @@ const Index = () => {
 
       <div className="container space-y-12 pb-8">
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 -mt-8 relative z-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 -mt-8 relative z-10">
           {[
             { icon: BookOpen, label: "মোট পরীক্ষা", val: exams.length },
             { icon: Award, label: "বিষয়", val: new Set(exams.map((e) => e.subject)).size },
+            { icon: BarChart3, label: "অনুশীলন", val: results.length },
             { icon: Bell, label: "নোটিস", val: notices.length },
           ].map((s, i) => (
             <div key={i} className="glass-card p-4 text-center">
@@ -69,6 +76,31 @@ const Index = () => {
             </div>
           ))}
         </div>
+
+        {/* Recent Results */}
+        {recentResults.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">📊 সাম্প্রতিক ফলাফল</h2>
+              <Link to="/results" className="text-xs text-primary font-medium flex items-center gap-1">সব দেখুন <ArrowRight size={14} /></Link>
+            </div>
+            <div className="space-y-2">
+              {recentResults.map((r, i) => (
+                <div key={i} className="glass-card p-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{r.examTitle}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock size={11} /> {new Date(r.timestamp).toLocaleDateString("bn-BD")}
+                    </p>
+                  </div>
+                  <span className={`text-sm font-bold ${r.percentage >= 60 ? "text-success" : "text-destructive"}`}>
+                    {r.percentage}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Notices */}
         {notices.length > 0 && (

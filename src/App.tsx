@@ -6,26 +6,19 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // Layouts
 import PublicLayout from "@/layouts/PublicLayout";
-import StudentLayout from "@/layouts/StudentLayout";
 import AdminLayout from "@/layouts/AdminLayout";
 
-// Public pages
+// Pages
 import Index from "./pages/Index";
 import ExamsPage from "./pages/ExamsPage";
 import ExamDetails from "./pages/ExamDetails";
+import ExamAttempt from "./pages/student/StudentExamAttempt";
+import ResultsPage from "./pages/student/StudentResult";
 import NoticesPage from "./pages/NoticesPage";
 import NoticeDetails from "./pages/NoticeDetails";
+import ProfilePage from "./pages/student/StudentProfile";
 import AboutContact from "./pages/AboutContact";
 import NotFound from "./pages/NotFound";
-
-// Student pages
-import StudentDashboard from "./pages/student/StudentDashboard";
-import StudentExams from "./pages/student/StudentExams";
-import StudentExamDetails from "./pages/student/StudentExamDetails";
-import StudentExamAttempt from "./pages/student/StudentExamAttempt";
-import StudentResult from "./pages/student/StudentResult";
-import StudentNotices from "./pages/student/StudentNotices";
-import StudentProfile from "./pages/student/StudentProfile";
 
 // Admin pages
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
@@ -46,25 +39,17 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
+          {/* Main site routes */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Index />} />
             <Route path="/exams" element={<ExamsPage />} />
             <Route path="/exams/:id" element={<ExamDetails />} />
+            <Route path="/exams/:id/attempt" element={<ExamAttempt />} />
+            <Route path="/results" element={<ResultsPage />} />
             <Route path="/notices" element={<NoticesPage />} />
             <Route path="/notices/:id" element={<NoticeDetails />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/about" element={<AboutContact />} />
-          </Route>
-
-          {/* Student routes */}
-          <Route element={<StudentLayout />}>
-            <Route path="/student" element={<StudentDashboard />} />
-            <Route path="/student/exams" element={<StudentExams />} />
-            <Route path="/student/exams/:id" element={<StudentExamDetails />} />
-            <Route path="/student/exams/:id/attempt" element={<StudentExamAttempt />} />
-            <Route path="/student/results" element={<StudentResult />} />
-            <Route path="/student/notices" element={<StudentNotices />} />
-            <Route path="/student/profile" element={<StudentProfile />} />
           </Route>
 
           {/* Admin routes — hidden from public UI */}

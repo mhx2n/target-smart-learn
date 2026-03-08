@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { store } from "@/lib/store";
-import { Clock, HelpCircle, BarChart3, ArrowLeft } from "lucide-react";
+import { Clock, HelpCircle, ArrowLeft } from "lucide-react";
 
 const diffLabel: Record<string, string> = { easy: "সহজ", medium: "মাঝারি", hard: "কঠিন" };
 
