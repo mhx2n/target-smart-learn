@@ -39,28 +39,28 @@ const VisitorStats = () => {
       icon: Globe,
       label: "মোট ভিজিট",
       value: data.totalVisits.toLocaleString("bn-BD"),
-      color: "text-blue-500",
-      bgColor: "bg-blue-500/10",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
     },
     {
       icon: Eye,
       label: "আজকের ভিজিট",
       value: data.todayVisits.toLocaleString("bn-BD"),
-      color: "text-green-500",
-      bgColor: "bg-green-500/10",
+      color: "text-success",
+      bgColor: "bg-success/10",
     },
     {
       icon: Users,
       label: "এখন অনলাইন",
       value: data.activeNow.toLocaleString("bn-BD"),
-      color: "text-orange-500",
-      bgColor: "bg-orange-500/10",
+      color: "text-warning",
+      bgColor: "bg-warning/10",
       pulse: true,
     },
   ];
 
   return (
-    <div className="glass-strong rounded-2xl p-4 backdrop-blur-xl border border-white/10">
+    <div className="glass-strong rounded-2xl p-4 backdrop-blur-xl border border-border/50">
       <div className="flex items-center gap-2 mb-4">
         <div className="relative">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
