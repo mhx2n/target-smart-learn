@@ -94,8 +94,17 @@ export interface Reminder {
   id: string;
   title: string;
   description: string;
+  targetDate: string;
+  color: string;
+  createdAt: string;
+}
+
+export interface EventBanner {
+  id: string;
+  image: string; // base64 data URL
+  caption: string;
   targetDate: string; // ISO date-time string
-  color: string; // hex color for accent
+  active: boolean;
   createdAt: string;
 }
 

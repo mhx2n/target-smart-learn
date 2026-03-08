@@ -1,4 +1,4 @@
-import { Exam, ExamResult, Notice, Reminder, Section, SiteSettings } from "./types";
+import { Exam, ExamResult, Notice, Reminder, Section, SiteSettings, EventBanner } from "./types";
 import { demoExams, demoNotices, subjects as defaultSubjects, categories as defaultCategories } from "./data";
 
 const EXAMS_KEY = "target_exams";
@@ -10,6 +10,7 @@ const SITE_SETTINGS_KEY = "target_site_settings";
 const SUBJECTS_KEY = "target_subjects";
 const CATEGORIES_KEY = "target_categories";
 const REMINDERS_KEY = "target_reminders";
+const EVENT_BANNERS_KEY = "target_event_banners";
 
 const defaultSiteSettings: SiteSettings = {
   aboutTitle: "Target 🎯 কী?",
@@ -76,6 +77,9 @@ export const store = {
 
   getReminders: (): Reminder[] => load(REMINDERS_KEY, []),
   setReminders: (r: Reminder[]) => save(REMINDERS_KEY, r),
+
+  getEventBanners: (): EventBanner[] => load(EVENT_BANNERS_KEY, []),
+  setEventBanners: (b: EventBanner[]) => save(EVENT_BANNERS_KEY, b),
 
   isAdmin: (): boolean => load(ADMIN_KEY, false),
   setAdmin: (val: boolean) => save(ADMIN_KEY, val),
