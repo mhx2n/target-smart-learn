@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ReminderWidget from "@/components/ReminderWidget";
 import EventBannerDisplay from "@/components/EventBannerDisplay";
+import TelegramFloatingButton from "@/components/TelegramFloatingButton";
 import { trackPageVisit } from "@/lib/api";
 
 const PublicLayout = () => {
