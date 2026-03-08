@@ -45,7 +45,7 @@ const StudentProfile = () => {
                   <p className="text-sm font-medium">{r.examTitle}</p>
                   <p className="text-xs text-muted-foreground">{new Date(r.timestamp).toLocaleDateString("bn-BD")}</p>
                 </div>
-                <span className={`font-bold ${r.score >= 60 ? "text-success" : "text-destructive"}`}>{r.score}%</span>
+                <span className={`font-bold ${r.percentage >= 60 ? "text-success" : "text-destructive"}`}>{r.percentage}%</span>
               </div>
             ))}
           </div>

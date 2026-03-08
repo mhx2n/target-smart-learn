@@ -60,8 +60,8 @@ const StudentDashboard = () => {
                     <Clock size={11} /> {new Date(r.timestamp).toLocaleDateString("bn-BD")}
                   </p>
                 </div>
-                <span className={`text-sm font-bold ${r.score >= 60 ? "text-success" : "text-destructive"}`}>
-                  {r.score}%
+                <span className={`text-sm font-bold ${r.percentage >= 60 ? "text-success" : "text-destructive"}`}>
+                  {r.percentage}%
                 </span>
               </div>
             ))}
