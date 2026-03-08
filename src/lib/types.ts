@@ -61,6 +61,7 @@ export interface SiteSettings {
   heroSubtitle: string;
   activeThemeId: string;
   customTheme?: { light: ThemeColors; dark: ThemeColors };
+  uiLabels?: Record<string, string>;
 }
 
 export interface Exam {
