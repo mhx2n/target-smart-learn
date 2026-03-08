@@ -2,8 +2,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { store } from "@/lib/store";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { ExamResult, Question } from "@/lib/types";
+import { ExamResult } from "@/lib/types";
 import { List, X, Clock, AlertTriangle } from "lucide-react";
+import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -13,37 +14,6 @@ function shuffle<T>(arr: T[]): T[] {
   }
   return a;
 }
-
-// Normalize answer key to match option text
-const normalizeAnswerValue = (value: string) => value.trim().toLowerCase().replace(/\s+/g, "");
-
-const resolveCorrectOptionText = (question: Question): string => {
-  const answer = question.answer;
-  if (!answer) return "";
-
-  // If answer is already one of the options, return it directly
-  if (question.options.includes(answer)) {
-    return answer;
-  }
-
-  const normalized = normalizeAnswerValue(answer);
-  
-  // Map common key formats to option indices
-  const keyToIndex: Record<string, number> = {
-    a: 0, b: 1, c: 2, d: 3, e: 4,
-    "1": 0, "2": 1, "3": 2, "4": 3, "5": 4,
-    option1: 0, option2: 1, option3: 2, option4: 3, option5: 4,
-  };
-
-  const mappedIndex = keyToIndex[normalized];
-  if (mappedIndex !== undefined && question.options[mappedIndex]) {
-    return question.options[mappedIndex];
-  }
-
-  // Try to match by normalized comparison
-  const matchedOption = question.options.find((opt) => normalizeAnswerValue(opt) === normalized);
-  return matchedOption ?? answer;
-};
 
 const StudentExamAttempt = () => {
   const { id } = useParams();
@@ -82,20 +52,20 @@ const StudentExamAttempt = () => {
 
     const currentAnswers = answersRef.current;
     let correct = 0, wrong = 0, skipped = 0;
-    
+
     questions.forEach((question) => {
       const userAnswer = currentAnswers[question.id];
-      
+
       // Find the original question to get the correct answer
-      const originalQ = originalQuestions.find(oq => oq.id === question.id);
+      const originalQ = originalQuestions.find((oq) => oq.id === question.id);
       if (!originalQ) return;
-      
+
       // Get the correct option text
       const correctOptionText = resolveCorrectOptionText(originalQ);
-      
+
       if (!userAnswer) {
         skipped++;
-      } else if (userAnswer === correctOptionText) {
+      } else if (isAnswerMatch(userAnswer, correctOptionText)) {
         correct++;
       } else {
         wrong++;
@@ -123,7 +93,7 @@ const StudentExamAttempt = () => {
       timestamp: new Date().toISOString(),
     };
     store.addResult(result);
-    navigate("/results", { state: { result, questions } });
+    navigate("/results", { state: { result, questions, originalQuestions } });
   }, [submitted, exam, questions, originalQuestions, negativeMarking, navigate]);
 
   const submittedRef = useRef(false);

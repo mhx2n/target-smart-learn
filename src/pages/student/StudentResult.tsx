@@ -1,44 +1,22 @@
 import { useLocation, Link } from "react-router-dom";
 import { ExamResult, Question } from "@/lib/types";
 import { CheckCircle2, XCircle, MinusCircle, RotateCcw, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { store } from "@/lib/store";
-
-const normalizeAnswerValue = (value: string) => value.trim().toLowerCase().replace(/\s+/g, "");
-
-// Resolve the correct answer to actual option text
-const resolveCorrectOptionText = (question: Question): string => {
-  const answer = question.answer;
-  if (!answer) return "";
-
-  // If answer is already one of the options, return it directly
-  if (question.options.includes(answer)) {
-    return answer;
-  }
-
-  const normalized = normalizeAnswerValue(answer);
-  
-  // Map common key formats to option indices
-  const keyToIndex: Record<string, number> = {
-    a: 0, b: 1, c: 2, d: 3, e: 4,
-    "1": 0, "2": 1, "3": 2, "4": 3, "5": 4,
-    option1: 0, option2: 1, option3: 2, option4: 3, option5: 4,
-  };
-
-  const mappedIndex = keyToIndex[normalized];
-  if (mappedIndex !== undefined && question.options[mappedIndex]) {
-    return question.options[mappedIndex];
-  }
-
-  // Try to match by normalized comparison
-  const matchedOption = question.options.find((opt) => normalizeAnswerValue(opt) === normalized);
-  return matchedOption ?? answer;
-};
+import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
 
 const StudentResult = () => {
   const location = useLocation();
-  const { result, questions } = (location.state || {}) as { result?: ExamResult; questions?: Question[] };
+  const { result, questions, originalQuestions } = (location.state || {}) as {
+    result?: ExamResult;
+    questions?: Question[];
+    originalQuestions?: Question[];
+  };
   const [showReview, setShowReview] = useState(false);
+  const originalQuestionMap = useMemo(
+    () => new Map((originalQuestions ?? []).map((q) => [q.id, q])),
+    [originalQuestions]
+  );
 
   // If no state, show history
   if (!result) {
@@ -151,9 +129,10 @@ const StudentResult = () => {
             <div className="space-y-3 animate-fade-in">
               {questions.map((q, i) => {
                 const userAns = result.answers[q.id] || "";
-                const correctAnswer = resolveCorrectOptionText(q);
+                const sourceQuestion = originalQuestionMap.get(q.id) ?? q;
+                const correctAnswer = resolveCorrectOptionText(sourceQuestion);
                 const isSkipped = !userAns;
-                const isCorrect = Boolean(userAns) && userAns === correctAnswer;
+                const isCorrect = Boolean(userAns) && isAnswerMatch(userAns, correctAnswer);
                 const isWrong = Boolean(userAns) && !isCorrect;
                 const statusBadge = isCorrect
                   ? { text: "✅ সঠিক", cls: "bg-success/15 text-success border-success/30" }
@@ -171,8 +150,8 @@ const StudentResult = () => {
                     )}
                     <div className="space-y-1.5 mb-3">
                       {q.options.map((opt, oi) => {
-                        const isAnswer = opt === correctAnswer;
-                        const isUser = opt === userAns;
+                        const isAnswer = isAnswerMatch(opt, correctAnswer);
+                        const isUser = Boolean(userAns) && isAnswerMatch(opt, userAns);
                         let cls = "border-border";
                         if (isAnswer) cls = "border-success bg-success/10";
                         else if (isUser && !isCorrect) cls = "border-destructive bg-destructive/10";
