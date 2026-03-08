@@ -4,6 +4,7 @@ import { store } from "@/lib/store";
 import ExamCard from "@/components/ExamCard";
 import heroBg from "@/assets/hero-bg.jpg";
 import { useState } from "react";
+import { getLabel } from "@/lib/labels";
 
 const Index = () => {
   const settings = store.getSiteSettings();
@@ -13,10 +14,6 @@ const Index = () => {
   const featured = exams.filter((e) => e.featured);
   const [search, setSearch] = useState("");
   const recentResults = results.slice(0, 3);
-
-  const avgScore = results.length > 0
-    ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / results.length)
-    : 0;
 
   const filtered = search
     ? exams.filter((e) => e.title.toLowerCase().includes(search.toLowerCase()) || e.subject.toLowerCase().includes(search.toLowerCase()))
@@ -40,10 +37,9 @@ const Index = () => {
             </p>
           )}
 
-          {/* Search */}
           <div className="relative max-w-md mx-auto mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-            <input type="text" placeholder="পরীক্ষা খুঁজুন..." value={search} onChange={(e) => setSearch(e.target.value)}
+            <input type="text" placeholder={getLabel("searchPlaceholder")} value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full glass-strong rounded-2xl pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             {search && filtered.length > 0 && (
               <div className="absolute top-full mt-2 left-0 right-0 glass-strong rounded-2xl p-3 max-h-60 overflow-y-auto z-20">
@@ -54,26 +50,24 @@ const Index = () => {
             )}
           </div>
 
-          {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in" style={{ animationDelay: "0.3s" }}>
             <Link to="/exams" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">
-              <BookOpen size={18} /> পরীক্ষা দিন
+              <BookOpen size={18} /> {getLabel("ctaExams")}
             </Link>
             <Link to="/results" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold glass hover:bg-muted/80 transition-all">
-              <BarChart3 size={18} /> ফলাফল দেখুন
+              <BarChart3 size={18} /> {getLabel("ctaResults")}
             </Link>
           </div>
         </div>
       </section>
 
       <div className="container space-y-12 pb-8">
-        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 -mt-8 relative z-10">
           {[
-            { icon: BookOpen, label: "মোট পরীক্ষা", val: exams.length },
-            { icon: Award, label: "বিষয়", val: new Set(exams.map((e) => e.subject)).size },
-            { icon: BarChart3, label: "অনুশীলন", val: results.length },
-            { icon: Bell, label: "নোটিস", val: notices.length },
+            { icon: BookOpen, label: getLabel("statTotalExams"), val: exams.length },
+            { icon: Award, label: getLabel("statSubjects"), val: new Set(exams.map((e) => e.subject)).size },
+            { icon: BarChart3, label: getLabel("statPractice"), val: results.length },
+            { icon: Bell, label: getLabel("statNotices"), val: notices.length },
           ].map((s, i) => (
             <div key={i} className="glass-card p-4 text-center">
               <s.icon className="mx-auto mb-2 text-primary" size={22} />
@@ -83,12 +77,11 @@ const Index = () => {
           ))}
         </div>
 
-        {/* Recent Results */}
         {recentResults.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold flex items-center gap-2">📊 সাম্প্রতিক ফলাফল</h2>
-              <Link to="/results" className="text-xs text-primary font-medium flex items-center gap-1">সব দেখুন <ArrowRight size={14} /></Link>
+              <h2 className="text-lg font-bold flex items-center gap-2">{getLabel("recentResults")}</h2>
+              <Link to="/results" className="text-xs text-primary font-medium flex items-center gap-1">{getLabel("viewAll")} <ArrowRight size={14} /></Link>
             </div>
             <div className="space-y-2">
               {recentResults.map((r, i) => (
@@ -108,17 +101,16 @@ const Index = () => {
           </section>
         )}
 
-        {/* Notices */}
         {notices.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold flex items-center gap-2"><Bell size={18} className="text-primary" /> নোটিস বোর্ড</h2>
-              <Link to="/notices" className="text-xs text-primary font-medium flex items-center gap-1">সব দেখুন <ArrowRight size={14} /></Link>
+              <h2 className="text-lg font-bold flex items-center gap-2"><Bell size={18} className="text-primary" /> {getLabel("noticeBoard")}</h2>
+              <Link to="/notices" className="text-xs text-primary font-medium flex items-center gap-1">{getLabel("viewAll")} <ArrowRight size={14} /></Link>
             </div>
             <div className="space-y-2">
               {notices.slice(0, 3).map((n) => (
                 <Link key={n.id} to={`/notices/${n.id}`} className="glass-card p-4 flex items-center gap-3 group">
-                  {n.pinned && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">📌 পিন</span>}
+                  {n.pinned && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">{getLabel("pinned")}</span>}
                   <span className="text-sm font-medium group-hover:text-primary transition-colors flex-1">{n.title}</span>
                   <span className="text-xs text-muted-foreground">{n.createdAt}</span>
                 </Link>
@@ -127,12 +119,11 @@ const Index = () => {
           </section>
         )}
 
-        {/* Featured */}
         {featured.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">⭐ বিশেষ পরীক্ষা</h2>
-              <Link to="/exams" className="text-xs text-primary font-medium flex items-center gap-1">সব দেখুন <ArrowRight size={14} /></Link>
+              <h2 className="text-lg font-bold">{getLabel("featuredExams")}</h2>
+              <Link to="/exams" className="text-xs text-primary font-medium flex items-center gap-1">{getLabel("viewAll")} <ArrowRight size={14} /></Link>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {featured.slice(0, 3).map((e) => <ExamCard key={e.id} exam={e} />)}
@@ -140,11 +131,10 @@ const Index = () => {
           </section>
         )}
 
-        {/* All exams */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold">📝 সকল পরীক্ষা</h2>
-            <Link to="/exams" className="text-xs text-primary font-medium flex items-center gap-1">আরও দেখুন <ArrowRight size={14} /></Link>
+            <h2 className="text-lg font-bold">{getLabel("allExams")}</h2>
+            <Link to="/exams" className="text-xs text-primary font-medium flex items-center gap-1">{getLabel("viewMore")} <ArrowRight size={14} /></Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {exams.slice(0, 3).map((e) => <ExamCard key={e.id} exam={e} />)}
