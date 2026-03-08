@@ -29,6 +29,7 @@ import AdminCSVUpload from "./pages/admin/AdminCSVUpload";
 import AdminNotices from "./pages/admin/AdminNotices";
 import AdminSubjects from "./pages/admin/AdminSubjects";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminSections from "./pages/admin/AdminSections";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
           <Route element={<AdminLayout />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/exams" element={<AdminExams />} />
+            <Route path="/admin/sections" element={<AdminSections />} />
             <Route path="/admin/questions" element={<AdminQuestions />} />
             <Route path="/admin/upload-csv" element={<AdminCSVUpload />} />
             <Route path="/admin/notices" element={<AdminNotices />} />
