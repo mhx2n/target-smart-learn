@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock } from "lucide-react";
+import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock, X } from "lucide-react";
 import { store } from "@/lib/store";
 import ExamCard from "@/components/ExamCard";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -22,7 +22,7 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <section className="relative pt-28 pb-20 px-4 overflow-hidden" style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+      <section className="relative pt-28 pb-20 px-4" style={{ backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center" }}>
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background" />
         <div className="container relative z-10 text-center max-w-2xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 animate-fade-in">
@@ -37,12 +37,17 @@ const Index = () => {
             </p>
           )}
 
-          <div className="relative max-w-md mx-auto mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+          <div className="relative max-w-md mx-auto mb-8 animate-fade-in z-30" style={{ animationDelay: "0.2s" }}>
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground z-10" size={18} />
             <input type="text" placeholder={getLabel("searchPlaceholder")} value={search} onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-2xl border border-border/60 bg-background/90 backdrop-blur-md pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-sm" />
+              className="w-full rounded-2xl border border-border/60 bg-background/90 backdrop-blur-md pl-11 pr-10 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-sm" />
+            {search && search.length > 0 && (
+              <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors z-10">
+                <X size={16} />
+              </button>
+            )}
             {search && (
-              <div className="absolute top-full mt-2 left-0 right-0 rounded-2xl border border-border/60 bg-background/95 backdrop-blur-xl shadow-lg max-h-72 overflow-y-auto z-50">
+              <div className="absolute top-full mt-2 left-0 right-0 rounded-2xl border border-border/60 bg-background shadow-2xl max-h-72 overflow-y-auto z-[100]" style={{ backdropFilter: 'blur(20px)' }}>
                 {filtered.length > 0 ? (
                   <div className="p-2 space-y-0.5">
                     {filtered.map((e) => (
