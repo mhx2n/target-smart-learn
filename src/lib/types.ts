@@ -1,7 +1,9 @@
 export interface Question {
   id: string;
   question: string;
+  questionImage?: string; // base64 data URL
   options: string[];
+  optionImages?: (string | null)[]; // base64 data URLs per option
   answer: string;
   explanation: string;
   type: string;

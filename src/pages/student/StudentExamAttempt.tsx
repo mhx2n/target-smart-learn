@@ -148,7 +148,10 @@ const StudentExamAttempt = () => {
             className="glass-card-static p-5"
           >
             <p className="text-xs text-muted-foreground mb-2">প্রশ্ন {i + 1} / {questions.length}</p>
-            <h3 className="text-base font-semibold mb-4">{q.question}</h3>
+            <h3 className="text-base font-semibold mb-2">{q.question}</h3>
+            {q.questionImage && (
+              <img src={q.questionImage} alt="" className="max-w-full max-h-60 rounded-lg border border-border mb-4 object-contain" />
+            )}
             <div className="space-y-2.5">
               {q.options.map((opt, oi) => (
                 <button
@@ -163,7 +166,10 @@ const StudentExamAttempt = () => {
                   <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs mr-3 flex-shrink-0">
                     {String.fromCharCode(65 + oi)}
                   </span>
-                  {opt}
+                  <span className="flex-1">{opt}</span>
+                  {q.optionImages?.[oi] && (
+                    <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded-lg border border-border object-contain" />
+                  )}
                 </button>
               ))}
             </div>
