@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, BookOpen, Award, Bell, GraduationCap, Shield } from "lucide-react";
+import { Search, ArrowRight, BookOpen, Award, Bell, GraduationCap } from "lucide-react";
 import { store } from "@/lib/store";
 import ExamCard from "@/components/ExamCard";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -47,8 +47,8 @@ const Index = () => {
             <Link to="/student" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">
               <GraduationCap size={18} /> স্টুডেন্ট প্যানেল
             </Link>
-            <Link to="/admin" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold glass hover:bg-muted/80 transition-all">
-              <Shield size={18} /> অ্যাডমিন লগইন
+            <Link to="/exams" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold glass hover:bg-muted/80 transition-all">
+              <BookOpen size={18} /> পরীক্ষা দেখুন
             </Link>
           </div>
         </div>

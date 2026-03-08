@@ -21,14 +21,14 @@ const AdminLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    if (!store.isAdmin()) navigate("/admin");
+    if (!store.isAdmin()) navigate("/secure-admin-login");
   }, []);
 
   const isActive = (path: string) => location.pathname === path;
 
   const logout = () => {
     store.setAdmin(false);
-    navigate("/admin");
+    navigate("/secure-admin-login");
   };
 
   return (

@@ -45,7 +45,7 @@ const AdminLoginPage = () => {
             লগইন
           </button>
         </form>
-        <Link to="/" className="block text-center text-xs text-muted-foreground mt-4 hover:text-foreground">← হোমপেজে ফিরে যান</Link>
+        <Link to="/" className="block text-center text-xs text-muted-foreground mt-4 hover:text-foreground">← ফিরে যান</Link>
       </div>
     </div>
   );
