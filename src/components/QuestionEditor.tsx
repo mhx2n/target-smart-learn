@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Question, Exam } from "@/lib/types";
 import { store } from "@/lib/store";
 import { compressImage } from "@/lib/imageUtils";
-import { X, ImagePlus, Trash2, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ImagePlus, Save, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Props {
@@ -63,79 +63,83 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-background/60 backdrop-blur-sm overflow-y-auto p-4">
-      <div className="bg-card rounded-2xl w-full max-w-3xl shadow-2xl border border-border my-8 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-card rounded-t-2xl z-10">
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm overflow-y-auto">
+      <div className="min-h-full flex flex-col">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-10 bg-card border-b border-border px-4 sm:px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="font-bold text-sm">✏️ প্রশ্ন সম্পাদনা</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{exam.title} • {questions.length} প্রশ্ন</p>
+            <h2 className="font-bold text-base sm:text-lg">✏️ প্রশ্ন সম্পাদনা</h2>
+            <p className="text-sm text-muted-foreground">{exam.title} • {questions.length} প্রশ্ন</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={saveAll} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
-              <Save size={14} /> সংরক্ষণ
+          <div className="flex items-center gap-3">
+            <button onClick={saveAll} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+              <Save size={16} /> সংরক্ষণ
             </button>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted"><X size={18} /></button>
+            <button onClick={onClose} className="p-2.5 rounded-xl hover:bg-muted transition-colors">
+              <X size={22} />
+            </button>
           </div>
         </div>
 
-        {/* Questions */}
-        <div className="p-5 space-y-3 max-h-[70vh] overflow-y-auto">
+        {/* Questions List */}
+        <div className="flex-1 px-4 sm:px-6 py-5 space-y-4 max-w-4xl mx-auto w-full">
           {questions.map((q, qi) => {
             const isOpen = expandedId === q.id;
             return (
-              <div key={q.id} className="border border-border rounded-xl overflow-hidden">
+              <div key={q.id} className="border border-border rounded-2xl overflow-hidden bg-card">
+                {/* Accordion header */}
                 <button
                   onClick={() => setExpandedId(isOpen ? null : q.id)}
-                  className="w-full flex items-center justify-between p-3 text-left hover:bg-muted/50 transition-colors"
+                  className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-muted/50 transition-colors"
                 >
-                  <span className="text-sm font-medium truncate flex-1">
-                    <span className="text-muted-foreground mr-2">{qi + 1}.</span>
-                    {q.question.slice(0, 80)}{q.question.length > 80 ? "..." : ""}
+                  <span className="text-sm sm:text-base font-medium truncate flex-1">
+                    <span className="text-muted-foreground mr-2 font-bold">{qi + 1}.</span>
+                    {q.question.slice(0, 100)}{q.question.length > 100 ? "..." : ""}
                   </span>
-                  <div className="flex items-center gap-2 ml-2">
-                    {q.questionImage && <span className="text-xs text-primary">🖼️</span>}
-                    {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                    {q.questionImage && <span className="text-sm">🖼️</span>}
+                    {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </div>
                 </button>
 
                 {isOpen && (
-                  <div className="p-4 pt-0 space-y-4 animate-fade-in">
+                  <div className="px-4 sm:px-5 pb-5 space-y-5 animate-fade-in">
                     {/* Question text */}
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">প্রশ্ন</label>
+                      <label className="text-sm font-semibold text-foreground mb-2 block">📝 প্রশ্ন</label>
                       <textarea
                         value={q.question}
                         onChange={(e) => updateQ(q.id, { question: e.target.value })}
-                        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm min-h-[60px] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
 
                     {/* Question image */}
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">প্রশ্নের ছবি</label>
+                      <label className="text-sm font-semibold text-foreground mb-2 block">🖼️ প্রশ্নের ছবি</label>
                       {q.questionImage ? (
                         <div className="relative inline-block">
-                          <img src={q.questionImage} alt="" className="max-h-40 rounded-lg border border-border" />
-                          <button onClick={() => removeQuestionImage(q.id)} className="absolute -top-2 -right-2 p-1 rounded-full bg-destructive text-destructive-foreground shadow">
-                            <X size={12} />
+                          <img src={q.questionImage} alt="" className="max-w-full max-h-56 rounded-xl border border-border" />
+                          <button onClick={() => removeQuestionImage(q.id)} className="absolute top-2 right-2 p-2 rounded-full bg-destructive text-destructive-foreground shadow-lg">
+                            <X size={16} />
                           </button>
                         </div>
                       ) : (
-                        <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground cursor-pointer hover:border-primary/50 hover:text-primary transition-colors">
-                          <ImagePlus size={14} /> ছবি যোগ করুন
+                        <label className="flex items-center justify-center gap-3 w-full py-8 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground cursor-pointer hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all">
+                          <ImagePlus size={24} />
+                          <span>ছবি যোগ করতে ট্যাপ করুন</span>
                           <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleQuestionImage(q.id, e.target.files[0])} />
                         </label>
                       )}
                     </div>
 
                     {/* Options */}
-                    <div className="space-y-3">
-                      <label className="text-xs font-medium text-muted-foreground block">অপশনসমূহ</label>
+                    <div className="space-y-4">
+                      <label className="text-sm font-semibold text-foreground block">📋 অপশনসমূহ</label>
                       {q.options.map((opt, oi) => (
-                        <div key={oi} className={`p-3 rounded-lg border ${opt === q.answer ? "border-success/50 bg-success/5" : "border-border"}`}>
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-full bg-muted text-xs flex items-center justify-center font-medium flex-shrink-0">
+                        <div key={oi} className={`p-4 rounded-xl border-2 ${opt === q.answer ? "border-success/60 bg-success/5" : "border-border"}`}>
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="w-9 h-9 rounded-full bg-muted text-sm flex items-center justify-center font-bold flex-shrink-0">
                               {String.fromCharCode(65 + oi)}
                             </span>
                             <input
@@ -146,28 +150,30 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
                                 newOpts[oi] = e.target.value;
                                 updateQ(q.id, { options: newOpts, ...(wasAnswer ? { answer: e.target.value } : {}) });
                               }}
-                              className="flex-1 bg-transparent text-sm focus:outline-none"
+                              className="flex-1 bg-transparent text-base font-medium focus:outline-none border-b border-transparent focus:border-primary/30 pb-1"
                             />
-                            <button
-                              onClick={() => updateQ(q.id, { answer: opt })}
-                              className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${opt === q.answer ? "bg-success/20 text-success" : "bg-muted text-muted-foreground hover:bg-success/10"}`}
-                            >
-                              {opt === q.answer ? "✅ সঠিক" : "সঠিক?"}
-                            </button>
                           </div>
 
-                          {/* Option image */}
-                          <div className="mt-2 ml-8">
+                          <div className="flex items-center gap-3 ml-12">
+                            <button
+                              onClick={() => updateQ(q.id, { answer: opt })}
+                              className={`text-xs px-4 py-2 rounded-lg font-semibold transition-all ${opt === q.answer ? "bg-success/20 text-success" : "bg-muted text-muted-foreground hover:bg-success/10 hover:text-success"}`}
+                            >
+                              {opt === q.answer ? "✅ সঠিক উত্তর" : "সঠিক করুন"}
+                            </button>
+
+                            {/* Option image */}
                             {q.optionImages?.[oi] ? (
                               <div className="relative inline-block">
-                                <img src={q.optionImages[oi]!} alt="" className="max-h-24 rounded-lg border border-border" />
-                                <button onClick={() => removeOptionImage(q.id, oi)} className="absolute -top-1.5 -right-1.5 p-0.5 rounded-full bg-destructive text-destructive-foreground shadow">
-                                  <X size={10} />
+                                <img src={q.optionImages[oi]!} alt="" className="max-h-32 rounded-lg border border-border" />
+                                <button onClick={() => removeOptionImage(q.id, oi)} className="absolute top-1 right-1 p-1.5 rounded-full bg-destructive text-destructive-foreground shadow-lg">
+                                  <X size={12} />
                                 </button>
                               </div>
                             ) : (
-                              <label className="inline-flex items-center gap-1 px-2 py-1 rounded border border-dashed border-border text-[10px] text-muted-foreground cursor-pointer hover:border-primary/50 transition-colors">
-                                <ImagePlus size={10} /> ছবি
+                              <label className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-border text-xs text-muted-foreground cursor-pointer hover:border-primary/50 hover:text-primary transition-all">
+                                <ImagePlus size={16} />
+                                <span>ছবি যোগ</span>
                                 <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleOptionImage(q.id, oi, e.target.files[0])} />
                               </label>
                             )}
@@ -178,11 +184,11 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
 
                     {/* Explanation */}
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">ব্যাখ্যা</label>
+                      <label className="text-sm font-semibold text-foreground mb-2 block">💡 ব্যাখ্যা</label>
                       <textarea
                         value={q.explanation}
                         onChange={(e) => updateQ(q.id, { explanation: e.target.value })}
-                        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm min-h-[50px] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base min-h-[70px] focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
                   </div>
