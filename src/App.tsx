@@ -17,6 +17,7 @@ import ExamsPage from "./pages/ExamsPage";
 import ExamDetails from "./pages/ExamDetails";
 import ExamAttempt from "./pages/student/StudentExamAttempt";
 import ResultsPage from "./pages/student/StudentResult";
+import WrongAnswersBank from "./pages/student/WrongAnswersBank";
 import NoticesPage from "./pages/NoticesPage";
 import NoticeDetails from "./pages/NoticeDetails";
 import ProfilePage from "./pages/student/StudentProfile";
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/exams/:id" element={<ExamDetails />} />
             <Route path="/exams/:id/attempt" element={<ExamAttempt />} />
             <Route path="/results" element={<ResultsPage />} />
+            <Route path="/wrong-answers" element={<WrongAnswersBank />} />
             <Route path="/notices" element={<NoticesPage />} />
             <Route path="/notices/:id" element={<NoticeDetails />} />
             <Route path="/profile" element={<ProfilePage />} />
