@@ -34,7 +34,7 @@ const WrongAnswersBank = () => {
   return (
     <div className="pt-24 pb-8 container max-w-2xl mx-auto animate-fade-in">
       <div className="flex items-center gap-3 mb-5">
-        <Link to="/results" className="text-muted-foreground hover:text-foreground"><ArrowLeft size={20} /></Link>
+        <Link to="/" className="text-muted-foreground hover:text-foreground"><ArrowLeft size={20} /></Link>
         <h1 className="text-xl font-bold">📕 ভুল উত্তর ব্যাংক</h1>
       </div>
 
