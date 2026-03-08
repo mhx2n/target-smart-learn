@@ -1,4 +1,4 @@
-import { Exam, ExamResult, Notice, Reminder, Section, SiteSettings } from "./types";
+import { Exam, ExamResult, Notice, Reminder, Section, SiteSettings, EventBanner } from "./types";
 import { demoExams, demoNotices, subjects as defaultSubjects, categories as defaultCategories } from "./data";
 
 const EXAMS_KEY = "target_exams";
