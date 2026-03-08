@@ -1,5 +1,5 @@
 import { Exam, ExamResult, Notice, Section, SiteSettings } from "./types";
-import { demoExams, demoNotices } from "./data";
+import { demoExams, demoNotices, subjects as defaultSubjects, categories as defaultCategories } from "./data";
 
 const EXAMS_KEY = "target_exams";
 const NOTICES_KEY = "target_notices";
@@ -7,6 +7,8 @@ const RESULTS_KEY = "target_results";
 const ADMIN_KEY = "target_admin";
 const SECTIONS_KEY = "target_sections";
 const SITE_SETTINGS_KEY = "target_site_settings";
+const SUBJECTS_KEY = "target_subjects";
+const CATEGORIES_KEY = "target_categories";
 
 const defaultSiteSettings: SiteSettings = {
   aboutTitle: "Target 🎯 কী?",
@@ -59,6 +61,12 @@ export const store = {
 
   getSiteSettings: (): SiteSettings => load(SITE_SETTINGS_KEY, defaultSiteSettings),
   setSiteSettings: (settings: SiteSettings) => save(SITE_SETTINGS_KEY, settings),
+
+  getSubjects: (): string[] => load(SUBJECTS_KEY, defaultSubjects),
+  setSubjects: (s: string[]) => save(SUBJECTS_KEY, s),
+
+  getCategories: (): string[] => load(CATEGORIES_KEY, defaultCategories),
+  setCategories: (c: string[]) => save(CATEGORIES_KEY, c),
 
   isAdmin: (): boolean => load(ADMIN_KEY, false),
   setAdmin: (val: boolean) => save(ADMIN_KEY, val),

@@ -1,17 +1,53 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { store } from "@/lib/store";
 import { Notice } from "@/lib/types";
-import { Plus, Trash2, Pin } from "lucide-react";
+import { Plus, Trash2, Pin, Bold, Italic, Link, Type } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+const RichTextToolbar = ({ editorRef }: { editorRef: React.RefObject<HTMLDivElement> }) => {
+  const exec = (cmd: string, value?: string) => {
+    document.execCommand(cmd, false, value);
+    editorRef.current?.focus();
+  };
+
+  return (
+    <div className="flex items-center gap-1 p-1.5 border-b border-border flex-wrap">
+      <button type="button" onClick={() => exec("bold")} className="p-1.5 rounded hover:bg-muted transition-colors" title="Bold">
+        <Bold size={14} />
+      </button>
+      <button type="button" onClick={() => exec("italic")} className="p-1.5 rounded hover:bg-muted transition-colors" title="Italic">
+        <Italic size={14} />
+      </button>
+      <button type="button" onClick={() => {
+        const url = prompt("লিংক URL দিন:");
+        if (url) exec("createLink", url);
+      }} className="p-1.5 rounded hover:bg-muted transition-colors" title="Link">
+        <Link size={14} />
+      </button>
+      <select
+        onChange={(e) => { if (e.target.value) exec("fontSize", e.target.value); e.target.value = ""; }}
+        className="text-xs bg-transparent border border-border rounded px-1.5 py-1 focus:outline-none"
+        defaultValue=""
+      >
+        <option value="" disabled>সাইজ</option>
+        <option value="1">ছোট</option>
+        <option value="3">স্বাভাবিক</option>
+        <option value="5">বড়</option>
+        <option value="7">অনেক বড়</option>
+      </select>
+    </div>
+  );
+};
 
 const AdminNotices = () => {
   const [notices, setNotices] = useState<Notice[]>(store.getNotices());
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const contentRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const addNotice = () => {
     if (!title) return;
+    const content = contentRef.current?.innerHTML || "";
     const n: Notice = {
       id: `n-${Date.now()}`,
       title,
@@ -23,7 +59,7 @@ const AdminNotices = () => {
     setNotices(updated);
     store.setNotices(updated);
     setTitle("");
-    setContent("");
+    if (contentRef.current) contentRef.current.innerHTML = "";
     toast({ title: "নোটিস যুক্ত হয়েছে" });
   };
 
@@ -48,8 +84,18 @@ const AdminNotices = () => {
         <h3 className="font-semibold text-sm mb-3">নতুন নোটিস</h3>
         <input placeholder="শিরোনাম" value={title} onChange={(e) => setTitle(e.target.value)}
           className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-primary/30" />
-        <textarea placeholder="বিবরণ" value={content} onChange={(e) => setContent(e.target.value)}
-          className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm mb-3 h-20 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30" />
+        
+        <div className="border border-border rounded-xl overflow-hidden mb-3">
+          <RichTextToolbar editorRef={contentRef} />
+          <div
+            ref={contentRef}
+            contentEditable
+            className="min-h-[80px] px-4 py-2.5 text-sm focus:outline-none bg-transparent"
+            data-placeholder="বিবরণ লিখুন (বোল্ড, ইটালিক, লিংক সাপোর্ট)"
+            style={{ minHeight: "80px" }}
+          />
+        </div>
+
         <button onClick={addNotice} className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
           <Plus size={14} className="inline mr-1" /> যুক্ত করুন
         </button>

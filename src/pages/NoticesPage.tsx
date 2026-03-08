@@ -1,6 +1,7 @@
 import { store } from "@/lib/store";
 import { Link } from "react-router-dom";
 import { Bell, Pin } from "lucide-react";
+import DOMPurify from "dompurify";
 
 const NoticesPage = () => {
   const notices = store.getNotices();
@@ -21,7 +22,7 @@ const NoticesPage = () => {
                 <span className="text-xs text-muted-foreground ml-auto">{n.createdAt}</span>
               </div>
               <h3 className="font-semibold mb-1">{n.title}</h3>
-              <p className="text-sm text-muted-foreground line-clamp-2">{n.content}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(n.content) }} />
             </Link>
           ))}
         </div>
