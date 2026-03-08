@@ -1,9 +1,10 @@
 import { useLocation, Link } from "react-router-dom";
 import { ExamResult, Question } from "@/lib/types";
-import { CheckCircle2, XCircle, MinusCircle, RotateCcw, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
-import { useMemo, useState } from "react";
+import { CheckCircle2, XCircle, MinusCircle, RotateCcw, AlertTriangle, BookX } from "lucide-react";
+import { useMemo, useEffect, useState } from "react";
 import { useResults } from "@/hooks/useSupabaseData";
 import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
+import { saveWrongAnswers, WrongAnswerEntry } from "@/lib/api";
 
 const StudentResult = () => {
   const location = useLocation();
@@ -12,13 +13,53 @@ const StudentResult = () => {
     questions?: Question[];
     originalQuestions?: Question[];
   };
-  const [showReview, setShowReview] = useState(false);
+  const [activeTab, setActiveTab] = useState<"wrong" | "correct" | "skipped">("wrong");
+
   const originalQuestionMap = useMemo(
     () => new Map((originalQuestions ?? []).map((q) => [q.id, q])),
     [originalQuestions]
   );
 
   const { data: allResults = [] } = useResults();
+
+  // Categorize questions
+  const { wrongQs, correctQs, skippedQs } = useMemo(() => {
+    if (!questions || !result) return { wrongQs: [] as Question[], correctQs: [] as Question[], skippedQs: [] as Question[] };
+    const wrong: Question[] = [];
+    const correct: Question[] = [];
+    const skipped: Question[] = [];
+    questions.forEach((q) => {
+      const userAns = result.answers[q.id] || "";
+      const sourceQ = originalQuestionMap.get(q.id) ?? q;
+      const correctAnswer = resolveCorrectOptionText(sourceQ);
+      if (!userAns) skipped.push(q);
+      else if (isAnswerMatch(userAns, correctAnswer)) correct.push(q);
+      else wrong.push(q);
+    });
+    return { wrongQs: wrong, correctQs: correct, skippedQs: skipped };
+  }, [questions, result, originalQuestionMap]);
+
+  // Save wrong answers to bank
+  useEffect(() => {
+    if (!result || !questions || wrongQs.length === 0) return;
+    const entries: WrongAnswerEntry[] = wrongQs.map((q) => {
+      const sourceQ = originalQuestionMap.get(q.id) ?? q;
+      return {
+        sessionId: "",
+        examId: result.examId,
+        examTitle: result.examTitle,
+        questionId: q.id,
+        questionText: q.question,
+        questionImage: q.questionImage,
+        options: q.options,
+        optionImages: q.optionImages,
+        correctAnswer: resolveCorrectOptionText(sourceQ),
+        userAnswer: result.answers[q.id] || "",
+        explanation: q.explanation,
+      };
+    });
+    saveWrongAnswers(entries).catch(console.error);
+  }, [result, questions, wrongQs, originalQuestionMap]);
 
   if (!result) {
     return (
@@ -50,6 +91,10 @@ const StudentResult = () => {
             ))}
           </div>
         )}
+        {/* Wrong answers bank link */}
+        <Link to="/wrong-answers" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-destructive hover:underline">
+          <BookX size={18} /> ভুল উত্তর ব্যাংক দেখুন →
+        </Link>
       </div>
     );
   }
@@ -62,14 +107,63 @@ const StudentResult = () => {
   };
   const msg = getMessage();
 
+  const tabData = activeTab === "wrong" ? wrongQs : activeTab === "correct" ? correctQs : skippedQs;
+
+  const renderQuestion = (q: Question, i: number) => {
+    const userAns = result.answers[q.id] || "";
+    const sourceQuestion = originalQuestionMap.get(q.id) ?? q;
+    const correctAnswer = resolveCorrectOptionText(sourceQuestion);
+    const isSkipped = !userAns;
+    const isCorrect = Boolean(userAns) && isAnswerMatch(userAns, correctAnswer);
+
+    return (
+      <div key={q.id} className="glass-card-static p-4">
+        <p className="text-base font-semibold mb-3">
+          <span className="text-muted-foreground mr-2">{i + 1}.</span>{q.question}
+        </p>
+        {q.questionImage && <img src={q.questionImage} alt="" className="max-w-full max-h-48 rounded-lg border border-border mb-3 object-contain" />}
+        <div className="space-y-2 mb-3">
+          {q.options.map((opt, oi) => {
+            const isAnswer = isAnswerMatch(opt, correctAnswer);
+            const isUser = Boolean(userAns) && isAnswerMatch(opt, userAns);
+            let cls = "border-border";
+            if (isAnswer) cls = "border-success bg-success/10";
+            else if (isUser && !isCorrect) cls = "border-destructive bg-destructive/10";
+            return (
+              <div key={opt} className={`px-4 py-3 rounded-lg text-sm border ${cls}`}>
+                <div className="flex items-center gap-2">
+                  {isAnswer && <CheckCircle2 size={16} className="text-success flex-shrink-0" />}
+                  {isUser && !isCorrect && <XCircle size={16} className="text-destructive flex-shrink-0" />}
+                  <span className="text-sm">{opt}</span>
+                </div>
+                {q.optionImages?.[oi] && <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded border border-border object-contain" />}
+              </div>
+            );
+          })}
+        </div>
+        {!isSkipped && (
+          <p className="text-sm text-muted-foreground mb-1">
+            তোমার উত্তর: <span className={isCorrect ? "text-success font-medium" : "text-destructive font-medium"}>{userAns}</span>
+          </p>
+        )}
+        <p className="text-sm text-muted-foreground">
+          সঠিক উত্তর: <span className="text-success font-medium">{correctAnswer}</span>
+        </p>
+        {q.explanation && <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mt-2">💡 <strong>ব্যাখ্যা:</strong> {q.explanation}</div>}
+      </div>
+    );
+  };
+
   return (
     <div className="pt-24 pb-8 container max-w-2xl mx-auto animate-fade-in">
+      {/* Score header */}
       <div className="glass-card-static p-8 text-center mb-6">
         <div className="text-5xl font-extrabold gradient-text mb-2">{result.percentage}%</div>
         <p className={`text-lg font-bold ${msg.color} mb-1`}>{msg.text}</p>
         <p className="text-sm text-muted-foreground">{result.examTitle}</p>
       </div>
 
+      {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="glass-card-static p-4 text-center">
           <CheckCircle2 className="mx-auto mb-1 text-success" size={22} />
@@ -93,6 +187,7 @@ const StudentResult = () => {
         </div>
       </div>
 
+      {/* Score analysis */}
       <div className="glass-card-static p-5 mb-6">
         <h3 className="text-sm font-semibold mb-3">📊 স্কোর বিশ্লেষণ</h3>
         <div className="space-y-2 text-sm">
@@ -102,67 +197,75 @@ const StudentResult = () => {
         </div>
       </div>
 
-      <div className="flex gap-3 mb-6">
+      {/* Review section with tabs - MOVED UP */}
+      {questions && (
+        <div className="mb-6">
+          <h3 className="text-base font-bold mb-3">📖 উত্তর পর্যালোচনা</h3>
+          
+          {/* 3-column tab buttons */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <button
+              onClick={() => setActiveTab("wrong")}
+              className={`p-3 rounded-xl text-center text-sm font-semibold transition-all ${
+                activeTab === "wrong"
+                  ? "bg-destructive/15 text-destructive border-2 border-destructive/40"
+                  : "glass-card-static hover:bg-muted/60"
+              }`}
+            >
+              <XCircle size={18} className="mx-auto mb-1" />
+              ভুল ({wrongQs.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("correct")}
+              className={`p-3 rounded-xl text-center text-sm font-semibold transition-all ${
+                activeTab === "correct"
+                  ? "bg-success/15 text-success border-2 border-success/40"
+                  : "glass-card-static hover:bg-muted/60"
+              }`}
+            >
+              <CheckCircle2 size={18} className="mx-auto mb-1" />
+              সঠিক ({correctQs.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("skipped")}
+              className={`p-3 rounded-xl text-center text-sm font-semibold transition-all ${
+                activeTab === "skipped"
+                  ? "bg-muted text-muted-foreground border-2 border-border"
+                  : "glass-card-static hover:bg-muted/60"
+              }`}
+            >
+              <MinusCircle size={18} className="mx-auto mb-1" />
+              স্কিপ ({skippedQs.length})
+            </button>
+          </div>
+
+          {/* Tab content */}
+          <div className="space-y-3 animate-fade-in">
+            {tabData.length === 0 ? (
+              <div className="glass-card-static p-8 text-center text-muted-foreground text-sm">
+                {activeTab === "wrong" && "কোনো ভুল উত্তর নেই! 🎉"}
+                {activeTab === "correct" && "কোনো সঠিক উত্তর নেই"}
+                {activeTab === "skipped" && "কোনো স্কিপ করা প্রশ্ন নেই"}
+              </div>
+            ) : (
+              tabData.map((q, i) => renderQuestion(q, i))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons - MOVED DOWN */}
+      <div className="flex gap-3 mb-4">
         <Link to={`/exams/${result.examId}/attempt`} className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
           <RotateCcw size={16} /> আবার চেষ্টা করুন
         </Link>
         <Link to="/exams" className="flex-1 inline-flex items-center justify-center text-sm text-center font-semibold rounded-xl px-4 py-3 glass hover:bg-muted/80 transition-all">অন্য পরীক্ষা</Link>
       </div>
 
-      {questions && (
-        <div>
-          <button onClick={() => setShowReview(!showReview)} className="w-full glass-card-static p-4 flex items-center justify-between text-sm font-semibold mb-3">
-            📖 উত্তর পর্যালোচনা
-            {showReview ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </button>
-          {showReview && (
-            <div className="space-y-3 animate-fade-in">
-              {questions.map((q, i) => {
-                const userAns = result.answers[q.id] || "";
-                const sourceQuestion = originalQuestionMap.get(q.id) ?? q;
-                const correctAnswer = resolveCorrectOptionText(sourceQuestion);
-                const isSkipped = !userAns;
-                const isCorrect = Boolean(userAns) && isAnswerMatch(userAns, correctAnswer);
-                const isWrong = Boolean(userAns) && !isCorrect;
-                const statusBadge = isCorrect
-                  ? { text: "✅ সঠিক", cls: "bg-success/15 text-success border-success/30" }
-                  : isWrong
-                  ? { text: "❌ ভুল", cls: "bg-destructive/15 text-destructive border-destructive/30" }
-                  : { text: "⏭ স্কিপ", cls: "bg-muted text-muted-foreground border-border" };
-                return (
-                  <div key={q.id} className="glass-card-static p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-semibold"><span className="text-muted-foreground mr-2">{i + 1}.</span>{q.question}</p>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ml-2 ${statusBadge.cls}`}>{statusBadge.text}</span>
-                    </div>
-                    {q.questionImage && <img src={q.questionImage} alt="" className="max-w-full max-h-48 rounded-lg border border-border mb-3 object-contain" />}
-                    <div className="space-y-1.5 mb-3">
-                      {q.options.map((opt, oi) => {
-                        const isAnswer = isAnswerMatch(opt, correctAnswer);
-                        const isUser = Boolean(userAns) && isAnswerMatch(opt, userAns);
-                        let cls = "border-border";
-                        if (isAnswer) cls = "border-success bg-success/10";
-                        else if (isUser && !isCorrect) cls = "border-destructive bg-destructive/10";
-                        return (
-                          <div key={opt} className={`px-3 py-2 rounded-lg text-xs border ${cls}`}>
-                            <div className="flex items-center gap-2">
-                              {isAnswer && <CheckCircle2 size={14} className="text-success flex-shrink-0" />}
-                              {isUser && !isCorrect && <XCircle size={14} className="text-destructive flex-shrink-0" />}
-                              {opt}
-                            </div>
-                            {q.optionImages?.[oi] && <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-20 rounded border border-border object-contain" />}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {q.explanation && <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">💡 <strong>ব্যাখ্যা:</strong> {q.explanation}</div>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Wrong answers bank link */}
+      <Link to="/wrong-answers" className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-all">
+        <BookX size={16} /> ভুল উত্তর ব্যাংক দেখুন
+      </Link>
     </div>
   );
 };

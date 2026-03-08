@@ -430,3 +430,80 @@ export async function deleteEventBanner(id: string): Promise<void> {
   const { error } = await supabase.from("event_banners").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ============ WRONG ANSWERS BANK ============
+
+export interface WrongAnswerEntry {
+  id?: string;
+  sessionId: string;
+  examId: string;
+  examTitle: string;
+  questionId: string;
+  questionText: string;
+  questionImage?: string;
+  options: string[];
+  optionImages?: (string | null)[];
+  correctAnswer: string;
+  userAnswer: string;
+  explanation: string;
+  createdAt?: string;
+}
+
+export async function saveWrongAnswers(entries: WrongAnswerEntry[]): Promise<void> {
+  if (!entries.length) return;
+  const sessionId = getSessionId();
+  
+  // Delete old wrong answers for the same exam to avoid duplicates
+  const examIds = [...new Set(entries.map(e => e.examId))];
+  for (const examId of examIds) {
+    await supabase.from("wrong_answers").delete().eq("session_id", sessionId).eq("exam_id", examId);
+  }
+
+  const { error } = await supabase.from("wrong_answers").insert(
+    entries.map(e => ({
+      session_id: sessionId,
+      exam_id: e.examId,
+      exam_title: e.examTitle,
+      question_id: e.questionId,
+      question_text: e.questionText,
+      question_image: e.questionImage || null,
+      options: e.options as any,
+      option_images: e.optionImages as any || null,
+      correct_answer: e.correctAnswer,
+      user_answer: e.userAnswer,
+      explanation: e.explanation || "",
+    }))
+  );
+  if (error) throw error;
+}
+
+export async function fetchWrongAnswers(): Promise<WrongAnswerEntry[]> {
+  const sessionId = getSessionId();
+  const { data, error } = await supabase
+    .from("wrong_answers")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    sessionId: r.session_id,
+    examId: r.exam_id,
+    examTitle: r.exam_title,
+    questionId: r.question_id,
+    questionText: r.question_text,
+    questionImage: r.question_image || undefined,
+    options: Array.isArray(r.options) ? r.options : JSON.parse(r.options),
+    optionImages: r.option_images ? (Array.isArray(r.option_images) ? r.option_images : JSON.parse(r.option_images)) : undefined,
+    correctAnswer: r.correct_answer,
+    userAnswer: r.user_answer,
+    explanation: r.explanation,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function deleteWrongAnswersByExam(examId: string): Promise<void> {
+  const sessionId = getSessionId();
+  const { error } = await supabase.from("wrong_answers").delete().eq("session_id", sessionId).eq("exam_id", examId);
+  if (error) throw error;
+}
