@@ -4,6 +4,37 @@ import { CheckCircle2, XCircle, MinusCircle, RotateCcw, ChevronDown, ChevronUp, 
 import { useState } from "react";
 import { store } from "@/lib/store";
 
+const normalizeAnswerValue = (value: string) => value.trim().toLowerCase().replace(/\s+/g, "");
+
+const resolveOptionText = (question: Question, value?: string) => {
+  if (!value) return "";
+
+  const normalized = normalizeAnswerValue(value);
+  const keyToIndex: Record<string, number> = {
+    a: 0,
+    b: 1,
+    c: 2,
+    d: 3,
+    e: 4,
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "5": 4,
+    option1: 0,
+    option2: 1,
+    option3: 2,
+    option4: 3,
+    option5: 4,
+  };
+
+  const mappedIndex = keyToIndex[normalized];
+  if (mappedIndex !== undefined) return question.options[mappedIndex] ?? value;
+
+  const matchedOption = question.options.find((opt) => normalizeAnswerValue(opt) === normalized);
+  return matchedOption ?? value;
+};
+
 const StudentResult = () => {
   const location = useLocation();
   const { result, questions } = (location.state || {}) as { result?: ExamResult; questions?: Question[] };
@@ -119,14 +150,15 @@ const StudentResult = () => {
           {showReview && (
             <div className="space-y-3 animate-fade-in">
               {questions.map((q, i) => {
-                const userAns = result.answers[q.id];
-                const isCorrect = userAns === q.answer;
+                const userAns = resolveOptionText(q, result.answers[q.id]);
+                const correctAnswer = resolveOptionText(q, q.answer);
+                const isCorrect = Boolean(userAns) && userAns === correctAnswer;
                 return (
                   <div key={q.id} className="glass-card-static p-4">
                     <p className="text-sm font-semibold mb-3"><span className="text-muted-foreground mr-2">{i + 1}.</span>{q.question}</p>
                     <div className="space-y-1.5 mb-3">
                       {q.options.map((opt) => {
-                        const isAnswer = opt === q.answer;
+                        const isAnswer = opt === correctAnswer;
                         const isUser = opt === userAns;
                         let cls = "border-border";
                         if (isAnswer) cls = "border-success bg-success/10";
