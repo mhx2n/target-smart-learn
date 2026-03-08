@@ -1,10 +1,10 @@
-import { store } from "@/lib/store";
+import { useNotices } from "@/hooks/useSupabaseData";
 import { Link } from "react-router-dom";
-import { Bell, Pin } from "lucide-react";
+import { Bell } from "lucide-react";
 import DOMPurify from "dompurify";
 
 const NoticesPage = () => {
-  const notices = store.getNotices();
+  const { data: notices = [] } = useNotices();
 
   return (
     <div className="pt-24 pb-8 container max-w-2xl min-h-screen">

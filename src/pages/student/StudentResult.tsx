@@ -2,7 +2,7 @@ import { useLocation, Link } from "react-router-dom";
 import { ExamResult, Question } from "@/lib/types";
 import { CheckCircle2, XCircle, MinusCircle, RotateCcw, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { useMemo, useState } from "react";
-import { store } from "@/lib/store";
+import { useResults } from "@/hooks/useSupabaseData";
 import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
 
 const StudentResult = () => {
@@ -18,13 +18,13 @@ const StudentResult = () => {
     [originalQuestions]
   );
 
-  // If no state, show history
+  const { data: allResults = [] } = useResults();
+
   if (!result) {
-    const results = store.getResults();
     return (
       <div className="pt-24 pb-8 container animate-fade-in">
         <h1 className="text-xl font-bold mb-5">📊 ফলাফল ইতিহাস</h1>
-        {results.length === 0 ? (
+        {allResults.length === 0 ? (
           <div className="glass-card-static p-12 text-center text-muted-foreground">
             এখনও কোনো পরীক্ষা দেওয়া হয়নি
             <br />
@@ -32,7 +32,7 @@ const StudentResult = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {results.map((r, i) => (
+            {allResults.map((r, i) => (
               <div key={i} className="glass-card-static p-4 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold">{r.examTitle}</p>
@@ -93,22 +93,12 @@ const StudentResult = () => {
         </div>
       </div>
 
-      {/* Score breakdown */}
       <div className="glass-card-static p-5 mb-6">
         <h3 className="text-sm font-semibold mb-3">📊 স্কোর বিশ্লেষণ</h3>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">সঠিক উত্তর</span>
-            <span className="font-medium">+{result.correct}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">নেগেটিভ মার্ক ({result.wrong} × নেগেটিভ)</span>
-            <span className="font-medium text-destructive">-{result.negativeMarks.toFixed(2)}</span>
-          </div>
-          <div className="border-t border-border pt-2 flex justify-between">
-            <span className="font-semibold">চূড়ান্ত স্কোর</span>
-            <span className="font-bold text-primary">{result.finalScore.toFixed(2)} / {result.maxScore}</span>
-          </div>
+          <div className="flex justify-between"><span className="text-muted-foreground">সঠিক উত্তর</span><span className="font-medium">+{result.correct}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">নেগেটিভ মার্ক</span><span className="font-medium text-destructive">-{result.negativeMarks.toFixed(2)}</span></div>
+          <div className="border-t border-border pt-2 flex justify-between"><span className="font-semibold">চূড়ান্ত স্কোর</span><span className="font-bold text-primary">{result.finalScore.toFixed(2)} / {result.maxScore}</span></div>
         </div>
       </div>
 
@@ -145,9 +135,7 @@ const StudentResult = () => {
                       <p className="text-sm font-semibold"><span className="text-muted-foreground mr-2">{i + 1}.</span>{q.question}</p>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ml-2 ${statusBadge.cls}`}>{statusBadge.text}</span>
                     </div>
-                    {q.questionImage && (
-                      <img src={q.questionImage} alt="" className="max-w-full max-h-48 rounded-lg border border-border mb-3 object-contain" />
-                    )}
+                    {q.questionImage && <img src={q.questionImage} alt="" className="max-w-full max-h-48 rounded-lg border border-border mb-3 object-contain" />}
                     <div className="space-y-1.5 mb-3">
                       {q.options.map((opt, oi) => {
                         const isAnswer = isAnswerMatch(opt, correctAnswer);
@@ -162,16 +150,12 @@ const StudentResult = () => {
                               {isUser && !isCorrect && <XCircle size={14} className="text-destructive flex-shrink-0" />}
                               {opt}
                             </div>
-                            {q.optionImages?.[oi] && (
-                              <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-20 rounded border border-border object-contain" />
-                            )}
+                            {q.optionImages?.[oi] && <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-20 rounded border border-border object-contain" />}
                           </div>
                         );
                       })}
                     </div>
-                    {q.explanation && (
-                      <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">💡 <strong>ব্যাখ্যা:</strong> {q.explanation}</div>
-                    )}
+                    {q.explanation && <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">💡 <strong>ব্যাখ্যা:</strong> {q.explanation}</div>}
                   </div>
                 );
               })}

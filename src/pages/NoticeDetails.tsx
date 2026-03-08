@@ -1,12 +1,13 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { store } from "@/lib/store";
+import { useNotices } from "@/hooks/useSupabaseData";
 import { ArrowLeft } from "lucide-react";
 import DOMPurify from "dompurify";
 
 const NoticeDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const notice = store.getNotices().find((n) => n.id === id);
+  const { data: notices = [] } = useNotices();
+  const notice = notices.find((n) => n.id === id);
 
   if (!notice) {
     return (

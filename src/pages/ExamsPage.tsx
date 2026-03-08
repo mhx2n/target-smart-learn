@@ -1,17 +1,19 @@
-import { store } from "@/lib/store";
+import { useExams, useSections } from "@/hooks/useSupabaseData";
 import ExamCard from "@/components/ExamCard";
 import { useState } from "react";
 import { Search, X, FolderOpen, BookOpen } from "lucide-react";
 import { getLabel } from "@/lib/labels";
 
 const ExamsPage = () => {
-  const allExams = store.getExams().filter((e) => e.published);
-  const sections = store.getSections();
+  const { data: allExamsRaw = [] } = useExams();
+  const { data: sections = [] } = useSections();
   const [search, setSearch] = useState("");
   const [subject, setSubject] = useState("all");
   const [difficulty, setDifficulty] = useState("all");
   const [openSectionId, setOpenSectionId] = useState<string | null>(null);
   const [tab, setTab] = useState<"sections" | "subjects">("sections");
+
+  const allExams = allExamsRaw.filter((e) => e.published);
 
   const diffLabels: Record<string, string> = { all: getLabel("diffAll"), easy: getLabel("diffEasy"), medium: getLabel("diffMedium"), hard: getLabel("diffHard") };
 
