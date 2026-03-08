@@ -36,14 +36,14 @@ const ReminderWidget = () => {
   if (visible.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2 max-w-[280px]">
+    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-1.5 max-w-[220px] md:max-w-[280px]">
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-primary text-primary-foreground text-xs font-medium shadow-lg hover:shadow-xl transition-all"
+        className="flex items-center gap-1 px-2.5 py-1.5 md:px-3 md:py-2 rounded-full bg-primary text-primary-foreground text-[10px] md:text-xs font-medium shadow-lg hover:shadow-xl transition-all"
       >
-        <Bell size={14} />
+        <Bell size={12} className="md:hidden" /><Bell size={14} className="hidden md:block" />
         {visible.length} রিমাইন্ডার
-        {collapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        {collapsed ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
       </button>
 
       {!collapsed && (
