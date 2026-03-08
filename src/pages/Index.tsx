@@ -12,7 +12,7 @@ const Index = () => {
   const results = store.getResults();
   const featured = exams.filter((e) => e.featured);
   const [search, setSearch] = useState("");
-  const recentResults = results.slice(0, 5);
+  const recentResults = results.slice(0, 3);
 
   const avgScore = results.length > 0
     ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / results.length)
@@ -130,9 +130,12 @@ const Index = () => {
         {/* Featured */}
         {featured.length > 0 && (
           <section>
-            <h2 className="text-lg font-bold mb-4">⭐ বিশেষ পরীক্ষা</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">⭐ বিশেষ পরীক্ষা</h2>
+              <Link to="/exams" className="text-xs text-primary font-medium flex items-center gap-1">সব দেখুন <ArrowRight size={14} /></Link>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {featured.map((e) => <ExamCard key={e.id} exam={e} />)}
+              {featured.slice(0, 3).map((e) => <ExamCard key={e.id} exam={e} />)}
             </div>
           </section>
         )}
@@ -144,7 +147,7 @@ const Index = () => {
             <Link to="/exams" className="text-xs text-primary font-medium flex items-center gap-1">আরও দেখুন <ArrowRight size={14} /></Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {exams.map((e) => <ExamCard key={e.id} exam={e} />)}
+            {exams.slice(0, 3).map((e) => <ExamCard key={e.id} exam={e} />)}
           </div>
         </section>
       </div>
