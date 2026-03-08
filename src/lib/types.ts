@@ -20,16 +20,47 @@ export interface Section {
   createdAt: string;
 }
 
+export interface ThemePreset {
+  id: string;
+  name: string;
+  light: ThemeColors;
+  dark: ThemeColors;
+}
+
+export interface ThemeColors {
+  primary: string;
+  primaryForeground: string;
+  background: string;
+  foreground: string;
+  card: string;
+  cardForeground: string;
+  secondary: string;
+  secondaryForeground: string;
+  muted: string;
+  mutedForeground: string;
+  accent: string;
+  accentForeground: string;
+  border: string;
+  success: string;
+  warning: string;
+}
+
 export interface SiteSettings {
   aboutTitle: string;
-  aboutContent: string; // HTML content
+  aboutContent: string;
   featuresTitle: string;
-  featuresContent: string; // HTML content
+  featuresContent: string;
   contactTitle: string;
-  contactContent: string; // HTML content
+  contactContent: string;
   footerDescription: string;
   footerLinks: { label: string; url: string }[];
   socialLinks: { label: string; url: string }[];
+  brandName: string;
+  brandEmoji: string;
+  heroTagline: string;
+  heroSubtitle: string;
+  activeThemeId: string;
+  customTheme?: { light: ThemeColors; dark: ThemeColors };
 }
 
 export interface Exam {
