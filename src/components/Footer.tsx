@@ -10,8 +10,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 text-xl font-bold mb-3">
-              <span className="text-2xl">🎯</span>
-              <span className="gradient-text">Target</span>
+              <span className="text-2xl">{settings.brandEmoji || "🎯"}</span>
+              <span className="gradient-text">{settings.brandName || "Target"}</span>
             </div>
             <p className="text-sm text-muted-foreground">{settings.footerDescription}</p>
           </div>
