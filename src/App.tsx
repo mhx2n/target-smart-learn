@@ -29,6 +29,7 @@ import AdminCSVUpload from "./pages/admin/AdminCSVUpload";
 import AdminNotices from "./pages/admin/AdminNotices";
 import AdminSubjects from "./pages/admin/AdminSubjects";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminSections from "./pages/admin/AdminSections";
 
 const queryClient = new QueryClient();
 
