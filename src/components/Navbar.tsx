@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import ThemeToggle from "./ThemeToggle";
+import { store } from "@/lib/store";
 
 const Navbar = () => {
   const location = useLocation();
