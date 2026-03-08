@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { store } from "@/lib/store";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { ExamResult } from "@/lib/types";
 import { List, X, Clock, AlertTriangle } from "lucide-react";
 
@@ -21,40 +22,28 @@ const StudentExamAttempt = () => {
   const questions = useMemo(() => {
     if (!exam) return [];
     return shuffle(exam.questions).map((q) => ({ ...q, options: shuffle(q.options) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exam?.id]);
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState((exam?.duration || 10) * 60);
   const [showPalette, setShowPalette] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const questionRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const answersRef = useRef(answers);
+  answersRef.current = answers;
 
   const negativeMarking = exam?.negativeMarking ?? 0.25;
 
-  useEffect(() => {
-    if (timeLeft <= 0) { handleSubmit(); return; }
-    const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
-    return () => clearInterval(t);
-  }, [timeLeft]);
+  const doSubmit = useCallback(() => {
+    if (submitted || !exam) return;
+    setSubmitted(true);
 
-  const scrollToQuestion = useCallback((index: number) => {
-    questionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
-    setShowPalette(false);
-  }, []);
-
-  if (!exam) return <div className="text-center py-20 text-muted-foreground">পরীক্ষা পাওয়া যায়নি</div>;
-
-  const mins = Math.floor(timeLeft / 60);
-  const secs = timeLeft % 60;
-  const answeredCount = Object.keys(answers).length;
-  const unansweredCount = questions.length - answeredCount;
-
-  const selectAnswer = (qId: string, opt: string) => setAnswers((prev) => ({ ...prev, [qId]: opt }));
-
-  const handleSubmit = () => {
+    const currentAnswers = answersRef.current;
     let correct = 0, wrong = 0, skipped = 0;
     questions.forEach((question) => {
-      const ans = answers[question.id];
+      const ans = currentAnswers[question.id];
       if (!ans) skipped++;
       else if (ans === question.answer) correct++;
       else wrong++;
@@ -77,22 +66,53 @@ const StudentExamAttempt = () => {
       finalScore,
       maxScore,
       percentage,
-      answers,
+      answers: currentAnswers,
       timestamp: new Date().toISOString(),
     };
     store.addResult(result);
     navigate("/student/results", { state: { result, questions } });
-  };
+  }, [submitted, exam, questions, negativeMarking, navigate]);
+
+  useEffect(() => {
+    if (submitted) return;
+    if (timeLeft <= 0) { doSubmit(); return; }
+    const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
+    return () => clearInterval(t);
+  }, [timeLeft, submitted, doSubmit]);
+
+  const scrollToQuestion = useCallback((index: number) => {
+    questionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setShowPalette(false);
+  }, []);
+
+  if (!exam) return <div className="text-center py-20 text-muted-foreground">পরীক্ষা পাওয়া যায়নি</div>;
+
+  const mins = Math.floor(timeLeft / 60);
+  const secs = timeLeft % 60;
+  const answeredCount = Object.keys(answers).length;
+  const unansweredCount = questions.length - answeredCount;
+
+  const selectAnswer = (qId: string, opt: string) => setAnswers((prev) => ({ ...prev, [qId]: opt }));
 
   return (
     <div className="max-w-3xl mx-auto animate-fade-in relative pb-24">
-      {/* Floating Timer */}
-      <div className={`fixed top-16 right-4 z-40 flex items-center gap-2 px-4 py-2 rounded-2xl shadow-lg font-mono text-sm font-bold transition-all ${
-        timeLeft < 60 ? "bg-destructive text-destructive-foreground animate-pulse" : timeLeft < 300 ? "bg-warning text-warning-foreground" : "glass-strong"
-      }`}>
-        <Clock size={16} />
-        {mins.toString().padStart(2, "0")}:{secs.toString().padStart(2, "0")}
-      </div>
+      {/* Floating Timer - rendered via portal to ensure it's always visible */}
+      {createPortal(
+        <div
+          style={{ position: "fixed", top: 16, right: 16, zIndex: 9999 }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl shadow-lg font-mono text-sm font-bold transition-all ${
+            timeLeft < 60
+              ? "bg-destructive text-destructive-foreground animate-pulse"
+              : timeLeft < 300
+              ? "bg-warning text-warning-foreground"
+              : "bg-card border border-border"
+          }`}
+        >
+          <Clock size={16} />
+          {mins.toString().padStart(2, "0")}:{secs.toString().padStart(2, "0")}
+        </div>,
+        document.body
+      )}
 
       {/* Header */}
       <div className="glass-card-static p-4 mb-4">
@@ -135,28 +155,35 @@ const StudentExamAttempt = () => {
       </div>
 
       {/* Bottom action bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 glass-strong border-t border-border/50 p-3">
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-          <button
-            onClick={() => setShowPalette(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-muted hover:bg-muted/80 transition-all"
-          >
-            <List size={16} />
-            প্রশ্ন তালিকা
-          </button>
-          <button
-            onClick={() => setShowConfirm(true)}
-            className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]"
-          >
-            জমা দিন ✓
-          </button>
-        </div>
-      </div>
+      {createPortal(
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9998 }} className="bg-card/90 backdrop-blur-2xl border-t border-border p-3">
+          <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+            <button
+              onClick={() => setShowPalette(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-muted hover:bg-muted/80 transition-all"
+            >
+              <List size={16} />
+              প্রশ্ন তালিকা
+            </button>
+            <button
+              onClick={() => setShowConfirm(true)}
+              className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]"
+            >
+              জমা দিন ✓
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Question Palette Modal */}
-      {showPalette && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm p-4" onClick={() => setShowPalette(false)}>
-          <div className="glass-strong rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in" onClick={(e) => e.stopPropagation()}>
+      {showPalette && createPortal(
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 10000 }}
+          className="flex items-center justify-center bg-background/60 backdrop-blur-sm p-4"
+          onClick={() => setShowPalette(false)}
+        >
+          <div className="bg-card rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-border animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-sm">📋 প্রশ্ন তালিকা</h3>
               <button onClick={() => setShowPalette(false)} className="p-1 rounded-lg hover:bg-muted"><X size={18} /></button>
@@ -181,13 +208,18 @@ const StudentExamAttempt = () => {
               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-muted" /> বাকি</span>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Submit Confirmation Modal */}
-      {showConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm p-4" onClick={() => setShowConfirm(false)}>
-          <div className="glass-strong rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in" onClick={(e) => e.stopPropagation()}>
+      {showConfirm && createPortal(
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 10000 }}
+          className="flex items-center justify-center bg-background/60 backdrop-blur-sm p-4"
+          onClick={() => setShowConfirm(false)}
+        >
+          <div className="bg-card rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-border animate-fade-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle size={20} className="text-warning" />
               <h3 className="font-semibold text-sm">পরীক্ষা জমা দিন</h3>
@@ -207,13 +239,14 @@ const StudentExamAttempt = () => {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowConfirm(false)} className="flex-1 btn-glass text-sm font-medium">ফিরে যান</button>
-              <button onClick={handleSubmit} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+              <button onClick={() => setShowConfirm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-border hover:bg-muted transition-all">ফিরে যান</button>
+              <button onClick={doSubmit} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
                 জমা দিন ✓
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
