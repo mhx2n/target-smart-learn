@@ -7,6 +7,7 @@ import { store } from "@/lib/store";
 const Navbar = () => {
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const settings = store.getSiteSettings();
 
   const links = [
     { to: "/", label: "হোম" },
