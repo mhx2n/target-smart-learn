@@ -1,5 +1,5 @@
 import { Exam, ExamResult, Notice, Section, SiteSettings } from "./types";
-import { demoExams, demoNotices } from "./data";
+import { demoExams, demoNotices, subjects as defaultSubjects, categories as defaultCategories } from "./data";
 
 const EXAMS_KEY = "target_exams";
 const NOTICES_KEY = "target_notices";
@@ -7,6 +7,8 @@ const RESULTS_KEY = "target_results";
 const ADMIN_KEY = "target_admin";
 const SECTIONS_KEY = "target_sections";
 const SITE_SETTINGS_KEY = "target_site_settings";
+const SUBJECTS_KEY = "target_subjects";
+const CATEGORIES_KEY = "target_categories";
 
 const defaultSiteSettings: SiteSettings = {
   aboutTitle: "Target 🎯 কী?",
