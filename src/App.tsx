@@ -17,6 +17,7 @@ import ExamsPage from "./pages/ExamsPage";
 import ExamDetails from "./pages/ExamDetails";
 import ExamAttempt from "./pages/student/StudentExamAttempt";
 import ResultsPage from "./pages/student/StudentResult";
+import WrongAnswersBank from "./pages/student/WrongAnswersBank";
 import NoticesPage from "./pages/NoticesPage";
 import NoticeDetails from "./pages/NoticeDetails";
 import ProfilePage from "./pages/student/StudentProfile";
