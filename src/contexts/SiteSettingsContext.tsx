@@ -1,6 +1,10 @@
-import React, { createContext, useContext, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useRef, ReactNode } from "react";
 import { useSiteSettings } from "@/hooks/useSupabaseData";
+import { themePresets, applyThemeColors } from "@/lib/themePresets";
+import { getTheme } from "@/lib/theme";
 import type { SiteSettings } from "@/lib/types";
+
+const SITE_SETTINGS_KEY = "target_site_settings";
 
 const defaultSettings: SiteSettings = {
   aboutTitle: "Target 🎯 কী?",
@@ -36,12 +40,41 @@ export function useSiteSettingsContext() {
   return useContext(SiteSettingsContext);
 }
 
+function applySettingsTheme(settings: SiteSettings) {
+  const mode = getTheme();
+  const themeId = settings.activeThemeId || "ocean-blue";
+
+  if (themeId === "custom" && settings.customTheme) {
+    applyThemeColors(settings.customTheme[mode], mode);
+  } else {
+    const preset = themePresets.find((t) => t.id === themeId);
+    if (preset) {
+      applyThemeColors(mode === "dark" ? preset.dark : preset.light, mode);
+    }
+  }
+
+  // Persist to localStorage so initTheme() works on next page load
+  try {
+    localStorage.setItem(SITE_SETTINGS_KEY, JSON.stringify(settings));
+  } catch {}
+}
+
 export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const { data: settings } = useSiteSettings();
   const value = settings || defaultSettings;
-  
+  const appliedRef = useRef<string>("");
+
   // Update module-level cache for getLabel
   _cachedSettings = value;
+
+  // Apply theme colors whenever settings change
+  useEffect(() => {
+    const key = `${value.activeThemeId}-${JSON.stringify(value.customTheme || {})}`;
+    if (key !== appliedRef.current) {
+      appliedRef.current = key;
+      applySettingsTheme(value);
+    }
+  }, [value]);
 
   return (
     <SiteSettingsContext.Provider value={value}>
