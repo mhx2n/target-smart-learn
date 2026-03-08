@@ -33,6 +33,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSections from "./pages/admin/AdminSections";
 import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 import AdminThemeSettings from "./pages/admin/AdminThemeSettings";
+import AdminReminders from "./pages/admin/AdminReminders";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
             <Route path="/admin/theme" element={<AdminThemeSettings />} />
+            <Route path="/admin/reminders" element={<AdminReminders />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />
