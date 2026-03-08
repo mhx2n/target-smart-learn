@@ -33,6 +33,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSections from "./pages/admin/AdminSections";
 import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 import AdminThemeSettings from "./pages/admin/AdminThemeSettings";
+import AdminReminders from "./pages/admin/AdminReminders";
 
 const queryClient = new QueryClient();
 
