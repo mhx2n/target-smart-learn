@@ -4,10 +4,11 @@ import { User, BarChart3, Award, BookOpen } from "lucide-react";
 const StudentProfile = () => {
   const results = store.getResults();
   const totalAttempts = results.length;
-  const avgScore = totalAttempts > 0
-    ? Math.round(results.reduce((s, r) => s + r.percentage, 0) / totalAttempts)
+  const validResults = results.filter((r) => typeof r.percentage === "number" && !isNaN(r.percentage));
+  const avgScore = validResults.length > 0
+    ? Math.round(validResults.reduce((s, r) => s + r.percentage, 0) / validResults.length)
     : 0;
-  const bestScore = totalAttempts > 0 ? Math.max(...results.map((r) => r.percentage)) : 0;
+  const bestScore = validResults.length > 0 ? Math.max(...validResults.map((r) => r.percentage)) : 0;
   const uniqueExams = new Set(results.map((r) => r.examId)).size;
 
   return (
