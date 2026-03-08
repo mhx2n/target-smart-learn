@@ -82,12 +82,6 @@ const WrongAnswersBank = () => {
                         );
                       })}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      তোমার উত্তর: <span className="text-destructive font-medium">{entry.userAnswer}</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      সঠিক উত্তর: <span className="text-success font-medium">{entry.correctAnswer}</span>
-                    </p>
                     {entry.explanation && <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mt-2">💡 <strong>ব্যাখ্যা:</strong> {entry.explanation}</div>}
                   </div>
                 ))}
