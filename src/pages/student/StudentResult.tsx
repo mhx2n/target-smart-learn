@@ -141,14 +141,6 @@ const StudentResult = () => {
             );
           })}
         </div>
-        {!isSkipped && (
-          <p className="text-sm text-muted-foreground mb-1">
-            তোমার উত্তর: <span className={isCorrect ? "text-success font-medium" : "text-destructive font-medium"}>{userAns}</span>
-          </p>
-        )}
-        <p className="text-sm text-muted-foreground">
-          সঠিক উত্তর: <span className="text-success font-medium">{correctAnswer}</span>
-        </p>
         {q.explanation && <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mt-2">💡 <strong>ব্যাখ্যা:</strong> {q.explanation}</div>}
       </div>
     );
