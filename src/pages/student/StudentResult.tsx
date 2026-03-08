@@ -150,8 +150,8 @@ const StudentResult = () => {
                     )}
                     <div className="space-y-1.5 mb-3">
                       {q.options.map((opt, oi) => {
-                        const isAnswer = opt === correctAnswer;
-                        const isUser = opt === userAns;
+                        const isAnswer = isAnswerMatch(opt, correctAnswer);
+                        const isUser = Boolean(userAns) && isAnswerMatch(opt, userAns);
                         let cls = "border-border";
                         if (isAnswer) cls = "border-success bg-success/10";
                         else if (isUser && !isCorrect) cls = "border-destructive bg-destructive/10";
