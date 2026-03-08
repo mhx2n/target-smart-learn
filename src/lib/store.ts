@@ -78,6 +78,9 @@ export const store = {
   getReminders: (): Reminder[] => load(REMINDERS_KEY, []),
   setReminders: (r: Reminder[]) => save(REMINDERS_KEY, r),
 
+  getEventBanners: (): EventBanner[] => load(EVENT_BANNERS_KEY, []),
+  setEventBanners: (b: EventBanner[]) => save(EVENT_BANNERS_KEY, b),
+
   isAdmin: (): boolean => load(ADMIN_KEY, false),
   setAdmin: (val: boolean) => save(ADMIN_KEY, val),
 };
