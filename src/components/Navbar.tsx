@@ -33,9 +33,6 @@ const Navbar = () => {
           <Link to="/student" className="text-xs px-3 py-1.5 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
             স্টুডেন্ট প্যানেল
           </Link>
-          <Link to="/admin" className="text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground font-medium hover:bg-muted/80 transition-colors">
-            Admin
-          </Link>
         </div>
 
         <button className="md:hidden p-2" onClick={() => setOpen(!open)}>
