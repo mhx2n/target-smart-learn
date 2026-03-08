@@ -3,7 +3,7 @@ import { store } from "@/lib/store";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
-  LayoutDashboard, FileText, Bell, Upload, BookOpen, Settings, LogOut, Menu, X, HelpCircle, FolderOpen, Globe, Palette, Clock,
+  LayoutDashboard, FileText, Bell, Upload, BookOpen, Settings, LogOut, Menu, X, HelpCircle, FolderOpen, Globe, Palette, Clock, PartyPopper,
 } from "lucide-react";
 
 const navItems = [
