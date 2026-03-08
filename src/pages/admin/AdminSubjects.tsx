@@ -114,7 +114,7 @@ const AdminSubjects = () => {
                     {isEditing ? (
                       <>
                         <button onClick={saveSubjectEdit} className="p-1 rounded hover:bg-background transition-colors">
-                          <Check size={14} className="text-green-500" />
+                          <Check size={14} className="text-primary" />
                         </button>
                         <button onClick={() => setEditingSubject(null)} className="p-1 rounded hover:bg-background transition-colors">
                           <X size={14} className="text-muted-foreground" />
