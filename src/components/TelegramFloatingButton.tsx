@@ -19,7 +19,7 @@ const TelegramFloatingButton = () => {
       className="fixed bottom-6 left-6 z-50 group"
       title="Join Telegram Channel"
     >
-      <div className="w-14 h-14 rounded-full overflow-hidden shadow-lg ring-2 ring-primary/30 hover:ring-primary/60 hover:scale-110 transition-all duration-300 animate-fade-in">
+      <div className="w-10 h-10 md:w-14 md:h-14 rounded-full overflow-hidden shadow-lg ring-2 ring-primary/30 hover:ring-primary/60 hover:scale-110 transition-all duration-300 animate-fade-in">
         <img
           src={telegramLogo}
           alt="Telegram"

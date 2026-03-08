@@ -57,8 +57,8 @@ const ReminderWidget = () => {
                 <div className="p-2 md:p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-foreground truncate">{r.title}</p>
-                      {r.description && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{r.description}</p>}
+                      <p className="text-[10px] md:text-xs font-bold text-foreground truncate">{r.title}</p>
+                      {r.description && <p className="text-[9px] md:text-[10px] text-muted-foreground mt-0.5 line-clamp-1 md:line-clamp-2">{r.description}</p>}
                     </div>
                     <button onClick={() => setDismissed((prev) => new Set(prev).add(r.id))} className="p-1 rounded-lg hover:bg-muted transition-colors flex-shrink-0">
                       <X size={12} className="text-muted-foreground" />
