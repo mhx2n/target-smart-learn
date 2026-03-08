@@ -1,8 +1,8 @@
-import { store } from "@/lib/store";
+import { useResults } from "@/hooks/useSupabaseData";
 import { User, BarChart3, Award, BookOpen } from "lucide-react";
 
 const StudentProfile = () => {
-  const results = store.getResults();
+  const { data: results = [] } = useResults();
   const totalAttempts = results.length;
   const validResults = results.filter((r) => typeof r.percentage === "number" && !isNaN(r.percentage));
   const avgScore = validResults.length > 0
@@ -20,7 +20,6 @@ const StudentProfile = () => {
         <h1 className="text-xl font-bold">অনুশীলনকারী</h1>
         <p className="text-sm text-muted-foreground">আপনার অনুশীলন পরিসংখ্যান</p>
       </div>
-
       <div className="grid grid-cols-2 gap-3 mb-6">
         {[
           { icon: BookOpen, label: "মোট অনুশীলন", value: totalAttempts },
@@ -35,7 +34,6 @@ const StudentProfile = () => {
           </div>
         ))}
       </div>
-
       {results.length > 0 && (
         <div>
           <h2 className="text-sm font-bold mb-3">📈 সাম্প্রতিক ফলাফল</h2>

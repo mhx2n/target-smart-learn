@@ -1,10 +1,10 @@
-import { store } from "@/lib/store";
+import { useNotices } from "@/hooks/useSupabaseData";
 import { Bell } from "lucide-react";
 import { useState } from "react";
 import DOMPurify from "dompurify";
 
 const StudentNotices = () => {
-  const notices = store.getNotices();
+  const { data: notices = [] } = useNotices();
   const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
