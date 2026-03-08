@@ -3,6 +3,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import { store } from "@/lib/store";
+import { getLabel } from "@/lib/labels";
 
 const Navbar = () => {
   const location = useLocation();
@@ -10,12 +11,12 @@ const Navbar = () => {
   const settings = store.getSiteSettings();
 
   const links = [
-    { to: "/", label: "হোম" },
-    { to: "/exams", label: "পরীক্ষা" },
-    { to: "/results", label: "ফলাফল" },
-    { to: "/notices", label: "নোটিস" },
-    { to: "/profile", label: "প্রোফাইল" },
-    { to: "/about", label: "সম্পর্কে" },
+    { to: "/", label: getLabel("navHome") },
+    { to: "/exams", label: getLabel("navExams") },
+    { to: "/results", label: getLabel("navResults") },
+    { to: "/notices", label: getLabel("navNotices") },
+    { to: "/profile", label: getLabel("navProfile") },
+    { to: "/about", label: getLabel("navAbout") },
   ];
 
   const isActive = (path: string) => path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
@@ -28,7 +29,6 @@ const Navbar = () => {
           <span className="gradient-text">{settings.brandName}</span>
         </Link>
 
-        {/* Desktop */}
         <div className="hidden md:flex items-center gap-6">
           {links.map((l) => (
             <Link key={l.to} to={l.to} className={`text-sm font-medium transition-colors ${isActive(l.to) ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>

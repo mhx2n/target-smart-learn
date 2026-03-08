@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { store } from "@/lib/store";
+import { getLabel } from "@/lib/labels";
 
 const Footer = () => {
   const settings = store.getSiteSettings();
@@ -16,7 +17,7 @@ const Footer = () => {
             <p className="text-sm text-muted-foreground">{settings.footerDescription}</p>
           </div>
           <div>
-            <h4 className="font-semibold text-sm mb-3">দ্রুত লিঙ্ক</h4>
+            <h4 className="font-semibold text-sm mb-3">{getLabel("quickLinks")}</h4>
             <div className="flex flex-col gap-2">
               {settings.footerLinks.map((link, i) => (
                 <Link key={i} to={link.url} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -26,7 +27,7 @@ const Footer = () => {
             </div>
           </div>
           <div>
-            <h4 className="font-semibold text-sm mb-3">যোগাযোগ</h4>
+            <h4 className="font-semibold text-sm mb-3">{getLabel("contact")}</h4>
             <div className="flex gap-3">
               {settings.socialLinks.map((link, i) => (
                 <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-primary transition-colors">
@@ -37,7 +38,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-border/50 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} {settings.brandName || "Target"} {settings.brandEmoji || "🎯"} — সকল স্বত্ব সংরক্ষিত
+          © {new Date().getFullYear()} {settings.brandName || "Target"} {settings.brandEmoji || "🎯"} — {getLabel("allRightsReserved")}
         </div>
       </div>
     </footer>
