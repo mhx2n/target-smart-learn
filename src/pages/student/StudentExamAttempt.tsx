@@ -75,12 +75,27 @@ const StudentExamAttempt = () => {
     navigate("/results", { state: { result, questions } });
   }, [submitted, exam, questions, negativeMarking, navigate]);
 
+  const submittedRef = useRef(false);
+  submittedRef.current = submitted;
+  const doSubmitRef = useRef(doSubmit);
+  doSubmitRef.current = doSubmit;
+
   useEffect(() => {
-    if (submitted) return;
-    if (timeLeft <= 0) { doSubmit(); return; }
-    const t = setInterval(() => setTimeLeft((p) => p - 1), 1000);
+    if (submittedRef.current) return;
+    const t = setInterval(() => {
+      if (submittedRef.current) { clearInterval(t); return; }
+      setTimeLeft((p) => {
+        if (p <= 1) {
+          clearInterval(t);
+          setTimeout(() => doSubmitRef.current(), 0);
+          return 0;
+        }
+        return p - 1;
+      });
+    }, 1000);
     return () => clearInterval(t);
-  }, [timeLeft, submitted, doSubmit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const scrollToQuestion = useCallback((index: number) => {
     questionRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
