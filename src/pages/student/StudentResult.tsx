@@ -6,33 +6,33 @@ import { store } from "@/lib/store";
 
 const normalizeAnswerValue = (value: string) => value.trim().toLowerCase().replace(/\s+/g, "");
 
-const resolveOptionText = (question: Question, value?: string) => {
-  if (!value) return "";
+// Resolve the correct answer to actual option text
+const resolveCorrectOptionText = (question: Question): string => {
+  const answer = question.answer;
+  if (!answer) return "";
 
-  const normalized = normalizeAnswerValue(value);
+  // If answer is already one of the options, return it directly
+  if (question.options.includes(answer)) {
+    return answer;
+  }
+
+  const normalized = normalizeAnswerValue(answer);
+  
+  // Map common key formats to option indices
   const keyToIndex: Record<string, number> = {
-    a: 0,
-    b: 1,
-    c: 2,
-    d: 3,
-    e: 4,
-    "1": 0,
-    "2": 1,
-    "3": 2,
-    "4": 3,
-    "5": 4,
-    option1: 0,
-    option2: 1,
-    option3: 2,
-    option4: 3,
-    option5: 4,
+    a: 0, b: 1, c: 2, d: 3, e: 4,
+    "1": 0, "2": 1, "3": 2, "4": 3, "5": 4,
+    option1: 0, option2: 1, option3: 2, option4: 3, option5: 4,
   };
 
   const mappedIndex = keyToIndex[normalized];
-  if (mappedIndex !== undefined) return question.options[mappedIndex] ?? value;
+  if (mappedIndex !== undefined && question.options[mappedIndex]) {
+    return question.options[mappedIndex];
+  }
 
+  // Try to match by normalized comparison
   const matchedOption = question.options.find((opt) => normalizeAnswerValue(opt) === normalized);
-  return matchedOption ?? value;
+  return matchedOption ?? answer;
 };
 
 const StudentResult = () => {
@@ -150,8 +150,8 @@ const StudentResult = () => {
           {showReview && (
             <div className="space-y-3 animate-fade-in">
               {questions.map((q, i) => {
-                const userAns = resolveOptionText(q, result.answers[q.id]);
-                const correctAnswer = resolveOptionText(q, q.answer);
+                const userAns = result.answers[q.id] || "";
+                const correctAnswer = resolveCorrectOptionText(q);
                 const isSkipped = !userAns;
                 const isCorrect = Boolean(userAns) && userAns === correctAnswer;
                 const isWrong = Boolean(userAns) && !isCorrect;
