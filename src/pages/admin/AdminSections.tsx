@@ -1,0 +1,166 @@
+import { useState } from "react";
+import { store } from "@/lib/store";
+import { Section } from "@/lib/types";
+import { Plus, Trash2, GripVertical, Pencil, X, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+const AdminSections = () => {
+  const [sections, setSections] = useState<Section[]>(store.getSections());
+  const [newName, setNewName] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const { toast } = useToast();
+
+  const exams = store.getExams();
+
+  const addSection = () => {
+    if (!newName.trim()) return;
+    const section: Section = {
+      id: `sec-${Date.now()}`,
+      name: newName.trim(),
+      description: newDesc.trim(),
+      order: sections.length,
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+    const updated = [...sections, section];
+    setSections(updated);
+    store.setSections(updated);
+    setNewName("");
+    setNewDesc("");
+    toast({ title: "সেকশন যোগ করা হয়েছে" });
+  };
+
+  const deleteSection = (id: string) => {
+    const updated = sections.filter((s) => s.id !== id);
+    setSections(updated);
+    store.setSections(updated);
+    // Remove sectionId from exams in this section
+    const updatedExams = exams.map((e) => e.sectionId === id ? { ...e, sectionId: undefined } : e);
+    store.setExams(updatedExams);
+    toast({ title: "সেকশন মুছে ফেলা হয়েছে" });
+  };
+
+  const startEdit = (s: Section) => {
+    setEditId(s.id);
+    setEditName(s.name);
+    setEditDesc(s.description);
+  };
+
+  const saveEdit = () => {
+    if (!editId || !editName.trim()) return;
+    const updated = sections.map((s) =>
+      s.id === editId ? { ...s, name: editName.trim(), description: editDesc.trim() } : s
+    );
+    setSections(updated);
+    store.setSections(updated);
+    setEditId(null);
+    toast({ title: "সেকশন আপডেট হয়েছে" });
+  };
+
+  return (
+    <div className="animate-fade-in">
+      <h1 className="text-xl font-bold mb-5">📂 সেকশন ব্যবস্থাপনা</h1>
+      <p className="text-sm text-muted-foreground mb-6">
+        সেকশন তৈরি করুন (যেমন: ঢাকা বিশ্ববিদ্যালয়, BCS প্রস্তুতি) এবং পরীক্ষাগুলো সেকশনে যুক্ত করুন।
+      </p>
+
+      {/* Add new section */}
+      <div className="glass-card-static p-5 mb-6">
+        <h2 className="text-sm font-semibold mb-3">➕ নতুন সেকশন যোগ করুন</h2>
+        <div className="space-y-3">
+          <input
+            type="text"
+            placeholder="সেকশনের নাম (যেমন: ঢাকা বিশ্ববিদ্যালয়)"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <input
+            type="text"
+            placeholder="বর্ণনা (যেমন: ২০০০-২০২৬ সালের বিগত সালের পরীক্ষা)"
+            value={newDesc}
+            onChange={(e) => setNewDesc(e.target.value)}
+            className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <button
+            onClick={addSection}
+            disabled={!newName.trim()}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all"
+          >
+            <Plus size={16} /> যোগ করুন
+          </button>
+        </div>
+      </div>
+
+      {/* Sections list */}
+      {sections.length === 0 ? (
+        <div className="glass-card-static p-12 text-center text-muted-foreground">
+          কোনো সেকশন নেই। উপরে নতুন সেকশন তৈরি করুন।
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {sections.map((s) => {
+            const sectionExams = exams.filter((e) => e.sectionId === s.id);
+            const isEditing = editId === s.id;
+            return (
+              <div key={s.id} className="glass-card-static p-4">
+                <div className="flex items-start gap-3">
+                  <GripVertical size={16} className="text-muted-foreground mt-1 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="w-full glass-strong rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        />
+                        <input
+                          value={editDesc}
+                          onChange={(e) => setEditDesc(e.target.value)}
+                          className="w-full glass-strong rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="font-semibold text-sm">{s.name}</h3>
+                        {s.description && <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>}
+                      </>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {sectionExams.length} পরীক্ষা • তৈরি: {s.createdAt}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {isEditing ? (
+                      <>
+                        <button onClick={saveEdit} className="p-2 rounded-lg hover:bg-success/10 transition-colors">
+                          <Check size={16} className="text-success" />
+                        </button>
+                        <button onClick={() => setEditId(null)} className="p-2 rounded-lg hover:bg-muted transition-colors">
+                          <X size={16} className="text-muted-foreground" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => startEdit(s)} className="p-2 rounded-lg hover:bg-muted transition-colors">
+                          <Pencil size={16} className="text-muted-foreground" />
+                        </button>
+                        <button onClick={() => deleteSection(s.id)} className="p-2 rounded-lg hover:bg-destructive/10 transition-colors">
+                          <Trash2 size={16} className="text-destructive" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminSections;

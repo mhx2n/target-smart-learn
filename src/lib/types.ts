@@ -8,12 +8,21 @@ export interface Question {
   section: string;
 }
 
+export interface Section {
+  id: string;
+  name: string;
+  description: string;
+  order: number;
+  createdAt: string;
+}
+
 export interface Exam {
   id: string;
   title: string;
   subject: string;
   category: string;
   chapter: string;
+  sectionId?: string;
   difficulty: "easy" | "medium" | "hard";
   questionCount: number;
   duration: number; // minutes

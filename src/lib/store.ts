@@ -1,10 +1,11 @@
-import { Exam, ExamResult, Notice } from "./types";
+import { Exam, ExamResult, Notice, Section } from "./types";
 import { demoExams, demoNotices } from "./data";
 
 const EXAMS_KEY = "target_exams";
 const NOTICES_KEY = "target_notices";
 const RESULTS_KEY = "target_results";
 const ADMIN_KEY = "target_admin";
+const SECTIONS_KEY = "target_sections";
 
 function load<T>(key: string, fallback: T): T {
   try {
@@ -32,6 +33,9 @@ export const store = {
     results.unshift(result);
     save(RESULTS_KEY, results);
   },
+
+  getSections: (): Section[] => load(SECTIONS_KEY, []),
+  setSections: (sections: Section[]) => save(SECTIONS_KEY, sections),
 
   isAdmin: (): boolean => load(ADMIN_KEY, false),
   setAdmin: (val: boolean) => save(ADMIN_KEY, val),
