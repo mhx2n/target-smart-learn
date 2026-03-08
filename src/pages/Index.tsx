@@ -80,6 +80,9 @@ const Index = () => {
             <Link to="/results" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold glass hover:bg-muted/80 transition-all">
               <BarChart3 size={18} /> {getLabel("ctaResults")}
             </Link>
+            <Link to="/wrong-answers" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-all active:scale-[0.98]">
+              <BookX size={18} /> ভুল উত্তর ব্যাংক
+            </Link>
           </div>
         </div>
       </section>
