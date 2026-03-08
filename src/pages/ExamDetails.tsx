@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { store } from "@/lib/store";
+import { useExamById } from "@/hooks/useSupabaseData";
 import { Clock, HelpCircle, ArrowLeft } from "lucide-react";
 
 const diffLabel: Record<string, string> = { easy: "সহজ", medium: "মাঝারি", hard: "কঠিন" };
@@ -7,7 +7,11 @@ const diffLabel: Record<string, string> = { easy: "সহজ", medium: "মা�
 const ExamDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const exam = store.getExams().find((e) => e.id === id);
+  const { data: exam, isLoading } = useExamById(id);
+
+  if (isLoading) {
+    return <div className="pt-24 container text-center min-h-screen"><p className="text-muted-foreground">লোড হচ্ছে...</p></div>;
+  }
 
   if (!exam) {
     return (
@@ -23,21 +27,17 @@ const ExamDetails = () => {
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground mb-6 hover:text-foreground transition-colors">
         <ArrowLeft size={16} /> ফিরে যান
       </button>
-
       <div className="glass-card-static p-6 space-y-5">
         <div className="flex flex-wrap gap-2">
           <span className="text-xs font-medium bg-primary/10 text-primary px-3 py-1 rounded-full">{exam.subject}</span>
           <span className="text-xs font-medium bg-amber-100 text-amber-700 px-3 py-1 rounded-full">{diffLabel[exam.difficulty]}</span>
         </div>
-
         <h1 className="text-2xl font-bold">{exam.title}</h1>
         <p className="text-sm text-muted-foreground">{exam.category} • {exam.chapter}</p>
-
         <div className="flex gap-6 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5"><HelpCircle size={16} /> {exam.questionCount} প্রশ্ন</span>
           <span className="flex items-center gap-1.5"><Clock size={16} /> {exam.duration} মিনিট</span>
         </div>
-
         <div className="glass-card-static p-4 bg-primary/5 border-primary/20">
           <h3 className="font-semibold text-sm mb-2">📋 নির্দেশাবলী</h3>
           <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
@@ -47,11 +47,7 @@ const ExamDetails = () => {
             <li>প্রশ্নের ক্রম এবং অপশন প্রতিবার পরিবর্তিত হবে</li>
           </ul>
         </div>
-
-        <Link
-          to={`/exams/${exam.id}/attempt`}
-          className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]"
-        >
+        <Link to={`/exams/${exam.id}/attempt`} className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">
           পরীক্ষা শুরু করুন 🚀
         </Link>
       </div>
