@@ -34,7 +34,7 @@ const WrongAnswersBank = () => {
   return (
     <div className="pt-24 pb-8 container max-w-2xl mx-auto animate-fade-in">
       <div className="flex items-center gap-3 mb-5">
-        <Link to="/results" className="text-muted-foreground hover:text-foreground"><ArrowLeft size={20} /></Link>
+        <Link to="/" className="text-muted-foreground hover:text-foreground"><ArrowLeft size={20} /></Link>
         <h1 className="text-xl font-bold">📕 ভুল উত্তর ব্যাংক</h1>
       </div>
 
@@ -82,12 +82,6 @@ const WrongAnswersBank = () => {
                         );
                       })}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      তোমার উত্তর: <span className="text-destructive font-medium">{entry.userAnswer}</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      সঠিক উত্তর: <span className="text-success font-medium">{entry.correctAnswer}</span>
-                    </p>
                     {entry.explanation && <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mt-2">💡 <strong>ব্যাখ্যা:</strong> {entry.explanation}</div>}
                   </div>
                 ))}

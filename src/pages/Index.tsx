@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock, X as XIcon } from "lucide-react";
+import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock, X as XIcon, BookX } from "lucide-react";
 import { useExams, useNotices, useResults } from "@/hooks/useSupabaseData";
 import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import ExamCard from "@/components/ExamCard";
@@ -80,6 +80,9 @@ const Index = () => {
             <Link to="/results" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold glass hover:bg-muted/80 transition-all">
               <BarChart3 size={18} /> {getLabel("ctaResults")}
             </Link>
+            <Link to="/wrong-answers" className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-all active:scale-[0.98]">
+              <BookX size={18} /> ভুল উত্তর ব্যাংক
+            </Link>
           </div>
         </div>
       </section>
@@ -87,16 +90,16 @@ const Index = () => {
       <div className="container space-y-12 pb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 -mt-8 relative z-10">
           {[
-            { icon: BookOpen, label: getLabel("statTotalExams"), val: exams.length },
-            { icon: Award, label: getLabel("statSubjects"), val: new Set(exams.map((e) => e.subject)).size },
-            { icon: BarChart3, label: getLabel("statPractice"), val: results.length },
-            { icon: Bell, label: getLabel("statNotices"), val: notices.length },
+            { icon: BookOpen, label: getLabel("statTotalExams"), val: exams.length, link: "/exams" },
+            { icon: Award, label: getLabel("statSubjects"), val: new Set(exams.map((e) => e.subject)).size, link: "/exams" },
+            { icon: BarChart3, label: getLabel("statPractice"), val: results.length, link: "/results" },
+            { icon: Bell, label: getLabel("statNotices"), val: notices.length, link: "/notices" },
           ].map((s, i) => (
-            <div key={i} className="glass-card p-4 text-center">
+            <Link key={i} to={s.link} className="glass-card p-4 text-center hover:scale-[1.02] transition-transform">
               <s.icon className="mx-auto mb-2 text-primary" size={22} />
               <p className="text-2xl font-bold">{s.val}</p>
               <p className="text-xs text-muted-foreground">{s.label}</p>
-            </div>
+            </Link>
           ))}
         </div>
 

@@ -1,6 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
 import { ExamResult, Question } from "@/lib/types";
-import { CheckCircle2, XCircle, MinusCircle, RotateCcw, AlertTriangle, BookX } from "lucide-react";
+import { CheckCircle2, XCircle, MinusCircle, RotateCcw, AlertTriangle } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 import { useResults } from "@/hooks/useSupabaseData";
 import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
@@ -91,10 +91,6 @@ const StudentResult = () => {
             ))}
           </div>
         )}
-        {/* Wrong answers bank link */}
-        <Link to="/wrong-answers" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-destructive hover:underline">
-          <BookX size={18} /> ভুল উত্তর ব্যাংক দেখুন →
-        </Link>
       </div>
     );
   }
@@ -141,14 +137,6 @@ const StudentResult = () => {
             );
           })}
         </div>
-        {!isSkipped && (
-          <p className="text-sm text-muted-foreground mb-1">
-            তোমার উত্তর: <span className={isCorrect ? "text-success font-medium" : "text-destructive font-medium"}>{userAns}</span>
-          </p>
-        )}
-        <p className="text-sm text-muted-foreground">
-          সঠিক উত্তর: <span className="text-success font-medium">{correctAnswer}</span>
-        </p>
         {q.explanation && <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mt-2">💡 <strong>ব্যাখ্যা:</strong> {q.explanation}</div>}
       </div>
     );
@@ -262,10 +250,6 @@ const StudentResult = () => {
         <Link to="/exams" className="flex-1 inline-flex items-center justify-center text-sm text-center font-semibold rounded-xl px-4 py-3 glass hover:bg-muted/80 transition-all">অন্য পরীক্ষা</Link>
       </div>
 
-      {/* Wrong answers bank link */}
-      <Link to="/wrong-answers" className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-all">
-        <BookX size={16} /> ভুল উত্তর ব্যাংক দেখুন
-      </Link>
     </div>
   );
 };
