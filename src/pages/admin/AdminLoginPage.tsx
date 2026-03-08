@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { store } from "@/lib/store";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const AdminLogin = () => {
+const AdminLoginPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -20,10 +20,16 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="pt-24 pb-8 container max-w-sm min-h-screen flex items-center justify-center">
-      <div className="glass-card-static p-8 w-full">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-accent/20">
+      <div className="glass-card-static p-8 w-full max-w-sm">
         <div className="text-center mb-6">
-          <Lock className="mx-auto mb-3 text-primary" size={32} />
+          <Link to="/" className="inline-flex items-center gap-2 text-2xl font-bold mb-4">
+            <span>🎯</span>
+            <span className="gradient-text">Target</span>
+          </Link>
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+            <Lock className="text-primary" size={24} />
+          </div>
           <h1 className="text-xl font-bold">Admin Login</h1>
           <p className="text-xs text-muted-foreground mt-1">ডেমো পাসওয়ার্ড: admin123</p>
         </div>
@@ -35,16 +41,14 @@ const AdminLogin = () => {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full glass-strong rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
-          <button
-            type="submit"
-            className="w-full py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
-          >
+          <button type="submit" className="w-full py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
             লগইন
           </button>
         </form>
+        <Link to="/" className="block text-center text-xs text-muted-foreground mt-4 hover:text-foreground">← হোমপেজে ফিরে যান</Link>
       </div>
     </div>
   );
 };
 
-export default AdminLogin;
+export default AdminLoginPage;
