@@ -9,7 +9,7 @@ const StudentDashboard = () => {
   const recentResults = results.slice(0, 5);
 
   const avgScore = results.length > 0
-    ? Math.round(results.reduce((sum, r) => sum + r.score, 0) / results.length)
+    ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / results.length)
     : 0;
 
   return (
