@@ -313,6 +313,10 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
     const { error } = await supabase.from("site_settings").insert(row);
     if (error) throw error;
   }
+  // Sync to localStorage for initTheme on next page load
+  try {
+    localStorage.setItem("target_site_settings", JSON.stringify(settings));
+  } catch {}
 }
 
 // ============ SUBJECTS ============
