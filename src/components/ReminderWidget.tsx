@@ -36,14 +36,14 @@ const ReminderWidget = () => {
   if (visible.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2 max-w-[280px]">
+    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-1.5 max-w-[220px] md:max-w-[280px]">
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-primary text-primary-foreground text-xs font-medium shadow-lg hover:shadow-xl transition-all"
+        className="flex items-center gap-1 px-2.5 py-1.5 md:px-3 md:py-2 rounded-full bg-primary text-primary-foreground text-[10px] md:text-xs font-medium shadow-lg hover:shadow-xl transition-all"
       >
-        <Bell size={14} />
+        <Bell size={12} className="md:hidden" /><Bell size={14} className="hidden md:block" />
         {visible.length} রিমাইন্ডার
-        {collapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        {collapsed ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
       </button>
 
       {!collapsed && (
@@ -52,13 +52,13 @@ const ReminderWidget = () => {
             const timeLeft = getTimeLeft(r.targetDate);
             if (!timeLeft) return null;
             return (
-              <div key={r.id} className="rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-lg overflow-hidden">
+              <div key={r.id} className="rounded-lg md:rounded-xl border border-border bg-background/95 backdrop-blur-md shadow-lg overflow-hidden">
                 <div className="h-1" style={{ backgroundColor: r.color || "hsl(var(--primary))" }} />
-                <div className="p-3">
+                <div className="p-2 md:p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-foreground truncate">{r.title}</p>
-                      {r.description && <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">{r.description}</p>}
+                      <p className="text-[10px] md:text-xs font-bold text-foreground truncate">{r.title}</p>
+                      {r.description && <p className="text-[9px] md:text-[10px] text-muted-foreground mt-0.5 line-clamp-1 md:line-clamp-2">{r.description}</p>}
                     </div>
                     <button onClick={() => setDismissed((prev) => new Set(prev).add(r.id))} className="p-1 rounded-lg hover:bg-muted transition-colors flex-shrink-0">
                       <X size={12} className="text-muted-foreground" />
