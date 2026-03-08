@@ -12,7 +12,7 @@ const Index = () => {
   const results = store.getResults();
   const featured = exams.filter((e) => e.featured);
   const [search, setSearch] = useState("");
-  const recentResults = results.slice(0, 5);
+  const recentResults = results.slice(0, 3);
 
   const avgScore = results.length > 0
     ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / results.length)
