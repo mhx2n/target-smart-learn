@@ -29,11 +29,16 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 to-background" />
         <div className="container relative z-10 text-center max-w-2xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 animate-fade-in">
-            <span className="gradient-text">Target</span> 🎯
+            <span className="gradient-text">{settings.brandName}</span> {settings.brandEmoji}
           </h1>
           <p className="text-lg text-muted-foreground mb-6 animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            সীমাহীন অনুশীলন, নিখুঁত প্রস্তুতি
+            {settings.heroTagline}
           </p>
+          {settings.heroSubtitle && (
+            <p className="text-sm text-muted-foreground/80 mb-4 animate-fade-in" style={{ animationDelay: "0.15s" }}>
+              {settings.heroSubtitle}
+            </p>
+          )}
 
           {/* Search */}
           <div className="relative max-w-md mx-auto mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
