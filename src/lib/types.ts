@@ -17,6 +17,7 @@ export interface Exam {
   difficulty: "easy" | "medium" | "hard";
   questionCount: number;
   duration: number; // minutes
+  negativeMarking: number; // e.g. 0, 0.25, 0.5, 1
   questions: Question[];
   published: boolean;
   featured: boolean;
@@ -38,7 +39,10 @@ export interface ExamResult {
   correct: number;
   wrong: number;
   skipped: number;
-  score: number;
+  negativeMarks: number;
+  finalScore: number;
+  maxScore: number;
+  percentage: number;
   answers: Record<string, string>;
   timestamp: string;
 }
