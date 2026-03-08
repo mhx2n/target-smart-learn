@@ -43,7 +43,7 @@ const Index = () => {
               className="w-full rounded-2xl border border-border/60 bg-background/90 backdrop-blur-md pl-11 pr-10 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-sm" />
             {search && search.length > 0 && (
               <button onClick={() => setSearch("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors z-10">
-                <X size={16} />
+                <XIcon size={16} />
               </button>
             )}
             {search && (
