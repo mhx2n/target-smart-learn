@@ -1,19 +1,36 @@
 import { useState } from "react";
 import { store } from "@/lib/store";
 import { Section } from "@/lib/types";
-import { Plus, Trash2, GripVertical, Pencil, X, Check } from "lucide-react";
+import { Plus, Trash2, GripVertical, Pencil, X, Check, ImagePlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { compressImage } from "@/lib/imageUtils";
 
 const AdminSections = () => {
   const [sections, setSections] = useState<Section[]>(store.getSections());
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newCaption, setNewCaption] = useState("");
+  const [newImage, setNewImage] = useState<string | undefined>();
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
+  const [editCaption, setEditCaption] = useState("");
+  const [editImage, setEditImage] = useState<string | undefined>();
   const { toast } = useToast();
 
   const exams = store.getExams();
+
+  const handleImageUpload = async (
+    file: File,
+    setter: (v: string | undefined) => void
+  ) => {
+    try {
+      const compressed = await compressImage(file, 800, 400, 0.7);
+      setter(compressed);
+    } catch {
+      toast({ title: "ছবি আপলোড ব্যর্থ", variant: "destructive" });
+    }
+  };
 
   const addSection = () => {
     if (!newName.trim()) return;
@@ -21,6 +38,8 @@ const AdminSections = () => {
       id: `sec-${Date.now()}`,
       name: newName.trim(),
       description: newDesc.trim(),
+      caption: newCaption.trim() || undefined,
+      image: newImage,
       order: sections.length,
       createdAt: new Date().toISOString().split("T")[0],
     };
@@ -29,6 +48,8 @@ const AdminSections = () => {
     store.setSections(updated);
     setNewName("");
     setNewDesc("");
+    setNewCaption("");
+    setNewImage(undefined);
     toast({ title: "সেকশন যোগ করা হয়েছে" });
   };
 
@@ -36,7 +57,6 @@ const AdminSections = () => {
     const updated = sections.filter((s) => s.id !== id);
     setSections(updated);
     store.setSections(updated);
-    // Remove sectionId from exams in this section
     const updatedExams = exams.map((e) => e.sectionId === id ? { ...e, sectionId: undefined } : e);
     store.setExams(updatedExams);
     toast({ title: "সেকশন মুছে ফেলা হয়েছে" });
@@ -46,12 +66,16 @@ const AdminSections = () => {
     setEditId(s.id);
     setEditName(s.name);
     setEditDesc(s.description);
+    setEditCaption(s.caption || "");
+    setEditImage(s.image);
   };
 
   const saveEdit = () => {
     if (!editId || !editName.trim()) return;
     const updated = sections.map((s) =>
-      s.id === editId ? { ...s, name: editName.trim(), description: editDesc.trim() } : s
+      s.id === editId
+        ? { ...s, name: editName.trim(), description: editDesc.trim(), caption: editCaption.trim() || undefined, image: editImage }
+        : s
     );
     setSections(updated);
     store.setSections(updated);
@@ -63,7 +87,7 @@ const AdminSections = () => {
     <div className="animate-fade-in">
       <h1 className="text-xl font-bold mb-5">📂 সেকশন ব্যবস্থাপনা</h1>
       <p className="text-sm text-muted-foreground mb-6">
-        সেকশন তৈরি করুন (যেমন: ঢাকা বিশ্ববিদ্যালয়, BCS প্রস্তুতি) এবং পরীক্ষাগুলো সেকশনে যুক্ত করুন।
+        সেকশন তৈরি করুন, ছবি ও ক্যাপশন যোগ করুন। স্টুডেন্টরা সেকশনে ক্লিক করলে পরীক্ষাগুলো পপাপে দেখবে।
       </p>
 
       {/* Add new section */}
@@ -84,6 +108,42 @@ const AdminSections = () => {
             onChange={(e) => setNewDesc(e.target.value)}
             className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
+          <input
+            type="text"
+            placeholder="✨ স্টাইলিশ ক্যাপশন (ঐচ্ছিক)"
+            value={newCaption}
+            onChange={(e) => setNewCaption(e.target.value)}
+            className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+
+          {/* Image upload */}
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-border hover:bg-muted cursor-pointer transition-colors">
+              <ImagePlus size={16} className="text-primary" />
+              ছবি যোগ করুন
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file, setNewImage);
+                }}
+              />
+            </label>
+            {newImage && (
+              <div className="relative">
+                <img src={newImage} alt="preview" className="h-16 w-24 object-cover rounded-lg" />
+                <button
+                  onClick={() => setNewImage(undefined)}
+                  className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={addSection}
             disabled={!newName.trim()}
@@ -115,17 +175,58 @@ const AdminSections = () => {
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
                           className="w-full glass-strong rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          placeholder="সেকশনের নাম"
                         />
                         <input
                           value={editDesc}
                           onChange={(e) => setEditDesc(e.target.value)}
                           className="w-full glass-strong rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          placeholder="বর্ণনা"
                         />
+                        <input
+                          value={editCaption}
+                          onChange={(e) => setEditCaption(e.target.value)}
+                          className="w-full glass-strong rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          placeholder="✨ স্টাইলিশ ক্যাপশন"
+                        />
+                        <div className="flex items-center gap-3">
+                          <label className="inline-flex items-center gap-1 text-xs text-primary hover:underline cursor-pointer">
+                            <ImagePlus size={14} /> ছবি পরিবর্তন
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageUpload(file, setEditImage);
+                              }}
+                            />
+                          </label>
+                          {editImage && (
+                            <div className="relative">
+                              <img src={editImage} alt="preview" className="h-12 w-20 object-cover rounded-lg" />
+                              <button
+                                onClick={() => setEditImage(undefined)}
+                                className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                              >
+                                <X size={10} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <>
-                        <h3 className="font-semibold text-sm">{s.name}</h3>
-                        {s.description && <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>}
+                        <div className="flex items-start gap-3">
+                          {s.image && (
+                            <img src={s.image} alt={s.name} className="h-14 w-20 object-cover rounded-lg flex-shrink-0" />
+                          )}
+                          <div>
+                            <h3 className="font-semibold text-sm">{s.name}</h3>
+                            {s.caption && <p className="text-xs text-primary/70 italic mt-0.5">{s.caption}</p>}
+                            {s.description && <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>}
+                          </div>
+                        </div>
                       </>
                     )}
                     <p className="text-xs text-muted-foreground mt-1">

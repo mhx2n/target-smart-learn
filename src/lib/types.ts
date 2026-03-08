@@ -14,8 +14,22 @@ export interface Section {
   id: string;
   name: string;
   description: string;
+  image?: string; // base64 data URL
+  caption?: string;
   order: number;
   createdAt: string;
+}
+
+export interface SiteSettings {
+  aboutTitle: string;
+  aboutContent: string; // HTML content
+  featuresTitle: string;
+  featuresContent: string; // HTML content
+  contactTitle: string;
+  contactContent: string; // HTML content
+  footerDescription: string;
+  footerLinks: { label: string; url: string }[];
+  socialLinks: { label: string; url: string }[];
 }
 
 export interface Exam {

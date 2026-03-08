@@ -1,0 +1,240 @@
+import { useState } from "react";
+import { store } from "@/lib/store";
+import { SiteSettings } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+import { Save, Plus, Trash2, Bold, Italic, Link as LinkIcon, List, Type } from "lucide-react";
+
+const RichEditor = ({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) => {
+  const execCmd = (cmd: string, val?: string) => {
+    document.execCommand(cmd, false, val);
+  };
+
+  const insertLink = () => {
+    const url = prompt("লিঙ্ক URL দিন:");
+    if (url) execCmd("createLink", url);
+  };
+
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-semibold">{label}</label>
+      <div className="border border-border rounded-xl overflow-hidden">
+        <div className="flex items-center gap-1 p-2 border-b border-border bg-muted/30 flex-wrap">
+          <button type="button" onClick={() => execCmd("bold")} className="p-1.5 rounded hover:bg-muted transition-colors" title="Bold">
+            <Bold size={14} />
+          </button>
+          <button type="button" onClick={() => execCmd("italic")} className="p-1.5 rounded hover:bg-muted transition-colors" title="Italic">
+            <Italic size={14} />
+          </button>
+          <button type="button" onClick={insertLink} className="p-1.5 rounded hover:bg-muted transition-colors" title="Link">
+            <LinkIcon size={14} />
+          </button>
+          <button type="button" onClick={() => execCmd("insertUnorderedList")} className="p-1.5 rounded hover:bg-muted transition-colors" title="List">
+            <List size={14} />
+          </button>
+          <select
+            onChange={(e) => {
+              if (e.target.value) execCmd("fontSize", e.target.value);
+            }}
+            className="text-xs bg-transparent border border-border rounded px-1 py-1"
+            defaultValue=""
+          >
+            <option value="" disabled>সাইজ</option>
+            <option value="1">ছোট</option>
+            <option value="3">স্বাভাবিক</option>
+            <option value="5">বড়</option>
+            <option value="7">অনেক বড়</option>
+          </select>
+        </div>
+        <div
+          contentEditable
+          className="p-3 min-h-[100px] text-sm focus:outline-none prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: value }}
+          onBlur={(e) => onChange(e.currentTarget.innerHTML)}
+        />
+      </div>
+    </div>
+  );
+};
+
+const AdminSiteSettings = () => {
+  const [settings, setSettings] = useState<SiteSettings>(store.getSiteSettings());
+  const { toast } = useToast();
+
+  const update = (key: keyof SiteSettings, value: any) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const save = () => {
+    store.setSiteSettings(settings);
+    toast({ title: "সেটিংস সেভ হয়েছে ✅" });
+  };
+
+  const addFooterLink = () => {
+    update("footerLinks", [...settings.footerLinks, { label: "", url: "" }]);
+  };
+
+  const removeFooterLink = (i: number) => {
+    update("footerLinks", settings.footerLinks.filter((_, idx) => idx !== i));
+  };
+
+  const updateFooterLink = (i: number, key: "label" | "url", val: string) => {
+    const updated = [...settings.footerLinks];
+    updated[i] = { ...updated[i], [key]: val };
+    update("footerLinks", updated);
+  };
+
+  const addSocialLink = () => {
+    update("socialLinks", [...settings.socialLinks, { label: "", url: "" }]);
+  };
+
+  const removeSocialLink = (i: number) => {
+    update("socialLinks", settings.socialLinks.filter((_, idx) => idx !== i));
+  };
+
+  const updateSocialLink = (i: number, key: "label" | "url", val: string) => {
+    const updated = [...settings.socialLinks];
+    updated[i] = { ...updated[i], [key]: val };
+    update("socialLinks", updated);
+  };
+
+  return (
+    <div className="animate-fade-in max-w-2xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-bold">🌐 সাইট কাস্টমাইজ</h1>
+        <button
+          onClick={save}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+        >
+          <Save size={16} /> সেভ করুন
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        {/* About Section */}
+        <div className="glass-card-static p-5 space-y-4">
+          <h2 className="text-sm font-bold">📖 আমাদের সম্পর্কে পেজ</h2>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">শিরোনাম</label>
+            <input
+              value={settings.aboutTitle}
+              onChange={(e) => update("aboutTitle", e.target.value)}
+              className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+
+          <RichEditor label="বিবরণ" value={settings.aboutContent} onChange={(v) => update("aboutContent", v)} />
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">বৈশিষ্ট্য শিরোনাম</label>
+            <input
+              value={settings.featuresTitle}
+              onChange={(e) => update("featuresTitle", e.target.value)}
+              className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+
+          <RichEditor label="বৈশিষ্ট্য তালিকা" value={settings.featuresContent} onChange={(v) => update("featuresContent", v)} />
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">যোগাযোগ শিরোনাম</label>
+            <input
+              value={settings.contactTitle}
+              onChange={(e) => update("contactTitle", e.target.value)}
+              className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+
+          <RichEditor label="যোগাযোগ তথ্য" value={settings.contactContent} onChange={(v) => update("contactContent", v)} />
+        </div>
+
+        {/* Footer */}
+        <div className="glass-card-static p-5 space-y-4">
+          <h2 className="text-sm font-bold">📋 ফুটার সেটিংস</h2>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">ফুটার বিবরণ</label>
+            <input
+              value={settings.footerDescription}
+              onChange={(e) => update("footerDescription", e.target.value)}
+              className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+
+          {/* Footer Links */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">দ্রুত লিঙ্কসমূহ</label>
+            {settings.footerLinks.map((link, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input
+                  placeholder="লেবেল"
+                  value={link.label}
+                  onChange={(e) => updateFooterLink(i, "label", e.target.value)}
+                  className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none"
+                />
+                <input
+                  placeholder="URL (/exams)"
+                  value={link.url}
+                  onChange={(e) => updateFooterLink(i, "url", e.target.value)}
+                  className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none"
+                />
+                <button onClick={() => removeFooterLink(i)} className="p-2 hover:bg-destructive/10 rounded-lg">
+                  <Trash2 size={14} className="text-destructive" />
+                </button>
+              </div>
+            ))}
+            <button onClick={addFooterLink} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+              <Plus size={14} /> লিঙ্ক যোগ করুন
+            </button>
+          </div>
+
+          {/* Social Links */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">সোশ্যাল লিঙ্কসমূহ</label>
+            {settings.socialLinks.map((link, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input
+                  placeholder="লেবেল (Telegram)"
+                  value={link.label}
+                  onChange={(e) => updateSocialLink(i, "label", e.target.value)}
+                  className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none"
+                />
+                <input
+                  placeholder="URL"
+                  value={link.url}
+                  onChange={(e) => updateSocialLink(i, "url", e.target.value)}
+                  className="flex-1 glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none"
+                />
+                <button onClick={() => removeSocialLink(i)} className="p-2 hover:bg-destructive/10 rounded-lg">
+                  <Trash2 size={14} className="text-destructive" />
+                </button>
+              </div>
+            ))}
+            <button onClick={addSocialLink} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+              <Plus size={14} /> সোশ্যাল লিঙ্ক যোগ করুন
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 text-center">
+        <button
+          onClick={save}
+          className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+        >
+          <Save size={16} /> সব সেভ করুন
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default AdminSiteSettings;

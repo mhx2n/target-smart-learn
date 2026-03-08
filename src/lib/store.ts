@@ -1,4 +1,4 @@
-import { Exam, ExamResult, Notice, Section } from "./types";
+import { Exam, ExamResult, Notice, Section, SiteSettings } from "./types";
 import { demoExams, demoNotices } from "./data";
 
 const EXAMS_KEY = "target_exams";
@@ -6,6 +6,26 @@ const NOTICES_KEY = "target_notices";
 const RESULTS_KEY = "target_results";
 const ADMIN_KEY = "target_admin";
 const SECTIONS_KEY = "target_sections";
+const SITE_SETTINGS_KEY = "target_site_settings";
+
+const defaultSiteSettings: SiteSettings = {
+  aboutTitle: "Target 🎯 কী?",
+  aboutContent: "<p>Target 🎯 একটি আধুনিক শিক্ষামূলক পরীক্ষা অনুশীলন প্ল্যাটফর্ম। এখানে শিক্ষার্থীরা বিভিন্ন বিষয়ের MCQ পরীক্ষায় সীমাহীনভাবে অংশগ্রহণ করতে পারবেন। প্রতিটি পরীক্ষায় প্রশ্ন ও অপশন এলোমেলোভাবে সাজানো হয়, যা প্রকৃত পরীক্ষার অভিজ্ঞতা প্রদান করে।</p>",
+  featuresTitle: "বৈশিষ্ট্যসমূহ",
+  featuresContent: "<ul><li>সীমাহীন পরীক্ষা অনুশীলন</li><li>স্বয়ংক্রিয় প্রশ্ন ও অপশন র‍্যান্ডমাইজেশন</li><li>বিস্তারিত ফলাফল ও ব্যাখ্যা</li><li>বিষয়ভিত্তিক পরীক্ষা ব্রাউজিং</li><li>মোবাইল ফ্রেন্ডলি ডিজাইন</li></ul>",
+  contactTitle: "যোগাযোগ",
+  contactContent: "<p>আমাদের সাথে Telegram এ যোগাযোগ করুন।</p>",
+  footerDescription: "আপনার পরীক্ষার প্রস্তুতি এখন আরও সহজ। অনুশীলন করুন, শিখুন, সফল হোন।",
+  footerLinks: [
+    { label: "পরীক্ষা সমূহ", url: "/exams" },
+    { label: "ফলাফল", url: "/results" },
+    { label: "নোটিস বোর্ড", url: "/notices" },
+    { label: "সম্পর্কে", url: "/about" },
+  ],
+  socialLinks: [
+    { label: "Telegram", url: "https://t.me/FX_Ur_Target" },
+  ],
+};
 
 function load<T>(key: string, fallback: T): T {
   try {
@@ -36,6 +56,9 @@ export const store = {
 
   getSections: (): Section[] => load(SECTIONS_KEY, []),
   setSections: (sections: Section[]) => save(SECTIONS_KEY, sections),
+
+  getSiteSettings: (): SiteSettings => load(SITE_SETTINGS_KEY, defaultSiteSettings),
+  setSiteSettings: (settings: SiteSettings) => save(SITE_SETTINGS_KEY, settings),
 
   isAdmin: (): boolean => load(ADMIN_KEY, false),
   setAdmin: (val: boolean) => save(ADMIN_KEY, val),
