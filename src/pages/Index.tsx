@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock, X } from "lucide-react";
+import { Search, ArrowRight, BookOpen, Award, Bell, BarChart3, Clock, X as XIcon } from "lucide-react";
 import { store } from "@/lib/store";
 import ExamCard from "@/components/ExamCard";
 import heroBg from "@/assets/hero-bg.jpg";
