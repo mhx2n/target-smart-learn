@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { store } from "@/lib/store";
+import { useAuth, signOut } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
@@ -24,16 +24,47 @@ const navItems = [
 const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, isAdmin, loading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    if (!store.isAdmin()) navigate("/secure-admin-login");
-  }, []);
+    if (!loading && !user) {
+      navigate("/secure-admin-login");
+    }
+  }, [loading, user, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">লোড হচ্ছে...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="glass-card-static p-8 text-center max-w-sm">
+          <p className="text-4xl mb-4">🚫</p>
+          <h1 className="text-xl font-bold mb-2">অ্যাক্সেস নেই</h1>
+          <p className="text-sm text-muted-foreground mb-4">আপনার অ্যাডমিন অনুমতি নেই। প্রথম রেজিস্ট্রেশনকারী স্বয়ংক্রিয়ভাবে অ্যাডমিন হন।</p>
+          <button onClick={() => { signOut(); navigate("/secure-admin-login"); }} className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+            লগআউট
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const isActive = (path: string) => location.pathname === path;
 
-  const logout = () => {
-    store.setAdmin(false);
+  const logout = async () => {
+    await signOut();
     navigate("/secure-admin-login");
   };
 
@@ -52,6 +83,7 @@ const AdminLayout = () => {
             </Link>
           </div>
           <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground hidden sm:inline">{user.email}</span>
             <ThemeToggle />
             <button onClick={logout} className="flex items-center gap-1.5 text-xs text-destructive hover:underline font-medium">
               <LogOut size={14} /> লগআউট
@@ -61,48 +93,32 @@ const AdminLayout = () => {
       </header>
 
       <div className="flex flex-1 pt-14">
-        {/* Sidebar - desktop */}
         <aside className="hidden md:flex flex-col w-56 glass-strong border-r border-border/50 p-4 gap-1 fixed top-14 bottom-0 overflow-y-auto">
           {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
+            <Link key={item.to} to={item.to}
               className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                isActive(item.to)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <item.icon size={16} />
-              {item.label}
+                isActive(item.to) ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}>
+              <item.icon size={16} />{item.label}
             </Link>
           ))}
         </aside>
 
-        {/* Mobile nav overlay */}
         {mobileOpen && (
           <div className="md:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)}>
             <aside className="w-64 h-full glass-strong p-4 pt-20 space-y-1 animate-fade-in" onClick={(e) => e.stopPropagation()}>
               {navItems.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMobileOpen(false)}
+                <Link key={item.to} to={item.to} onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    isActive(item.to)
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <item.icon size={16} />
-                  {item.label}
+                    isActive(item.to) ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}>
+                  <item.icon size={16} />{item.label}
                 </Link>
               ))}
             </aside>
           </div>
         )}
 
-        {/* Main content */}
         <main className="flex-1 md:ml-56 p-4 md:p-6">
           <Outlet />
         </main>
