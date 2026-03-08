@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ScrollToTop from "@/components/ScrollToTop";
 import { SiteSettingsProvider } from "@/contexts/SiteSettingsContext";
+import { AuthProvider } from "@/hooks/useAuth";
 
 // Layouts
 import PublicLayout from "@/layouts/PublicLayout";
