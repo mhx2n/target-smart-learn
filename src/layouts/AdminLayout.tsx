@@ -15,6 +15,7 @@ const navItems = [
   { to: "/admin/notices", label: "নোটিস", icon: Bell },
   { to: "/admin/subjects", label: "বিষয়সমূহ", icon: BookOpen },
   { to: "/admin/theme", label: "থিম কাস্টমাইজ", icon: Palette },
+  { to: "/admin/reminders", label: "রিমাইন্ডার", icon: Clock },
   { to: "/admin/site-settings", label: "সাইট কাস্টমাইজ", icon: Globe },
   { to: "/admin/settings", label: "সেটিংস", icon: Settings },
 ];
