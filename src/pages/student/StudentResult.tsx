@@ -166,18 +166,26 @@ const StudentResult = () => {
                       <p className="text-sm font-semibold"><span className="text-muted-foreground mr-2">{i + 1}.</span>{q.question}</p>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ml-2 ${statusBadge.cls}`}>{statusBadge.text}</span>
                     </div>
+                    {q.questionImage && (
+                      <img src={q.questionImage} alt="" className="max-w-full max-h-48 rounded-lg border border-border mb-3 object-contain" />
+                    )}
                     <div className="space-y-1.5 mb-3">
-                      {q.options.map((opt) => {
+                      {q.options.map((opt, oi) => {
                         const isAnswer = opt === correctAnswer;
                         const isUser = opt === userAns;
                         let cls = "border-border";
                         if (isAnswer) cls = "border-success bg-success/10";
                         else if (isUser && !isCorrect) cls = "border-destructive bg-destructive/10";
                         return (
-                          <div key={opt} className={`px-3 py-2 rounded-lg text-xs border ${cls} flex items-center gap-2`}>
-                            {isAnswer && <CheckCircle2 size={14} className="text-success flex-shrink-0" />}
-                            {isUser && !isCorrect && <XCircle size={14} className="text-destructive flex-shrink-0" />}
-                            {opt}
+                          <div key={opt} className={`px-3 py-2 rounded-lg text-xs border ${cls}`}>
+                            <div className="flex items-center gap-2">
+                              {isAnswer && <CheckCircle2 size={14} className="text-success flex-shrink-0" />}
+                              {isUser && !isCorrect && <XCircle size={14} className="text-destructive flex-shrink-0" />}
+                              {opt}
+                            </div>
+                            {q.optionImages?.[oi] && (
+                              <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-20 rounded border border-border object-contain" />
+                            )}
                           </div>
                         );
                       })}

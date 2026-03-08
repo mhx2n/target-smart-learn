@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { store } from "@/lib/store";
 import { Exam } from "@/lib/types";
-import { Eye, EyeOff, Trash2, FolderOpen } from "lucide-react";
+import { Eye, EyeOff, Trash2, FolderOpen, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import QuestionEditor from "@/components/QuestionEditor";
 
 const AdminExams = () => {
   const [exams, setExams] = useState<Exam[]>(store.getExams());
   const sections = store.getSections();
   const { toast } = useToast();
+  const [editingExam, setEditingExam] = useState<Exam | null>(null);
 
-  // Sort newest first
   const sorted = [...exams].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const togglePublish = (examId: string) => {
@@ -32,6 +33,11 @@ const AdminExams = () => {
     setExams(updated);
     store.setExams(updated);
     toast({ title: "সেকশন আপডেট হয়েছে" });
+  };
+
+  const handleSaved = (updatedExam: Exam) => {
+    setExams((prev) => prev.map((e) => (e.id === updatedExam.id ? updatedExam : e)));
+    setEditingExam(null);
   };
 
   return (
@@ -57,6 +63,9 @@ const AdminExams = () => {
                   <span className={`text-xs px-2 py-0.5 rounded-full ${e.published ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                     {e.published ? "প্রকাশিত" : "অপ্রকাশিত"}
                   </span>
+                  <button onClick={() => setEditingExam(e)} className="p-2 rounded-lg hover:bg-primary/10 transition-colors" title="প্রশ্ন সম্পাদনা">
+                    <Pencil size={16} className="text-primary" />
+                  </button>
                   <button onClick={() => togglePublish(e.id)} className="p-2 rounded-lg hover:bg-muted transition-colors">
                     {e.published ? <Eye size={16} className="text-success" /> : <EyeOff size={16} className="text-muted-foreground" />}
                   </button>
@@ -64,7 +73,6 @@ const AdminExams = () => {
                     <Trash2 size={16} className="text-destructive" />
                   </button>
                 </div>
-                {/* Section assign */}
                 {sections.length > 0 && (
                   <div className="mt-2 flex items-center gap-2">
                     <FolderOpen size={14} className="text-muted-foreground" />
@@ -84,6 +92,10 @@ const AdminExams = () => {
             );
           })}
         </div>
+      )}
+
+      {editingExam && (
+        <QuestionEditor exam={editingExam} onClose={() => setEditingExam(null)} onSaved={handleSaved} />
       )}
     </div>
   );
