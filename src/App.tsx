@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ScrollToTop from "@/components/ScrollToTop";
 import { SiteSettingsProvider } from "@/contexts/SiteSettingsContext";
+import { AuthProvider } from "@/hooks/useAuth";
 
 // Layouts
 import PublicLayout from "@/layouts/PublicLayout";
@@ -41,6 +42,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <AuthProvider>
     <SiteSettingsProvider>
       <TooltipProvider>
         <Toaster />
@@ -83,6 +85,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </SiteSettingsProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
