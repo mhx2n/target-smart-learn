@@ -148,6 +148,27 @@ export type Database = {
         }
         Relationships: []
       }
+      page_visits: {
+        Row: {
+          created_at: string
+          id: string
+          page_path: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_path?: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_path?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
       questions: {
         Row: {
           answer: string
