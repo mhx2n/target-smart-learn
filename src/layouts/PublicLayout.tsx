@@ -20,6 +20,7 @@ const PublicLayout = () => {
       <EventBannerDisplay />
       <Outlet />
       <ReminderWidget />
+      <TelegramFloatingButton />
       <Footer />
     </>
   );
