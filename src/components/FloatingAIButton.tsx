@@ -19,11 +19,11 @@ export function FloatingAIButton() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-2xl hover:shadow-primary/40 hover:scale-110 transition-all duration-300 flex items-center justify-center group"
+        className="fixed bottom-20 left-4 z-50 w-12 h-12 rounded-full bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-xl hover:shadow-primary/40 hover:scale-105 transition-all duration-300 flex items-center justify-center group"
         title="AI শিক্ষা সহায়ক"
       >
-        <MessageCircle size={24} className="group-hover:scale-110 transition-transform" />
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full animate-pulse border-2 border-background" />
+        <MessageCircle size={18} className="group-hover:scale-110 transition-transform" />
+        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-success rounded-full animate-pulse border border-background" />
       </button>
 
       <GeneralAIChatModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
