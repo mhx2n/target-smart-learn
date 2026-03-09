@@ -155,11 +155,20 @@ export function QuestionChatModal({ isOpen, onClose, questionContext }: Question
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Bot size={20} className="text-primary" />
-            প্রশ্ন সহায়তা
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
+        <DialogHeader className="border-b pb-4">
+          <DialogTitle className="flex items-center gap-3 text-xl">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center">
+              <Sparkles size={20} className="text-primary-foreground" />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                AI শিক্ষা সহায়ক
+              </span>
+              <span className="text-xs text-muted-foreground font-normal">
+                ২৪/৭ পড়াশোনার সাহায্য
+              </span>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
