@@ -1,6 +1,6 @@
 import { useLocation, Link } from "react-router-dom";
-import { ExamResult, Question } from "@/lib/types";
-import { CheckCircle2, XCircle, MinusCircle, RotateCcw, AlertTriangle } from "lucide-react";
+import { ExamResult, Question, SubjectBreakdown } from "@/lib/types";
+import { CheckCircle2, XCircle, MinusCircle, RotateCcw, AlertTriangle, BookOpen } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 import { useResults } from "@/hooks/useSupabaseData";
 import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
@@ -103,6 +103,9 @@ const StudentResult = () => {
   };
   const msg = getMessage();
 
+  const subjectBreakdown = result.subjectBreakdown || [];
+  const hasSubjectBreakdown = subjectBreakdown.length > 1;
+
   const tabData = activeTab === "wrong" ? wrongQs : activeTab === "correct" ? correctQs : skippedQs;
 
   const renderQuestion = (q: Question, i: number) => {
@@ -114,9 +117,14 @@ const StudentResult = () => {
 
     return (
       <div key={q.id} className="glass-card-static p-4">
-        <p className="text-base font-semibold mb-3">
-          <span className="text-muted-foreground mr-2">{i + 1}.</span>{q.question}
-        </p>
+        <div className="flex items-center gap-2 mb-2">
+          <p className="text-base font-semibold flex-1">
+            <span className="text-muted-foreground mr-2">{i + 1}.</span>{q.question}
+          </p>
+          {q.section && hasSubjectBreakdown && (
+            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full flex-shrink-0">{q.section}</span>
+          )}
+        </div>
         {q.questionImage && <img src={q.questionImage} alt="" className="max-w-full max-h-48 rounded-lg border border-border mb-3 object-contain" />}
         <div className="space-y-2 mb-3">
           {q.options.map((opt, oi) => {
@@ -175,6 +183,40 @@ const StudentResult = () => {
         </div>
       </div>
 
+      {/* Subject-wise breakdown */}
+      {hasSubjectBreakdown && (
+        <div className="glass-card-static p-5 mb-6">
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <BookOpen size={16} className="text-primary" /> বিষয়ভিত্তিক ফলাফল
+          </h3>
+          <div className="space-y-3">
+            {subjectBreakdown.map((sb) => (
+              <div key={sb.subject} className="bg-muted/50 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold">{sb.subject}</span>
+                  <span className={`text-sm font-bold ${sb.percentage >= 60 ? "text-success" : sb.percentage >= 40 ? "text-warning" : "text-destructive"}`}>
+                    {sb.percentage}%
+                  </span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2 mb-2">
+                  <div
+                    className={`h-2 rounded-full transition-all ${sb.percentage >= 60 ? "bg-success" : sb.percentage >= 40 ? "bg-warning" : "bg-destructive"}`}
+                    style={{ width: `${sb.percentage}%` }}
+                  />
+                </div>
+                <div className="flex gap-3 text-xs text-muted-foreground">
+                  <span>মোট: {sb.total}</span>
+                  <span className="text-success">সঠিক: {sb.correct}</span>
+                  <span className="text-destructive">ভুল: {sb.wrong}</span>
+                  <span>বাদ: {sb.skipped}</span>
+                  <span className="text-primary font-medium">স্কোর: {sb.score.toFixed(1)}/{sb.maxScore}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Score analysis */}
       <div className="glass-card-static p-5 mb-6">
         <h3 className="text-sm font-semibold mb-3">📊 স্কোর বিশ্লেষণ</h3>
@@ -185,12 +227,11 @@ const StudentResult = () => {
         </div>
       </div>
 
-      {/* Review section with tabs - MOVED UP */}
+      {/* Review section with tabs */}
       {questions && (
         <div className="mb-6">
           <h3 className="text-base font-bold mb-3">📖 উত্তর পর্যালোচনা</h3>
           
-          {/* 3-column tab buttons */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             <button
               onClick={() => setActiveTab("wrong")}
@@ -227,7 +268,6 @@ const StudentResult = () => {
             </button>
           </div>
 
-          {/* Tab content */}
           <div className="space-y-3 animate-fade-in">
             {tabData.length === 0 ? (
               <div className="glass-card-static p-8 text-center text-muted-foreground text-sm">
@@ -242,14 +282,13 @@ const StudentResult = () => {
         </div>
       )}
 
-      {/* Action buttons - MOVED DOWN */}
+      {/* Action buttons */}
       <div className="flex gap-3 mb-4">
-        <Link to={`/exams/${result.examId}/attempt`} className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+        <Link to={`/exams/${result.examId}`} className="flex-1 inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
           <RotateCcw size={16} /> আবার চেষ্টা করুন
         </Link>
         <Link to="/exams" className="flex-1 inline-flex items-center justify-center text-sm text-center font-semibold rounded-xl px-4 py-3 glass hover:bg-muted/80 transition-all">অন্য পরীক্ষা</Link>
       </div>
-
     </div>
   );
 };
