@@ -50,6 +50,7 @@ export const demoExams: Exam[] = [
     published: true,
     featured: true,
     createdAt: "2026-03-05",
+    mandatorySubjects: [],
   },
   {
     id: "exam-3",
