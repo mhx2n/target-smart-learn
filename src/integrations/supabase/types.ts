@@ -68,6 +68,7 @@ export type Database = {
           duration: number
           featured: boolean
           id: string
+          mandatory_subjects: Json
           negative_marking: number
           published: boolean
           question_count: number
@@ -84,6 +85,7 @@ export type Database = {
           duration?: number
           featured?: boolean
           id?: string
+          mandatory_subjects?: Json
           negative_marking?: number
           published?: boolean
           question_count?: number
@@ -100,6 +102,7 @@ export type Database = {
           duration?: number
           featured?: boolean
           id?: string
+          mandatory_subjects?: Json
           negative_marking?: number
           published?: boolean
           question_count?: number
