@@ -21,6 +21,7 @@ const PublicLayout = () => {
       <EventBannerDisplay />
       <Outlet />
       <ReminderWidget />
+      <FloatingAIButton />
       <TelegramFloatingButton />
       <Footer />
     </>
