@@ -97,7 +97,8 @@ export async function upsertExam(exam: Exam): Promise<void> {
     published: rest.published,
     featured: rest.featured,
     created_at: rest.createdAt,
-  });
+    mandatory_subjects: rest.mandatorySubjects || [],
+  } as any);
   if (error) throw error;
 
   // Replace all questions
