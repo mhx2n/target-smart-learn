@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useExams, useSections, useDeleteExam, useUpdateExamField } from "@/hooks/useSupabaseData";
+import { useExams, useSections, useDeleteExam, useUpdateExamField, useUpsertExam } from "@/hooks/useSupabaseData";
 import { Exam } from "@/lib/types";
-import { Eye, EyeOff, Trash2, FolderOpen, Pencil } from "lucide-react";
+import { Eye, EyeOff, Trash2, FolderOpen, Pencil, Lock, BookOpen, X, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QuestionEditor from "@/components/QuestionEditor";
 
@@ -10,8 +10,10 @@ const AdminExams = () => {
   const { data: sections = [] } = useSections();
   const deleteExamMut = useDeleteExam();
   const updateFieldMut = useUpdateExamField();
+  const upsertExam = useUpsertExam();
   const { toast } = useToast();
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
+  const [editingMandatory, setEditingMandatory] = useState<string | null>(null); // exam id being edited
 
   const sorted = [...exams].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -33,6 +35,22 @@ const AdminExams = () => {
     });
   };
 
+  const getExamSubjects = (exam: Exam) => {
+    return [...new Set(exam.questions.map((q) => q.section).filter(Boolean))];
+  };
+
+  const toggleMandatorySubject = (exam: Exam, subject: string) => {
+    const current = exam.mandatorySubjects || [];
+    const updated = current.includes(subject)
+      ? current.filter((s) => s !== subject)
+      : [...current, subject];
+    
+    const updatedExam = { ...exam, mandatorySubjects: updated };
+    upsertExam.mutate(updatedExam, {
+      onSuccess: () => toast({ title: "বাধ্যতামূলক বিষয় আপডেট হয়েছে" }),
+    });
+  };
+
   if (isLoading) {
     return <div className="animate-fade-in p-12 text-center text-muted-foreground">লোড হচ্ছে...</div>;
   }
@@ -47,6 +65,10 @@ const AdminExams = () => {
         <div className="space-y-3">
           {sorted.map((e) => {
             const section = sections.find((s) => s.id === e.sectionId);
+            const examSubjects = getExamSubjects(e);
+            const hasMultipleSubjects = examSubjects.length > 1;
+            const isEditingMandatory = editingMandatory === e.id;
+
             return (
               <div key={e.id} className="glass-card-static p-4">
                 <div className="flex items-center gap-3">
@@ -56,10 +78,28 @@ const AdminExams = () => {
                       {e.subject} • {e.questionCount} প্রশ্ন • {e.createdAt}
                       {section && <span className="text-primary"> • 📂 {section.name}</span>}
                     </p>
+                    {hasMultipleSubjects && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {examSubjects.map((s) => (
+                          <span key={s} className={`text-[10px] px-2 py-0.5 rounded-full ${
+                            (e.mandatorySubjects || []).includes(s) 
+                              ? "bg-primary/15 text-primary font-medium" 
+                              : "bg-muted text-muted-foreground"
+                          }`}>
+                            {(e.mandatorySubjects || []).includes(s) && "🔒 "}{s} ({e.questions.filter((q) => q.section === s).length})
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${e.published ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                     {e.published ? "প্রকাশিত" : "অপ্রকাশিত"}
                   </span>
+                  {hasMultipleSubjects && (
+                    <button onClick={() => setEditingMandatory(isEditingMandatory ? null : e.id)} className="p-2 rounded-lg hover:bg-accent/10 transition-colors" title="বাধ্যতামূলক বিষয়">
+                      <Lock size={16} className={isEditingMandatory ? "text-primary" : "text-muted-foreground"} />
+                    </button>
+                  )}
                   <button onClick={() => setEditingExam(e)} className="p-2 rounded-lg hover:bg-primary/10 transition-colors" title="প্রশ্ন সম্পাদনা">
                     <Pencil size={16} className="text-primary" />
                   </button>
@@ -70,6 +110,34 @@ const AdminExams = () => {
                     <Trash2 size={16} className="text-destructive" />
                   </button>
                 </div>
+
+                {/* Mandatory subject editor */}
+                {isEditingMandatory && hasMultipleSubjects && (
+                  <div className="mt-3 p-3 bg-accent/5 rounded-xl border border-accent/20">
+                    <p className="text-xs font-semibold mb-2">🔒 বাধ্যতামূলক বিষয় নির্বাচন করুন:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {examSubjects.map((s) => {
+                        const isMandatory = (e.mandatorySubjects || []).includes(s);
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => toggleMandatorySubject(e, s)}
+                            className={`inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full transition-all ${
+                              isMandatory
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            }`}
+                          >
+                            {isMandatory ? <Check size={12} /> : <X size={12} />}
+                            {s}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">বাধ্যতামূলক বিষয়গুলো স্টুডেন্টরা বাদ দিতে পারবে না</p>
+                  </div>
+                )}
+
                 {sections.length > 0 && (
                   <div className="mt-2 flex items-center gap-2">
                     <FolderOpen size={14} className="text-muted-foreground" />
