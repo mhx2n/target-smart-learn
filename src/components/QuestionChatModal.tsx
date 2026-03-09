@@ -2,8 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Bot, User, Loader2 } from "lucide-react";
+import { Send, Bot, User, Loader2, Sparkles } from "lucide-react";
 import { WrongAnswerEntry } from "@/lib/api";
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 
 interface Message {
   role: "user" | "assistant";
@@ -35,14 +39,22 @@ export function QuestionChatModal({ isOpen, onClose, questionContext }: Question
       setMessages([
         {
           role: "assistant",
-          content: `আসসালামু আলাইকুম! 👋 আমি এই প্রশ্নটি সম্পর্কে আপনাকে সাহায্য করতে এসেছি।
+          content: `🎓 **আসসালামু আলাইকুম!** আমি আপনার **শিক্ষা সহায়ক**।
 
-**প্রশ্ন:** ${questionContext.questionText}
+আমি এই প্রশ্নটি সম্পর্কে আপনাকে সাহায্য করতে এসেছি:
 
-✅ **সঠিক উত্তর:** ${questionContext.correctAnswer}
-❌ **আপনার উত্তর:** ${questionContext.userAnswer}
+---
 
-আপনি এই প্রশ্ন সম্পর্কে যেকোনো কিছু জিজ্ঞাসা করতে পারেন। আমি ব্যাখ্যা করে দেব!`
+**📝 প্রশ্ন:** ${questionContext.questionText}
+
+**✅ সঠিক উত্তর:** ${questionContext.correctAnswer}
+**❌ আপনার উত্তর:** ${questionContext.userAnswer}
+
+---
+
+আপনি এই প্রশ্ন সম্পর্কে যেকোনো কিছু জিজ্ঞাসা করতে পারেন। আমি **শুধুমাত্র পড়াশোনার বিষয়ে** সাহায্য করি। 📚
+
+কীভাবে সাহায্য করতে পারি? 🤔`
         }
       ]);
     }
@@ -143,45 +155,67 @@ export function QuestionChatModal({ isOpen, onClose, questionContext }: Question
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Bot size={20} className="text-primary" />
-            প্রশ্ন সহায়তা
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col bg-gradient-to-br from-background via-background to-muted/20">
+        <DialogHeader className="border-b pb-4">
+          <DialogTitle className="flex items-center gap-3 text-xl">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center">
+              <Sparkles size={20} className="text-primary-foreground" />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                AI শিক্ষা সহায়ক
+              </span>
+              <span className="text-xs text-muted-foreground font-normal">
+                ২৪/৭ পড়াশোনার সাহায্য
+              </span>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-4 py-4">
+        <div className="flex-1 overflow-y-auto space-y-6 py-6 px-2">
           {messages.map((message, index) => (
-            <div key={index} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`flex gap-2 max-w-[80%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  message.role === "user" ? "bg-primary" : "bg-muted"
+            <div key={index} className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`flex gap-3 max-w-[85%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ${
+                  message.role === "user" 
+                    ? "bg-gradient-to-r from-primary to-primary/80" 
+                    : "bg-gradient-to-r from-secondary to-secondary/80 border-2 border-primary/20"
                 }`}>
                   {message.role === "user" ? (
-                    <User size={16} className="text-primary-foreground" />
+                    <User size={18} className="text-primary-foreground" />
                   ) : (
-                    <Bot size={16} className="text-muted-foreground" />
+                    <Sparkles size={18} className="text-secondary-foreground" />
                   )}
                 </div>
-                <div className={`rounded-lg p-3 ${
+                <div className={`rounded-2xl p-4 shadow-sm border ${
                   message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}>
-                  <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground"
+                    : "bg-gradient-to-r from-card to-card/80 border-border/50"
+                } backdrop-blur-sm`}>
+                  <div className="text-sm leading-relaxed">
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      className="prose prose-sm max-w-none prose-headings:text-inherit prose-p:text-inherit prose-strong:text-inherit prose-em:text-inherit prose-code:text-inherit prose-pre:text-inherit prose-blockquote:text-inherit prose-ul:text-inherit prose-ol:text-inherit prose-li:text-inherit"
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
           {isLoading && (
-            <div className="flex gap-3 justify-start">
-              <div className="flex gap-2 max-w-[80%]">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-muted">
-                  <Bot size={16} className="text-muted-foreground" />
+            <div className="flex gap-4 justify-start">
+              <div className="flex gap-3 max-w-[85%]">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-r from-secondary to-secondary/80 border-2 border-primary/20 shadow-md">
+                  <Sparkles size={18} className="text-secondary-foreground" />
                 </div>
-                <div className="rounded-lg p-3 bg-muted">
-                  <Loader2 size={16} className="animate-spin" />
+                <div className="rounded-2xl p-4 bg-gradient-to-r from-card to-card/80 border border-border/50 backdrop-blur-sm shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">চিন্তা করছি...</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -189,16 +223,21 @@ export function QuestionChatModal({ isOpen, onClose, questionContext }: Question
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="flex gap-2 pt-4 border-t">
+        <div className="flex gap-3 pt-4 border-t bg-muted/20 rounded-t-xl px-4 py-4">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="আপনার প্রশ্ন লিখুন..."
+            placeholder="আপনার প্রশ্ন লিখুন... (শুধুমাত্র পড়াশোনার বিষয়ে)"
             onKeyPress={handleKeyPress}
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 bg-background border-border focus:border-primary transition-colors"
           />
-          <Button onClick={sendMessage} disabled={!input.trim() || isLoading} size="sm">
+          <Button 
+            onClick={sendMessage} 
+            disabled={!input.trim() || isLoading} 
+            size="sm"
+            className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all shadow-md"
+          >
             <Send size={16} />
           </Button>
         </div>

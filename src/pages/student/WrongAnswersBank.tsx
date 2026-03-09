@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchWrongAnswers, deleteWrongAnswersByExam, WrongAnswerEntry } from "@/lib/api";
-import { CheckCircle2, XCircle, Trash2, ArrowLeft, BotMessageSquare } from "lucide-react";
+import { CheckCircle2, XCircle, Trash2, ArrowLeft, Sparkles } from "lucide-react";
 import { isAnswerMatch } from "@/lib/answerUtils";
 import { QuestionChatModal } from "@/components/QuestionChatModal";
 
@@ -60,40 +60,54 @@ const WrongAnswersBank = () => {
               </div>
               <div className="space-y-3">
                 {group.items.map((entry, i) => (
-                  <div key={entry.id || i} className="glass-card-static p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <p className="text-base font-semibold flex-1">
-                        <span className="text-muted-foreground mr-2">{i + 1}.</span>{entry.questionText}
-                      </p>
+                  <div key={entry.id || i} className="glass-card-static p-5 border border-border/50 hover:border-primary/30 transition-colors">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1 pr-4">
+                        <p className="text-base font-semibold leading-relaxed">
+                          <span className="text-muted-foreground mr-3 font-mono">{i + 1}.</span>
+                          <span>{entry.questionText}</span>
+                        </p>
+                      </div>
                       <button
                         onClick={() => setChatQuestion(entry)}
-                        className="ml-3 px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs hover:bg-primary/90 transition-colors flex items-center gap-1 flex-shrink-0"
+                        className="ml-2 p-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center flex-shrink-0 group"
+                        title="AI সহায়তা নিন"
                       >
-                        <BotMessageSquare size={12} />
-                        জিজ্ঞাসা করুন
+                        <Sparkles size={16} className="group-hover:scale-110 transition-transform" />
+                        <span className="sr-only">AI সহায়তা</span>
                       </button>
                     </div>
-                    {entry.questionImage && <img src={entry.questionImage} alt="" className="max-w-full max-h-48 rounded-lg border border-border mb-3 object-contain" />}
-                    <div className="space-y-2 mb-3">
+                    {entry.questionImage && <img src={entry.questionImage} alt="প্রশ্নের ছবি" className="max-w-full max-h-48 rounded-xl border border-border/30 mb-4 object-contain shadow-sm" />}
+                    <div className="space-y-3 mb-4">
                       {entry.options.map((opt, oi) => {
                         const isCorrectOpt = isAnswerMatch(opt, entry.correctAnswer);
                         const isUserOpt = isAnswerMatch(opt, entry.userAnswer);
-                        let cls = "border-border";
-                        if (isCorrectOpt) cls = "border-success bg-success/10";
-                        else if (isUserOpt) cls = "border-destructive bg-destructive/10";
+                        let cls = "border-border/30";
+                        if (isCorrectOpt) cls = "border-success bg-success/10 shadow-success/20";
+                        else if (isUserOpt) cls = "border-destructive bg-destructive/10 shadow-destructive/20";
                         return (
-                          <div key={opt} className={`px-4 py-3 rounded-lg text-sm border ${cls}`}>
-                            <div className="flex items-center gap-2">
-                              {isCorrectOpt && <CheckCircle2 size={16} className="text-success flex-shrink-0" />}
-                              {isUserOpt && !isCorrectOpt && <XCircle size={16} className="text-destructive flex-shrink-0" />}
-                              <span>{opt}</span>
+                          <div key={opt} className={`px-4 py-3 rounded-xl text-sm border ${cls} shadow-sm transition-colors`}>
+                            <div className="flex items-center gap-3">
+                              {isCorrectOpt && <CheckCircle2 size={18} className="text-success flex-shrink-0" />}
+                              {isUserOpt && !isCorrectOpt && <XCircle size={18} className="text-destructive flex-shrink-0" />}
+                              <span className="leading-relaxed">{opt}</span>
                             </div>
-                            {entry.optionImages?.[oi] && <img src={entry.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded border border-border object-contain" />}
+                            {entry.optionImages?.[oi] && <img src={entry.optionImages[oi]!} alt="অপশনের ছবি" className="mt-3 max-h-24 rounded-lg border border-border/30 object-contain shadow-sm" />}
                           </div>
                         );
                       })}
                     </div>
-                    {entry.explanation && <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mt-2">💡 <strong>ব্যাখ্যা:</strong> {entry.explanation}</div>}
+                    {entry.explanation && (
+                      <div className="text-sm bg-gradient-to-r from-muted/80 to-muted/50 rounded-xl p-4 mt-3 border border-border/30">
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg">💡</span>
+                          <div>
+                            <strong className="text-foreground">ব্যাখ্যা:</strong>
+                            <p className="mt-1 leading-relaxed text-muted-foreground">{entry.explanation}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
