@@ -79,6 +79,7 @@ export interface Exam {
   published: boolean;
   featured: boolean;
   createdAt: string;
+  mandatorySubjects: string[]; // subjects that students must attempt
 }
 
 export interface Notice {
