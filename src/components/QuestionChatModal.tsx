@@ -39,14 +39,22 @@ export function QuestionChatModal({ isOpen, onClose, questionContext }: Question
       setMessages([
         {
           role: "assistant",
-          content: `আসসালামু আলাইকুম! 👋 আমি এই প্রশ্নটি সম্পর্কে আপনাকে সাহায্য করতে এসেছি।
+          content: `🎓 **আসসালামু আলাইকুম!** আমি আপনার **শিক্ষা সহায়ক**।
 
-**প্রশ্ন:** ${questionContext.questionText}
+আমি এই প্রশ্নটি সম্পর্কে আপনাকে সাহায্য করতে এসেছি:
 
-✅ **সঠিক উত্তর:** ${questionContext.correctAnswer}
-❌ **আপনার উত্তর:** ${questionContext.userAnswer}
+---
 
-আপনি এই প্রশ্ন সম্পর্কে যেকোনো কিছু জিজ্ঞাসা করতে পারেন। আমি ব্যাখ্যা করে দেব!`
+**📝 প্রশ্ন:** ${questionContext.questionText}
+
+**✅ সঠিক উত্তর:** ${questionContext.correctAnswer}
+**❌ আপনার উত্তর:** ${questionContext.userAnswer}
+
+---
+
+আপনি এই প্রশ্ন সম্পর্কে যেকোনো কিছু জিজ্ঞাসা করতে পারেন। আমি **শুধুমাত্র পড়াশোনার বিষয়ে** সাহায্য করি। 📚
+
+কীভাবে সাহায্য করতে পারি? 🤔`
         }
       ]);
     }
