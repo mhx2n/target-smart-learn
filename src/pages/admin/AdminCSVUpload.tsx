@@ -147,6 +147,7 @@ const AdminCSVUpload = () => {
       published: true,
       featured: false,
       createdAt: new Date().toISOString().split("T")[0],
+      mandatorySubjects: [],
     };
 
     upsertExam.mutate(newExam, {

@@ -66,6 +66,7 @@ export const demoExams: Exam[] = [
     published: true,
     featured: false,
     createdAt: "2026-03-07",
+    mandatorySubjects: [],
   },
 ];
 
