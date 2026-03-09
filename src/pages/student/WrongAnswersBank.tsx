@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchWrongAnswers, deleteWrongAnswersByExam, WrongAnswerEntry } from "@/lib/api";
-import { CheckCircle2, XCircle, Trash2, ArrowLeft, BotMessageSquare } from "lucide-react";
+import { CheckCircle2, XCircle, Trash2, ArrowLeft, Sparkles } from "lucide-react";
 import { isAnswerMatch } from "@/lib/answerUtils";
 import { QuestionChatModal } from "@/components/QuestionChatModal";
 
