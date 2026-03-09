@@ -78,26 +78,36 @@ const WrongAnswersBank = () => {
                       </button>
                     </div>
                     {entry.questionImage && <img src={entry.questionImage} alt="প্রশ্নের ছবি" className="max-w-full max-h-48 rounded-xl border border-border/30 mb-4 object-contain shadow-sm" />}
-                    <div className="space-y-2 mb-3">
+                    <div className="space-y-3 mb-4">
                       {entry.options.map((opt, oi) => {
                         const isCorrectOpt = isAnswerMatch(opt, entry.correctAnswer);
                         const isUserOpt = isAnswerMatch(opt, entry.userAnswer);
-                        let cls = "border-border";
-                        if (isCorrectOpt) cls = "border-success bg-success/10";
-                        else if (isUserOpt) cls = "border-destructive bg-destructive/10";
+                        let cls = "border-border/30";
+                        if (isCorrectOpt) cls = "border-success bg-success/10 shadow-success/20";
+                        else if (isUserOpt) cls = "border-destructive bg-destructive/10 shadow-destructive/20";
                         return (
-                          <div key={opt} className={`px-4 py-3 rounded-lg text-sm border ${cls}`}>
-                            <div className="flex items-center gap-2">
-                              {isCorrectOpt && <CheckCircle2 size={16} className="text-success flex-shrink-0" />}
-                              {isUserOpt && !isCorrectOpt && <XCircle size={16} className="text-destructive flex-shrink-0" />}
-                              <span>{opt}</span>
+                          <div key={opt} className={`px-4 py-3 rounded-xl text-sm border ${cls} shadow-sm transition-colors`}>
+                            <div className="flex items-center gap-3">
+                              {isCorrectOpt && <CheckCircle2 size={18} className="text-success flex-shrink-0" />}
+                              {isUserOpt && !isCorrectOpt && <XCircle size={18} className="text-destructive flex-shrink-0" />}
+                              <span className="leading-relaxed">{opt}</span>
                             </div>
-                            {entry.optionImages?.[oi] && <img src={entry.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded border border-border object-contain" />}
+                            {entry.optionImages?.[oi] && <img src={entry.optionImages[oi]!} alt="অপশনের ছবি" className="mt-3 max-h-24 rounded-lg border border-border/30 object-contain shadow-sm" />}
                           </div>
                         );
                       })}
                     </div>
-                    {entry.explanation && <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mt-2">💡 <strong>ব্যাখ্যা:</strong> {entry.explanation}</div>}
+                    {entry.explanation && (
+                      <div className="text-sm bg-gradient-to-r from-muted/80 to-muted/50 rounded-xl p-4 mt-3 border border-border/30">
+                        <div className="flex items-start gap-2">
+                          <span className="text-lg">💡</span>
+                          <div>
+                            <strong className="text-foreground">ব্যাখ্যা:</strong>
+                            <p className="mt-1 leading-relaxed text-muted-foreground">{entry.explanation}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
