@@ -206,13 +206,16 @@ export function QuestionChatModal({ isOpen, onClose, questionContext }: Question
             </div>
           ))}
           {isLoading && (
-            <div className="flex gap-3 justify-start">
-              <div className="flex gap-2 max-w-[80%]">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-muted">
-                  <Bot size={16} className="text-muted-foreground" />
+            <div className="flex gap-4 justify-start">
+              <div className="flex gap-3 max-w-[85%]">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-r from-secondary to-secondary/80 border-2 border-primary/20 shadow-md">
+                  <Sparkles size={18} className="text-secondary-foreground" />
                 </div>
-                <div className="rounded-lg p-3 bg-muted">
-                  <Loader2 size={16} className="animate-spin" />
+                <div className="rounded-2xl p-4 bg-gradient-to-r from-card to-card/80 border border-border/50 backdrop-blur-sm shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">চিন্তা করছি...</span>
+                  </div>
                 </div>
               </div>
             </div>
