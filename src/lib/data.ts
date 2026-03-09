@@ -34,6 +34,7 @@ export const demoExams: Exam[] = [
     published: true,
     featured: true,
     createdAt: "2026-03-01",
+    mandatorySubjects: [],
   },
   {
     id: "exam-2",
@@ -49,6 +50,7 @@ export const demoExams: Exam[] = [
     published: true,
     featured: true,
     createdAt: "2026-03-05",
+    mandatorySubjects: [],
   },
   {
     id: "exam-3",
@@ -64,6 +66,7 @@ export const demoExams: Exam[] = [
     published: true,
     featured: false,
     createdAt: "2026-03-07",
+    mandatorySubjects: [],
   },
 ];
 

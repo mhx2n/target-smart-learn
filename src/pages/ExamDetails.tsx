@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useExamById } from "@/hooks/useSupabaseData";
-import { Clock, HelpCircle, ArrowLeft } from "lucide-react";
+import { Clock, HelpCircle, ArrowLeft, CheckSquare, Square, Lock } from "lucide-react";
+import { useState, useMemo } from "react";
 
 const diffLabel: Record<string, string> = { easy: "সহজ", medium: "মাঝারি", hard: "কঠিন" };
 
@@ -8,6 +9,45 @@ const ExamDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: exam, isLoading } = useExamById(id);
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [initialized, setInitialized] = useState(false);
+
+  // Get unique subjects from questions' section field
+  const examSubjects = useMemo(() => {
+    if (!exam) return [];
+    return [...new Set(exam.questions.map((q) => q.section).filter(Boolean))];
+  }, [exam]);
+
+  const mandatorySubjects = useMemo(() => exam?.mandatorySubjects || [], [exam]);
+  const hasMultipleSubjects = examSubjects.length > 1;
+
+  // Initialize selected subjects when exam loads
+  if (exam && !initialized && examSubjects.length > 0) {
+    setSelectedSubjects(examSubjects); // select all by default
+    setInitialized(true);
+  }
+
+  const toggleSubject = (subject: string) => {
+    if (mandatorySubjects.includes(subject)) return; // can't deselect mandatory
+    setSelectedSubjects((prev) =>
+      prev.includes(subject) ? prev.filter((s) => s !== subject) : [...prev, subject]
+    );
+  };
+
+  const selectedQuestionCount = useMemo(() => {
+    if (!exam) return 0;
+    if (!hasMultipleSubjects) return exam.questions.length;
+    return exam.questions.filter((q) => selectedSubjects.includes(q.section)).length;
+  }, [exam, selectedSubjects, hasMultipleSubjects]);
+
+  const subjectQuestionCounts = useMemo(() => {
+    if (!exam) return {};
+    const counts: Record<string, number> = {};
+    exam.questions.forEach((q) => {
+      counts[q.section] = (counts[q.section] || 0) + 1;
+    });
+    return counts;
+  }, [exam]);
 
   if (isLoading) {
     return <div className="pt-24 container text-center min-h-screen"><p className="text-muted-foreground">লোড হচ্ছে...</p></div>;
@@ -21,6 +61,11 @@ const ExamDetails = () => {
       </div>
     );
   }
+
+  const startExam = () => {
+    const subjects = hasMultipleSubjects ? selectedSubjects : examSubjects;
+    navigate(`/exams/${exam.id}/attempt`, { state: { selectedSubjects: subjects } });
+  };
 
   return (
     <div className="pt-24 pb-8 container max-w-2xl min-h-screen">
@@ -38,6 +83,58 @@ const ExamDetails = () => {
           <span className="flex items-center gap-1.5"><HelpCircle size={16} /> {exam.questionCount} প্রশ্ন</span>
           <span className="flex items-center gap-1.5"><Clock size={16} /> {exam.duration} মিনিট</span>
         </div>
+
+        {/* Subject Selection for multi-subject exams */}
+        {hasMultipleSubjects && (
+          <div className="glass-card-static p-4 bg-accent/5 border-accent/20">
+            <h3 className="font-semibold text-sm mb-3">📚 বিষয় নির্বাচন করুন</h3>
+            <p className="text-xs text-muted-foreground mb-3">
+              {mandatorySubjects.length > 0
+                ? `🔒 ${mandatorySubjects.join(", ")} বাধ্যতামূলক। বাকিগুলো আপনার ইচ্ছামতো নির্বাচন করুন।`
+                : "আপনি যে বিষয়গুলোতে পরীক্ষা দিতে চান সেগুলো নির্বাচন করুন।"
+              }
+            </p>
+            <div className="space-y-2">
+              {examSubjects.map((subject) => {
+                const isMandatory = mandatorySubjects.includes(subject);
+                const isSelected = selectedSubjects.includes(subject);
+                const count = subjectQuestionCounts[subject] || 0;
+                return (
+                  <button
+                    key={subject}
+                    onClick={() => toggleSubject(subject)}
+                    disabled={isMandatory}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
+                      isSelected
+                        ? "bg-primary/10 border-primary/30 text-primary"
+                        : "border-border hover:border-primary/20 hover:bg-primary/5 text-muted-foreground"
+                    } ${isMandatory ? "opacity-90 cursor-not-allowed" : ""}`}
+                  >
+                    {isMandatory ? (
+                      <Lock size={16} className="text-primary flex-shrink-0" />
+                    ) : isSelected ? (
+                      <CheckSquare size={16} className="text-primary flex-shrink-0" />
+                    ) : (
+                      <Square size={16} className="text-muted-foreground flex-shrink-0" />
+                    )}
+                    <span className="flex-1 text-left">{subject}</span>
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
+                      {count} প্রশ্ন
+                    </span>
+                    {isMandatory && (
+                      <span className="text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-full">বাধ্যতামূলক</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">নির্বাচিত প্রশ্ন:</span>
+              <span className="font-bold text-primary">{selectedQuestionCount}টি</span>
+            </div>
+          </div>
+        )}
+
         <div className="glass-card-static p-4 bg-primary/5 border-primary/20">
           <h3 className="font-semibold text-sm mb-2">📋 নির্দেশাবলী</h3>
           <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
@@ -45,11 +142,16 @@ const ExamDetails = () => {
             <li>সময় শেষ হলে স্বয়ংক্রিয়ভাবে জমা হবে</li>
             <li>আপনি যতবার খুশি অনুশীলন করতে পারবেন</li>
             <li>প্রশ্নের ক্রম এবং অপশন প্রতিবার পরিবর্তিত হবে</li>
+            {exam.negativeMarking > 0 && <li>প্রতিটি ভুল উত্তরে {exam.negativeMarking} নম্বর কাটা যাবে</li>}
           </ul>
         </div>
-        <Link to={`/exams/${exam.id}/attempt`} className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">
-          পরীক্ষা শুরু করুন 🚀
-        </Link>
+        <button
+          onClick={startExam}
+          disabled={hasMultipleSubjects && selectedSubjects.length === 0}
+          className="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl px-4 py-3 bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50"
+        >
+          পরীক্ষা শুরু করুন 🚀 {hasMultipleSubjects && `(${selectedQuestionCount} প্রশ্ন)`}
+        </button>
       </div>
     </div>
   );

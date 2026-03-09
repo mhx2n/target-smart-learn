@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { useUpsertExam } from "@/hooks/useSupabaseData";
+import { useExams, useUpsertExam } from "@/hooks/useSupabaseData";
 import { Exam, Question } from "@/lib/types";
-import { Upload } from "lucide-react";
+import { Upload, Plus, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
 const AdminCSVUpload = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { data: existingExams = [] } = useExams();
   const upsertExam = useUpsertExam();
 
   const [csvQuestions, setCsvQuestions] = useState<Question[]>([]);
@@ -19,6 +20,11 @@ const AdminCSVUpload = () => {
   const [newExamNegativeMarking, setNewExamNegativeMarking] = useState(0.25);
   const [dragOver, setDragOver] = useState(false);
   const [importSummary, setImportSummary] = useState<{ total: number; imported: number; skipped: number; errors: string[] } | null>(null);
+  
+  // Multi-CSV / Add to existing exam
+  const [mode, setMode] = useState<"new" | "existing">("new");
+  const [targetExamId, setTargetExamId] = useState("");
+  const [subjectName, setSubjectName] = useState(""); // subject name for questions being added
 
   const parseCSVLine = (line: string): string[] => {
     const result: string[] = [];
@@ -68,6 +74,15 @@ const AdminCSVUpload = () => {
     const seen = new Set<string>();
     let skippedCount = 0;
 
+    // Also check for duplicates among existing questions if adding to existing exam
+    const existingQuestionTexts = new Set<string>();
+    if (mode === "existing" && targetExamId) {
+      const targetExam = existingExams.find((e) => e.id === targetExamId);
+      targetExam?.questions.forEach((q) => existingQuestionTexts.add(q.question.toLowerCase()));
+    }
+    // Also check existing csvQuestions
+    csvQuestions.forEach((q) => existingQuestionTexts.add(q.question.toLowerCase()));
+
     for (let i = 1; i < lines.length; i++) {
       const vals = parseCSVLine(lines[i]);
       if (vals.length < 6) { errors.push(`Row ${i + 1}: অপর্যাপ্ত কলাম`); skippedCount++; continue; }
@@ -82,13 +97,18 @@ const AdminCSVUpload = () => {
       const questionText = vals[qIdx >= 0 ? qIdx : 0];
       if (!questionText) { errors.push(`Row ${i + 1}: প্রশ্ন খালি`); skippedCount++; continue; }
 
-      if (seen.has(questionText.toLowerCase())) { errors.push(`Row ${i + 1}: ডুপ্লিকেট প্রশ্ন`); skippedCount++; continue; }
+      if (seen.has(questionText.toLowerCase()) || existingQuestionTexts.has(questionText.toLowerCase())) { 
+        errors.push(`Row ${i + 1}: ডুপ্লিকেট প্রশ্ন`); skippedCount++; continue; 
+      }
       seen.add(questionText.toLowerCase());
 
       const options = [vals[o1 >= 0 ? o1 : 1], vals[o2 >= 0 ? o2 : 2], vals[o3 >= 0 ? o3 : 3], vals[o4 >= 0 ? o4 : 4]].filter(Boolean);
       if (o5 >= 0 && vals[o5]) options.push(vals[o5]);
 
       if (options.length < 2) { errors.push(`Row ${i + 1}: অপর্যাপ্ত অপশন`); skippedCount++; continue; }
+
+      // Use subjectName as section if provided, otherwise use CSV section field
+      const sectionValue = subjectName.trim() || (secIdx >= 0 ? vals[secIdx] : "") || "সাধারণ";
 
       questions.push({
         id: crypto.randomUUID(),
@@ -97,7 +117,7 @@ const AdminCSVUpload = () => {
         answer: vals[ansIdx >= 0 ? ansIdx : 5] || options[0],
         explanation: expIdx >= 0 ? (vals[expIdx] || "") : "",
         type: "mcq",
-        section: (secIdx >= 0 ? vals[secIdx] : "") || "1",
+        section: sectionValue,
       });
     }
 
@@ -105,7 +125,13 @@ const AdminCSVUpload = () => {
     if (errors.length > 0) {
       toast({ title: `${skippedCount} সারি বাদ পড়েছে`, description: errors.slice(0, 3).join("; "), variant: "destructive" });
     }
-    setCsvQuestions(questions);
+    
+    if (mode === "existing") {
+      // Append to existing questions
+      setCsvQuestions((prev) => [...prev, ...questions]);
+    } else {
+      setCsvQuestions((prev) => [...prev, ...questions]);
+    }
     setCsvPreview(true);
     toast({ title: "সফল!", description: `${questions.length}টি প্রশ্ন লোড হয়েছে (${skippedCount}টি বাদ)` });
   };
@@ -119,6 +145,7 @@ const AdminCSVUpload = () => {
   const handleCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
+    e.target.value = ""; // Allow re-uploading same file
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -138,7 +165,7 @@ const AdminCSVUpload = () => {
       title: newExamTitle,
       subject: newExamSubject || "সাধারণ",
       category: "আমদানি",
-      chapter: csvQuestions[0]?.section || "1",
+      chapter: "",
       difficulty: newExamDifficulty,
       questionCount: csvQuestions.length,
       duration: newExamDuration,
@@ -147,6 +174,7 @@ const AdminCSVUpload = () => {
       published: true,
       featured: false,
       createdAt: new Date().toISOString().split("T")[0],
+      mandatorySubjects: [],
     };
 
     upsertExam.mutate(newExam, {
@@ -158,11 +186,80 @@ const AdminCSVUpload = () => {
     });
   };
 
+  const addToExistingExam = () => {
+    if (!targetExamId || csvQuestions.length === 0) {
+      toast({ title: "ত্রুটি", description: "পরীক্ষা ও প্রশ্ন নির্বাচন করুন", variant: "destructive" });
+      return;
+    }
+    const targetExam = existingExams.find((e) => e.id === targetExamId);
+    if (!targetExam) return;
+
+    const updatedExam: Exam = {
+      ...targetExam,
+      questions: [...targetExam.questions, ...csvQuestions],
+      questionCount: targetExam.questions.length + csvQuestions.length,
+    };
+
+    upsertExam.mutate(updatedExam, {
+      onSuccess: () => {
+        setCsvQuestions([]); setCsvPreview(false); setSubjectName(""); setImportSummary(null);
+        toast({ title: "প্রশ্ন যোগ হয়েছে!", description: `${csvQuestions.length}টি প্রশ্ন "${targetExam.title}" এ যোগ হয়েছে` });
+        navigate("/admin/exams");
+      },
+    });
+  };
+
   const sections = [...new Set(csvQuestions.map((q) => q.section))];
 
   return (
     <div className="animate-fade-in">
       <h1 className="text-xl font-bold mb-5">📤 CSV আপলোড</h1>
+
+      {/* Mode toggle */}
+      <div className="flex gap-2 mb-5">
+        <button
+          onClick={() => { setMode("new"); setCsvQuestions([]); setCsvPreview(false); setImportSummary(null); }}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            mode === "new" ? "bg-primary text-primary-foreground shadow-md" : "glass-strong text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Plus size={16} /> নতুন পরীক্ষা
+        </button>
+        <button
+          onClick={() => { setMode("existing"); setCsvQuestions([]); setCsvPreview(false); setImportSummary(null); }}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            mode === "existing" ? "bg-primary text-primary-foreground shadow-md" : "glass-strong text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <BookOpen size={16} /> বিদ্যমান পরীক্ষায় যোগ
+        </button>
+      </div>
+
+      {/* If adding to existing, select exam and subject name */}
+      {mode === "existing" && (
+        <div className="glass-card-static p-4 mb-5 space-y-3">
+          <h3 className="font-semibold text-sm">📌 পরীক্ষা ও বিষয় নির্বাচন</h3>
+          <select
+            value={targetExamId}
+            onChange={(e) => setTargetExamId(e.target.value)}
+            className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none"
+          >
+            <option value="">পরীক্ষা নির্বাচন করুন</option>
+            {existingExams.map((e) => (
+              <option key={e.id} value={e.id}>{e.title} ({e.questionCount} প্রশ্ন)</option>
+            ))}
+          </select>
+          <input
+            placeholder="বিষয়ের নাম (যেমন: পদার্থ, রসায়ন, গণিত)"
+            value={subjectName}
+            onChange={(e) => setSubjectName(e.target.value)}
+            className="w-full glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <p className="text-xs text-muted-foreground">
+            💡 বিষয়ের নাম দিলে এই CSV এর সব প্রশ্ন ঐ বিষয়ের অধীনে যাবে। একাধিক CSV আপলোড করে ভিন্ন ভিন্ন বিষয় যোগ করুন।
+          </p>
+        </div>
+      )}
 
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -172,7 +269,7 @@ const AdminCSVUpload = () => {
       >
         <Upload className="mx-auto mb-3 text-primary" size={36} />
         <p className="text-sm font-medium mb-1">CSV ফাইল আপলোড করুন বা ড্র্যাগ করুন</p>
-        <p className="text-xs text-muted-foreground mb-4">কলাম: questions, option1, option2, option3, option4, option5, answer, explanation, type, section</p>
+        <p className="text-xs text-muted-foreground mb-4">কলাম: questions, option1-5, answer, explanation, section</p>
         <label className="cursor-pointer inline-block px-5 py-2.5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
           ফাইল নির্বাচন করুন
           <input type="file" accept=".csv" onChange={handleCSV} className="hidden" />
@@ -201,32 +298,66 @@ const AdminCSVUpload = () => {
       {csvPreview && csvQuestions.length > 0 && (
         <div className="glass-card-static p-5">
           <h3 className="font-semibold text-sm mb-3">📋 {csvQuestions.length}টি প্রশ্ন লোড হয়েছে</h3>
-          {sections.length > 1 && (
+          {sections.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {sections.map((s) => (<span key={s} className="text-xs bg-accent text-accent-foreground px-2.5 py-1 rounded-full">{s}: {csvQuestions.filter((q) => q.section === s).length}</span>))}
+              {sections.map((s) => (
+                <span key={s} className="text-xs bg-accent text-accent-foreground px-2.5 py-1 rounded-full">
+                  📘 {s}: {csvQuestions.filter((q) => q.section === s).length} প্রশ্ন
+                </span>
+              ))}
             </div>
           )}
           <div className="max-h-48 overflow-y-auto mb-4 space-y-2">
             {csvQuestions.slice(0, 5).map((q, i) => (
-              <div key={i} className="text-xs p-2 bg-muted/50 rounded-lg"><strong>{i + 1}.</strong> {q.question} — ✅ {q.answer}</div>
+              <div key={i} className="text-xs p-2 bg-muted/50 rounded-lg">
+                <strong>{i + 1}.</strong> {q.question} — ✅ {q.answer}
+                {sections.length > 1 && <span className="text-primary ml-2">📘 {q.section}</span>}
+              </div>
             ))}
             {csvQuestions.length > 5 && (<p className="text-xs text-muted-foreground text-center">...এবং আরও {csvQuestions.length - 5}টি</p>)}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            <input placeholder="পরীক্ষার নাম *" value={newExamTitle} onChange={(e) => setNewExamTitle(e.target.value)} className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            <input placeholder="বিষয়" value={newExamSubject} onChange={(e) => setNewExamSubject(e.target.value)} className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            <select value={newExamDifficulty} onChange={(e) => setNewExamDifficulty(e.target.value as "easy" | "medium" | "hard")} className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none">
-              <option value="easy">সহজ</option><option value="medium">মাঝারি</option><option value="hard">কঠিন</option>
-            </select>
-            <input type="number" placeholder="সময় (মিনিট)" value={newExamDuration} onChange={(e) => setNewExamDuration(Number(e.target.value))} className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            <select value={newExamNegativeMarking} onChange={(e) => setNewExamNegativeMarking(Number(e.target.value))} className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none">
-              <option value={0}>নেগেটিভ মার্ক: ০</option><option value={0.25}>নেগেটিভ মার্ক: ০.২৫</option><option value={0.5}>নেগেটিভ মার্ক: ০.৫</option><option value={1}>নেগেটিভ মার্ক: ১</option>
-            </select>
+
+          {/* Upload more CSV button */}
+          <div className="mb-4 p-3 bg-accent/10 rounded-xl text-center">
+            <p className="text-xs text-muted-foreground mb-2">আরো বিষয় যোগ করতে চান?</p>
+            {mode === "existing" && (
+              <input
+                placeholder="নতুন বিষয়ের নাম লিখুন"
+                value={subjectName}
+                onChange={(e) => setSubjectName(e.target.value)}
+                className="w-full glass-strong rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 mb-2"
+              />
+            )}
+            <label className="cursor-pointer inline-block px-4 py-2 rounded-lg text-xs font-medium bg-accent text-accent-foreground hover:bg-accent/80 transition-all">
+              <Plus size={14} className="inline mr-1" /> আরো CSV আপলোড করুন
+              <input type="file" accept=".csv" onChange={handleCSV} className="hidden" />
+            </label>
           </div>
-          <button onClick={createExamFromCSV} disabled={upsertExam.isPending}
-            className="w-full py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all">
-            {upsertExam.isPending ? "সেভ হচ্ছে..." : "পরীক্ষা তৈরি করুন ✓"}
-          </button>
+
+          {mode === "new" ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <input placeholder="পরীক্ষার নাম *" value={newExamTitle} onChange={(e) => setNewExamTitle(e.target.value)} className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <input placeholder="বিষয়" value={newExamSubject} onChange={(e) => setNewExamSubject(e.target.value)} className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <select value={newExamDifficulty} onChange={(e) => setNewExamDifficulty(e.target.value as "easy" | "medium" | "hard")} className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none">
+                  <option value="easy">সহজ</option><option value="medium">মাঝারি</option><option value="hard">কঠিন</option>
+                </select>
+                <input type="number" placeholder="সময় (মিনিট)" value={newExamDuration} onChange={(e) => setNewExamDuration(Number(e.target.value))} className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <select value={newExamNegativeMarking} onChange={(e) => setNewExamNegativeMarking(Number(e.target.value))} className="glass-strong rounded-xl px-4 py-2.5 text-sm focus:outline-none">
+                  <option value={0}>নেগেটিভ মার্ক: ০</option><option value={0.25}>নেগেটিভ মার্ক: ০.২৫</option><option value={0.5}>নেগেটিভ মার্ক: ০.৫</option><option value={1}>নেগেটিভ মার্ক: ১</option>
+                </select>
+              </div>
+              <button onClick={createExamFromCSV} disabled={upsertExam.isPending}
+                className="w-full py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all">
+                {upsertExam.isPending ? "সেভ হচ্ছে..." : "পরীক্ষা তৈরি করুন ✓"}
+              </button>
+            </>
+          ) : (
+            <button onClick={addToExistingExam} disabled={upsertExam.isPending || !targetExamId}
+              className="w-full py-3 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-all">
+              {upsertExam.isPending ? "সেভ হচ্ছে..." : `বিদ্যমান পরীক্ষায় ${csvQuestions.length}টি প্রশ্ন যোগ করুন ✓`}
+            </button>
+          )}
         </div>
       )}
     </div>
