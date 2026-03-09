@@ -8,6 +8,7 @@ import { QuestionChatModal } from "@/components/QuestionChatModal";
 const WrongAnswersBank = () => {
   const [entries, setEntries] = useState<WrongAnswerEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chatQuestion, setChatQuestion] = useState<WrongAnswerEntry | null>(null);
 
   const load = () => {
     setLoading(true);
