@@ -172,25 +172,35 @@ export function QuestionChatModal({ isOpen, onClose, questionContext }: Question
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-4 py-4">
+        <div className="flex-1 overflow-y-auto space-y-6 py-6 px-2">
           {messages.map((message, index) => (
-            <div key={index} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`flex gap-2 max-w-[80%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  message.role === "user" ? "bg-primary" : "bg-muted"
+            <div key={index} className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`flex gap-3 max-w-[85%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ${
+                  message.role === "user" 
+                    ? "bg-gradient-to-r from-primary to-primary/80" 
+                    : "bg-gradient-to-r from-secondary to-secondary/80 border-2 border-primary/20"
                 }`}>
                   {message.role === "user" ? (
-                    <User size={16} className="text-primary-foreground" />
+                    <User size={18} className="text-primary-foreground" />
                   ) : (
-                    <Bot size={16} className="text-muted-foreground" />
+                    <Sparkles size={18} className="text-secondary-foreground" />
                   )}
                 </div>
-                <div className={`rounded-lg p-3 ${
+                <div className={`rounded-2xl p-4 shadow-sm border ${
                   message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}>
-                  <div className="whitespace-pre-wrap text-sm">{message.content}</div>
+                    ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground"
+                    : "bg-gradient-to-r from-card to-card/80 border-border/50"
+                } backdrop-blur-sm`}>
+                  <div className="text-sm leading-relaxed">
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      className="prose prose-sm max-w-none prose-headings:text-inherit prose-p:text-inherit prose-strong:text-inherit prose-em:text-inherit prose-code:text-inherit prose-pre:text-inherit prose-blockquote:text-inherit prose-ul:text-inherit prose-ol:text-inherit prose-li:text-inherit"
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </div>
             </div>
