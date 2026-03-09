@@ -61,9 +61,18 @@ const WrongAnswersBank = () => {
               <div className="space-y-3">
                 {group.items.map((entry, i) => (
                   <div key={entry.id || i} className="glass-card-static p-4">
-                    <p className="text-base font-semibold mb-3">
-                      <span className="text-muted-foreground mr-2">{i + 1}.</span>{entry.questionText}
-                    </p>
+                    <div className="flex items-start justify-between mb-3">
+                      <p className="text-base font-semibold flex-1">
+                        <span className="text-muted-foreground mr-2">{i + 1}.</span>{entry.questionText}
+                      </p>
+                      <button
+                        onClick={() => setChatQuestion(entry)}
+                        className="ml-3 px-3 py-1 bg-primary text-primary-foreground rounded-lg text-xs hover:bg-primary/90 transition-colors flex items-center gap-1 flex-shrink-0"
+                      >
+                        <BotMessageSquare size={12} />
+                        জিজ্ঞাসা করুন
+                      </button>
+                    </div>
                     {entry.questionImage && <img src={entry.questionImage} alt="" className="max-w-full max-h-48 rounded-lg border border-border mb-3 object-contain" />}
                     <div className="space-y-2 mb-3">
                       {entry.options.map((opt, oi) => {
@@ -91,6 +100,15 @@ const WrongAnswersBank = () => {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Question Chat Modal */}
+      {chatQuestion && (
+        <QuestionChatModal
+          isOpen={!!chatQuestion}
+          onClose={() => setChatQuestion(null)}
+          questionContext={chatQuestion}
+        />
       )}
     </div>
   );
