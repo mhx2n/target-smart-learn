@@ -223,16 +223,21 @@ export function QuestionChatModal({ isOpen, onClose, questionContext }: Question
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="flex gap-2 pt-4 border-t">
+        <div className="flex gap-3 pt-4 border-t bg-muted/20 rounded-t-xl px-4 py-4">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="আপনার প্রশ্ন লিখুন..."
+            placeholder="আপনার প্রশ্ন লিখুন... (শুধুমাত্র পড়াশোনার বিষয়ে)"
             onKeyPress={handleKeyPress}
             disabled={isLoading}
-            className="flex-1"
+            className="flex-1 bg-background border-border focus:border-primary transition-colors"
           />
-          <Button onClick={sendMessage} disabled={!input.trim() || isLoading} size="sm">
+          <Button 
+            onClick={sendMessage} 
+            disabled={!input.trim() || isLoading} 
+            size="sm"
+            className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all shadow-md"
+          >
             <Send size={16} />
           </Button>
         </div>
