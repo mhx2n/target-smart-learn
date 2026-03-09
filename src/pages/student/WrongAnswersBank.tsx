@@ -77,7 +77,7 @@ const WrongAnswersBank = () => {
                         <span className="sr-only">AI সহায়তা</span>
                       </button>
                     </div>
-                    {entry.questionImage && <img src={entry.questionImage} alt="" className="max-w-full max-h-48 rounded-lg border border-border mb-3 object-contain" />}
+                    {entry.questionImage && <img src={entry.questionImage} alt="প্রশ্নের ছবি" className="max-w-full max-h-48 rounded-xl border border-border/30 mb-4 object-contain shadow-sm" />}
                     <div className="space-y-2 mb-3">
                       {entry.options.map((opt, oi) => {
                         const isCorrectOpt = isAnswerMatch(opt, entry.correctAnswer);
