@@ -109,6 +109,18 @@ export interface EventBanner {
   createdAt: string;
 }
 
+export interface SubjectBreakdown {
+  subject: string;
+  total: number;
+  correct: number;
+  wrong: number;
+  skipped: number;
+  negativeMarks: number;
+  score: number;
+  maxScore: number;
+  percentage: number;
+}
+
 export interface ExamResult {
   examId: string;
   examTitle: string;
@@ -122,4 +134,6 @@ export interface ExamResult {
   percentage: number;
   answers: Record<string, string>;
   timestamp: string;
+  selectedSubjects?: string[];
+  subjectBreakdown?: SubjectBreakdown[];
 }
