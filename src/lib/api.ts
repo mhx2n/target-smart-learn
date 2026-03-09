@@ -19,6 +19,7 @@ function dbExamToApp(row: any, questions: Question[] = []): Exam {
     featured: row.featured,
     createdAt: row.created_at,
     questions,
+    mandatorySubjects: Array.isArray(row.mandatory_subjects) ? row.mandatory_subjects : [],
   };
 }
 
