@@ -90,12 +90,12 @@ const ExamDetails = () => {
 
         {/* Subject Selection for multi-subject exams */}
         {hasMultipleSubjects && (
-          <div className="glass-card-static p-4 bg-accent/5 border-accent/20">
-            <h3 className="font-semibold text-sm mb-3">📚 বিষয় নির্বাচন করুন</h3>
-            <p className="text-xs text-muted-foreground mb-3">
+          <div className="glass-card-static p-3 bg-accent/5 border-accent/20">
+            <h3 className="font-semibold text-xs mb-2">📚 {getLabel("subjectSelection", "বিষয় নির্বাচন করুন")}</h3>
+            <p className="text-[10px] text-muted-foreground mb-2">
               {mandatorySubjects.length > 0
-                ? `🔒 ${mandatorySubjects.join(", ")} বাধ্যতামূলক। বাকিগুলো আপনার ইচ্ছামতো নির্বাচন করুন।`
-                : "আপনি যে বিষয়গুলোতে পরীক্ষা দিতে চান সেগুলো নির্বাচন করুন।"
+                ? `🔒 ${mandatorySubjects.join(", ")} ${getLabel("mandatory", "বাধ্যতামূলক")}।`
+                : getLabel("subjectSelectionHint", "আপনি যে বিষয়গুলোতে পরীক্ষা দিতে চান সেগুলো নির্বাচন করুন।")
               }
             </p>
             <div className="grid grid-cols-2 gap-2">
