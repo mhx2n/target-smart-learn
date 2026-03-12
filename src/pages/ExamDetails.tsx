@@ -98,7 +98,7 @@ const ExamDetails = () => {
                 : "আপনি যে বিষয়গুলোতে পরীক্ষা দিতে চান সেগুলো নির্বাচন করুন।"
               }
             </p>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               {examSubjects.map((subject) => {
                 const isMandatory = mandatorySubjects.includes(subject);
                 const isSelected = selectedSubjects.includes(subject);
@@ -108,26 +108,23 @@ const ExamDetails = () => {
                     key={subject}
                     onClick={() => toggleSubject(subject)}
                     disabled={isMandatory}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all border ${
                       isSelected
                         ? "bg-primary/10 border-primary/30 text-primary"
                         : "border-border hover:border-primary/20 hover:bg-primary/5 text-muted-foreground"
                     } ${isMandatory ? "opacity-90 cursor-not-allowed" : ""}`}
                   >
                     {isMandatory ? (
-                      <Lock size={16} className="text-primary flex-shrink-0" />
+                      <Lock size={13} className="text-primary flex-shrink-0" />
                     ) : isSelected ? (
-                      <CheckSquare size={16} className="text-primary flex-shrink-0" />
+                      <CheckSquare size={13} className="text-primary flex-shrink-0" />
                     ) : (
-                      <Square size={16} className="text-muted-foreground flex-shrink-0" />
+                      <Square size={13} className="text-muted-foreground flex-shrink-0" />
                     )}
-                    <span className="flex-1 text-left">{subject}</span>
-                    <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                      {count} প্রশ্ন
+                    <span className="flex-1 text-left truncate">{subject}</span>
+                    <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                      {count}
                     </span>
-                    {isMandatory && (
-                      <span className="text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-full">বাধ্যতামূলক</span>
-                    )}
                   </button>
                 );
               })}
