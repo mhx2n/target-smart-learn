@@ -227,6 +227,55 @@ const AdminExams = () => {
                   </div>
                 )}
 
+                {/* Subject range editor */}
+                {editingRanges === e.id && (
+                  <div className="mt-3 p-3 bg-accent/5 rounded-xl border border-accent/20">
+                    <p className="text-xs font-semibold mb-2">📐 প্রশ্ন সিরিয়াল অনুযায়ী বিষয় ভাগ করুন (মোট {e.questions.length} প্রশ্ন)</p>
+                    <div className="space-y-2">
+                      {(rangeInputs[e.id] || []).map((r, ri) => (
+                        <div key={ri} className="flex items-center gap-2 flex-wrap">
+                          <input
+                            type="number" min={1} max={e.questions.length}
+                            value={r.from}
+                            onChange={(ev) => updateRange(e.id, ri, "from", Number(ev.target.value))}
+                            className="w-16 glass-strong rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            placeholder="থেকে"
+                          />
+                          <span className="text-xs text-muted-foreground">থেকে</span>
+                          <input
+                            type="number" min={1} max={e.questions.length}
+                            value={r.to}
+                            onChange={(ev) => updateRange(e.id, ri, "to", Number(ev.target.value))}
+                            className="w-16 glass-strong rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            placeholder="পর্যন্ত"
+                          />
+                          <span className="text-xs text-muted-foreground">→</span>
+                          <input
+                            value={r.subject}
+                            onChange={(ev) => updateRange(e.id, ri, "subject", ev.target.value)}
+                            className="flex-1 min-w-[100px] glass-strong rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            placeholder="বিষয়ের নাম"
+                          />
+                          <button onClick={() => removeRange(e.id, ri)} className="p-1 rounded hover:bg-destructive/10">
+                            <X size={14} className="text-destructive" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={() => addRange(e.id)} className="text-xs px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 transition-all">
+                        + রেঞ্জ যোগ করুন
+                      </button>
+                      <button onClick={() => applyRanges(e)} className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+                        ✓ প্রয়োগ করুন
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      উদাহরণ: ১-৩০ → পদার্থ, ৩১-৬০ → রসায়ন, ৬১-৯০ → জীববিজ্ঞান
+                    </p>
+                  </div>
+                )}
+
                 {sections.length > 0 && (
                   <div className="mt-2 flex items-center gap-2">
                     <FolderOpen size={14} className="text-muted-foreground" />
