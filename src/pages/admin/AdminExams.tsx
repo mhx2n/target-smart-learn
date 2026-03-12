@@ -13,7 +13,9 @@ const AdminExams = () => {
   const upsertExam = useUpsertExam();
   const { toast } = useToast();
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
-  const [editingMandatory, setEditingMandatory] = useState<string | null>(null); // exam id being edited
+  const [editingMandatory, setEditingMandatory] = useState<string | null>(null);
+  const [editingRanges, setEditingRanges] = useState<string | null>(null);
+  const [rangeInputs, setRangeInputs] = useState<Record<string, { from: number; to: number; subject: string }[]>>({});
 
   const sorted = [...exams].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
