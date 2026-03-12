@@ -178,6 +178,12 @@ const AdminExams = () => {
                   <span className={`text-xs px-2 py-0.5 rounded-full ${e.published ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                     {e.published ? "প্রকাশিত" : "অপ্রকাশিত"}
                   </span>
+                  <button onClick={() => {
+                    if (editingRanges === e.id) { setEditingRanges(null); } 
+                    else { setEditingRanges(e.id); initRangeInputs(e); }
+                  }} className="p-2 rounded-lg hover:bg-accent/10 transition-colors" title="বিষয় রেঞ্জ">
+                    <Layers size={16} className={editingRanges === e.id ? "text-primary" : "text-muted-foreground"} />
+                  </button>
                   {hasMultipleSubjects && (
                     <button onClick={() => setEditingMandatory(isEditingMandatory ? null : e.id)} className="p-2 rounded-lg hover:bg-accent/10 transition-colors" title="বাধ্যতামূলক বিষয়">
                       <Lock size={16} className={isEditingMandatory ? "text-primary" : "text-muted-foreground"} />
