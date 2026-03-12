@@ -3,6 +3,8 @@ import { useExamById } from "@/hooks/useSupabaseData";
 import { Clock, HelpCircle, ArrowLeft, CheckSquare, Square, Lock } from "lucide-react";
 import { useState, useMemo } from "react";
 
+import { getLabel } from "@/lib/labels";
+
 const diffLabel: Record<string, string> = { easy: "সহজ", medium: "মাঝারি", hard: "কঠিন" };
 
 const ExamDetails = () => {
