@@ -129,8 +129,8 @@ const ExamDetails = () => {
                 );
               })}
             </div>
-            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">নির্বাচিত প্রশ্ন:</span>
+            <div className="mt-2 pt-2 border-t border-border flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">{getLabel("selectedQuestions", "নির্বাচিত প্রশ্ন")}:</span>
               <span className="font-bold text-primary">{selectedQuestionCount}টি</span>
             </div>
           </div>
