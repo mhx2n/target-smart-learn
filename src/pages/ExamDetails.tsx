@@ -77,7 +77,7 @@ const ExamDetails = () => {
       <div className="glass-card-static p-6 space-y-5">
         <div className="flex flex-wrap gap-2">
           <span className="text-xs font-medium bg-primary/10 text-primary px-3 py-1 rounded-full">{exam.subject}</span>
-          <span className="text-xs font-medium bg-warning/15 text-warning dark:bg-warning/20 dark:text-warning px-3 py-1 rounded-full">{diffLabel[exam.difficulty]}</span>
+          <span className="text-xs font-medium bg-warning/15 text-warning dark:bg-warning/20 dark:text-warning px-3 py-1 rounded-full">{getLabel(`diff${exam.difficulty.charAt(0).toUpperCase() + exam.difficulty.slice(1)}`, diffLabel[exam.difficulty])}</span>
         </div>
         <h1 className="text-2xl font-bold">{exam.title}</h1>
         {(exam.category || exam.chapter) && (
