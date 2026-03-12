@@ -137,13 +137,12 @@ const ExamDetails = () => {
         )}
 
         <div className="glass-card-static p-4 bg-primary/5 border-primary/20">
-          <h3 className="font-semibold text-sm mb-2">📋 নির্দেশাবলী</h3>
+          <h3 className="font-semibold text-sm mb-2">📋 {getLabel("instructionsTitle", "নির্দেশাবলী")}</h3>
           <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
-            <li>প্রতিটি প্রশ্নের একটি সঠিক উত্তর আছে</li>
-            <li>সময় শেষ হলে স্বয়ংক্রিয়ভাবে জমা হবে</li>
-            <li>আপনি যতবার খুশি অনুশীলন করতে পারবেন</li>
-            <li>প্রশ্নের ক্রম CSV আপলোড সিকুয়েন্স অনুযায়ী থাকবে</li>
-            {exam.negativeMarking > 0 && <li>প্রতিটি ভুল উত্তরে {exam.negativeMarking} নম্বর কাটা যাবে</li>}
+            <li>{getLabel("inst1", "প্রতিটি প্রশ্নের একটি সঠিক উত্তর আছে")}</li>
+            <li>{getLabel("inst2", "সময় শেষ হলে স্বয়ংক্রিয়ভাবে জমা হবে")}</li>
+            <li>{getLabel("inst3", "আপনি যতবার খুশি অনুশীলন করতে পারবেন")}</li>
+            {exam.negativeMarking > 0 && <li>{getLabel("instNegative", "প্রতিটি ভুল উত্তরে")} {exam.negativeMarking} {getLabel("instNegativeSuffix", "নম্বর কাটা যাবে")}</li>}
           </ul>
         </div>
         <button
