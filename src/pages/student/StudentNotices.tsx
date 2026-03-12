@@ -20,12 +20,14 @@ const StudentNotices = () => {
             <div key={n.id} className="glass-card-static p-5 cursor-pointer" onClick={() => setExpanded(expanded === n.id ? null : n.id)}>
               <div className="flex items-center gap-2 mb-2">
                 {n.pinned && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">📌 পিন</span>}
-                <span className="text-xs text-muted-foreground ml-auto">{n.createdAt}</span>
+                <span className="text-xs text-muted-foreground ml-auto">{new Date(n.createdAt).toLocaleDateString("bn-BD")}</span>
               </div>
               <h3 className="font-semibold mb-1">{n.title}</h3>
               {n.image && <img src={n.image} alt={n.title} className="w-full rounded-lg object-cover max-h-48 mt-2" />}
-              {expanded === n.id && (
-                <div className="text-sm text-muted-foreground mt-2 leading-relaxed animate-fade-in" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(n.content) }} />
+              {expanded === n.id ? (
+                <div className="text-sm text-muted-foreground mt-2 leading-relaxed prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(n.content) }} />
+              ) : (
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(n.content) }} />
               )}
             </div>
           ))}

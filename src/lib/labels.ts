@@ -56,6 +56,19 @@ export const defaultLabels: Record<string, string> = {
 
   // Notices
   noticesTitle: "📢 নোটিস বোর্ড",
+
+  // Exam Details
+  instructionsTitle: "নির্দেশাবলী",
+  inst1: "প্রতিটি প্রশ্নের একটি সঠিক উত্তর আছে",
+  inst2: "সময় শেষ হলে স্বয়ংক্রিয়ভাবে জমা হবে",
+  inst3: "আপনি যতবার খুশি অনুশীলন করতে পারবেন",
+  instNegative: "প্রতিটি ভুল উত্তরে",
+  instNegativeSuffix: "নম্বর কাটা যাবে",
+  examCategory: "আমদানি",
+  subjectSelection: "বিষয় নির্বাচন করুন",
+  subjectSelectionHint: "আপনি যে বিষয়গুলোতে পরীক্ষা দিতে চান সেগুলো নির্বাচন করুন।",
+  selectedQuestions: "নির্বাচিত প্রশ্ন",
+  mandatory: "বাধ্যতামূলক",
 };
 
 export function getLabel(key: string, fallback?: string): string {

@@ -3,6 +3,8 @@ import { useExamById } from "@/hooks/useSupabaseData";
 import { Clock, HelpCircle, ArrowLeft, CheckSquare, Square, Lock } from "lucide-react";
 import { useState, useMemo } from "react";
 
+import { getLabel } from "@/lib/labels";
+
 const diffLabel: Record<string, string> = { easy: "সহজ", medium: "মাঝারি", hard: "কঠিন" };
 
 const ExamDetails = () => {
@@ -75,10 +77,12 @@ const ExamDetails = () => {
       <div className="glass-card-static p-6 space-y-5">
         <div className="flex flex-wrap gap-2">
           <span className="text-xs font-medium bg-primary/10 text-primary px-3 py-1 rounded-full">{exam.subject}</span>
-          <span className="text-xs font-medium bg-warning/15 text-warning dark:bg-warning/20 dark:text-warning px-3 py-1 rounded-full">{diffLabel[exam.difficulty]}</span>
+          <span className="text-xs font-medium bg-warning/15 text-warning dark:bg-warning/20 dark:text-warning px-3 py-1 rounded-full">{getLabel(`diff${exam.difficulty.charAt(0).toUpperCase() + exam.difficulty.slice(1)}`, diffLabel[exam.difficulty])}</span>
         </div>
         <h1 className="text-2xl font-bold">{exam.title}</h1>
-        <p className="text-sm text-muted-foreground">{exam.category} • {exam.chapter}</p>
+        {(exam.category || exam.chapter) && (
+          <p className="text-sm text-muted-foreground">{[exam.category, exam.chapter].filter(Boolean).join(" • ")}</p>
+        )}
         <div className="flex gap-6 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5"><HelpCircle size={16} /> {exam.questionCount} প্রশ্ন</span>
           <span className="flex items-center gap-1.5"><Clock size={16} /> {exam.duration} মিনিট</span>
@@ -86,15 +90,15 @@ const ExamDetails = () => {
 
         {/* Subject Selection for multi-subject exams */}
         {hasMultipleSubjects && (
-          <div className="glass-card-static p-4 bg-accent/5 border-accent/20">
-            <h3 className="font-semibold text-sm mb-3">📚 বিষয় নির্বাচন করুন</h3>
-            <p className="text-xs text-muted-foreground mb-3">
+          <div className="glass-card-static p-3 bg-accent/5 border-accent/20">
+            <h3 className="font-semibold text-xs mb-2">📚 {getLabel("subjectSelection", "বিষয় নির্বাচন করুন")}</h3>
+            <p className="text-[10px] text-muted-foreground mb-2">
               {mandatorySubjects.length > 0
-                ? `🔒 ${mandatorySubjects.join(", ")} বাধ্যতামূলক। বাকিগুলো আপনার ইচ্ছামতো নির্বাচন করুন।`
-                : "আপনি যে বিষয়গুলোতে পরীক্ষা দিতে চান সেগুলো নির্বাচন করুন।"
+                ? `🔒 ${mandatorySubjects.join(", ")} ${getLabel("mandatory", "বাধ্যতামূলক")}।`
+                : getLabel("subjectSelectionHint", "আপনি যে বিষয়গুলোতে পরীক্ষা দিতে চান সেগুলো নির্বাচন করুন।")
               }
             </p>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               {examSubjects.map((subject) => {
                 const isMandatory = mandatorySubjects.includes(subject);
                 const isSelected = selectedSubjects.includes(subject);
@@ -104,45 +108,41 @@ const ExamDetails = () => {
                     key={subject}
                     onClick={() => toggleSubject(subject)}
                     disabled={isMandatory}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all border ${
                       isSelected
                         ? "bg-primary/10 border-primary/30 text-primary"
                         : "border-border hover:border-primary/20 hover:bg-primary/5 text-muted-foreground"
                     } ${isMandatory ? "opacity-90 cursor-not-allowed" : ""}`}
                   >
                     {isMandatory ? (
-                      <Lock size={16} className="text-primary flex-shrink-0" />
+                      <Lock size={13} className="text-primary flex-shrink-0" />
                     ) : isSelected ? (
-                      <CheckSquare size={16} className="text-primary flex-shrink-0" />
+                      <CheckSquare size={13} className="text-primary flex-shrink-0" />
                     ) : (
-                      <Square size={16} className="text-muted-foreground flex-shrink-0" />
+                      <Square size={13} className="text-muted-foreground flex-shrink-0" />
                     )}
-                    <span className="flex-1 text-left">{subject}</span>
-                    <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                      {count} প্রশ্ন
+                    <span className="flex-1 text-left truncate">{subject}</span>
+                    <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                      {count}
                     </span>
-                    {isMandatory && (
-                      <span className="text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-full">বাধ্যতামূলক</span>
-                    )}
                   </button>
                 );
               })}
             </div>
-            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">নির্বাচিত প্রশ্ন:</span>
+            <div className="mt-2 pt-2 border-t border-border flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">{getLabel("selectedQuestions", "নির্বাচিত প্রশ্ন")}:</span>
               <span className="font-bold text-primary">{selectedQuestionCount}টি</span>
             </div>
           </div>
         )}
 
         <div className="glass-card-static p-4 bg-primary/5 border-primary/20">
-          <h3 className="font-semibold text-sm mb-2">📋 নির্দেশাবলী</h3>
+          <h3 className="font-semibold text-sm mb-2">📋 {getLabel("instructionsTitle", "নির্দেশাবলী")}</h3>
           <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside">
-            <li>প্রতিটি প্রশ্নের একটি সঠিক উত্তর আছে</li>
-            <li>সময় শেষ হলে স্বয়ংক্রিয়ভাবে জমা হবে</li>
-            <li>আপনি যতবার খুশি অনুশীলন করতে পারবেন</li>
-            <li>প্রশ্নের ক্রম CSV আপলোড সিকুয়েন্স অনুযায়ী থাকবে</li>
-            {exam.negativeMarking > 0 && <li>প্রতিটি ভুল উত্তরে {exam.negativeMarking} নম্বর কাটা যাবে</li>}
+            <li>{getLabel("inst1", "প্রতিটি প্রশ্নের একটি সঠিক উত্তর আছে")}</li>
+            <li>{getLabel("inst2", "সময় শেষ হলে স্বয়ংক্রিয়ভাবে জমা হবে")}</li>
+            <li>{getLabel("inst3", "আপনি যতবার খুশি অনুশীলন করতে পারবেন")}</li>
+            {exam.negativeMarking > 0 && <li>{getLabel("instNegative", "প্রতিটি ভুল উত্তরে")} {exam.negativeMarking} {getLabel("instNegativeSuffix", "নম্বর কাটা যাবে")}</li>}
           </ul>
         </div>
         <button
