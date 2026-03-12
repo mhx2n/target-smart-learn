@@ -34,9 +34,10 @@ const StudentExamAttempt = () => {
     return exam.questions;
   }, [exam, selectedSubjects]);
 
+  // Questions maintain CSV upload order — no shuffle
   const questions = useMemo(() => {
     if (!originalQuestions.length) return [];
-    return shuffle(originalQuestions).map((q) => ({ ...q, options: shuffle(q.options) }));
+    return originalQuestions.map((q) => ({ ...q }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exam?.id, selectedSubjects?.join(",")]);
 

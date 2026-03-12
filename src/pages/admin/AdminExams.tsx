@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useExams, useSections, useDeleteExam, useUpdateExamField, useUpsertExam } from "@/hooks/useSupabaseData";
-import { Exam } from "@/lib/types";
-import { Eye, EyeOff, Trash2, FolderOpen, Pencil, Lock, BookOpen, X, Check } from "lucide-react";
+import { Exam, Question } from "@/lib/types";
+import { Eye, EyeOff, Trash2, FolderOpen, Pencil, Lock, BookOpen, X, Check, Layers } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QuestionEditor from "@/components/QuestionEditor";
 
@@ -13,7 +13,9 @@ const AdminExams = () => {
   const upsertExam = useUpsertExam();
   const { toast } = useToast();
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
-  const [editingMandatory, setEditingMandatory] = useState<string | null>(null); // exam id being edited
+  const [editingMandatory, setEditingMandatory] = useState<string | null>(null);
+  const [editingRanges, setEditingRanges] = useState<string | null>(null);
+  const [rangeInputs, setRangeInputs] = useState<Record<string, { from: number; to: number; subject: string }[]>>({});
 
   const sorted = [...exams].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -48,6 +50,87 @@ const AdminExams = () => {
     const updatedExam = { ...exam, mandatorySubjects: updated };
     upsertExam.mutate(updatedExam, {
       onSuccess: () => toast({ title: "বাধ্যতামূলক বিষয় আপডেট হয়েছে" }),
+    });
+  };
+
+  // Initialize range inputs from existing question sections
+  const initRangeInputs = (exam: Exam) => {
+    const subjects = [...new Set(exam.questions.map((q) => q.section).filter(Boolean))];
+    const ranges: { from: number; to: number; subject: string }[] = [];
+    
+    // Detect existing ranges
+    let currentSubject = "";
+    let rangeStart = 0;
+    exam.questions.forEach((q, i) => {
+      if (q.section !== currentSubject) {
+        if (currentSubject && i > 0) {
+          ranges.push({ from: rangeStart + 1, to: i, subject: currentSubject });
+        }
+        currentSubject = q.section;
+        rangeStart = i;
+      }
+    });
+    if (currentSubject) {
+      ranges.push({ from: rangeStart + 1, to: exam.questions.length, subject: currentSubject });
+    }
+    
+    if (ranges.length === 0) {
+      ranges.push({ from: 1, to: exam.questions.length, subject: "" });
+    }
+    
+    setRangeInputs((prev) => ({ ...prev, [exam.id]: ranges }));
+  };
+
+  const addRange = (examId: string) => {
+    setRangeInputs((prev) => ({
+      ...prev,
+      [examId]: [...(prev[examId] || []), { from: 1, to: 1, subject: "" }],
+    }));
+  };
+
+  const removeRange = (examId: string, idx: number) => {
+    setRangeInputs((prev) => ({
+      ...prev,
+      [examId]: (prev[examId] || []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  const updateRange = (examId: string, idx: number, field: string, value: string | number) => {
+    setRangeInputs((prev) => ({
+      ...prev,
+      [examId]: (prev[examId] || []).map((r, i) => i === idx ? { ...r, [field]: value } : r),
+    }));
+  };
+
+  const applyRanges = (exam: Exam) => {
+    const ranges = rangeInputs[exam.id] || [];
+    if (ranges.length === 0) return;
+
+    // Validate ranges
+    for (const r of ranges) {
+      if (!r.subject.trim()) {
+        toast({ title: "ত্রুটি", description: "সব রেঞ্জে বিষয়ের নাম দিন", variant: "destructive" });
+        return;
+      }
+      if (r.from < 1 || r.to > exam.questions.length || r.from > r.to) {
+        toast({ title: "ত্রুটি", description: `রেঞ্জ ${r.from}-${r.to} সঠিক নয় (মোট ${exam.questions.length} প্রশ্ন)`, variant: "destructive" });
+        return;
+      }
+    }
+
+    const updatedQuestions = [...exam.questions];
+    ranges.forEach((r) => {
+      for (let i = r.from - 1; i < r.to && i < updatedQuestions.length; i++) {
+        updatedQuestions[i] = { ...updatedQuestions[i], section: r.subject.trim() };
+      }
+    });
+
+    const updatedExam = { ...exam, questions: updatedQuestions };
+    upsertExam.mutate(updatedExam, {
+      onSuccess: () => {
+        toast({ title: "বিষয় রেঞ্জ আপডেট হয়েছে!" });
+        setEditingRanges(null);
+      },
     });
   };
 
@@ -95,6 +178,12 @@ const AdminExams = () => {
                   <span className={`text-xs px-2 py-0.5 rounded-full ${e.published ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                     {e.published ? "প্রকাশিত" : "অপ্রকাশিত"}
                   </span>
+                  <button onClick={() => {
+                    if (editingRanges === e.id) { setEditingRanges(null); } 
+                    else { setEditingRanges(e.id); initRangeInputs(e); }
+                  }} className="p-2 rounded-lg hover:bg-accent/10 transition-colors" title="বিষয় রেঞ্জ">
+                    <Layers size={16} className={editingRanges === e.id ? "text-primary" : "text-muted-foreground"} />
+                  </button>
                   {hasMultipleSubjects && (
                     <button onClick={() => setEditingMandatory(isEditingMandatory ? null : e.id)} className="p-2 rounded-lg hover:bg-accent/10 transition-colors" title="বাধ্যতামূলক বিষয়">
                       <Lock size={16} className={isEditingMandatory ? "text-primary" : "text-muted-foreground"} />
@@ -135,6 +224,55 @@ const AdminExams = () => {
                       })}
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-2">বাধ্যতামূলক বিষয়গুলো স্টুডেন্টরা বাদ দিতে পারবে না</p>
+                  </div>
+                )}
+
+                {/* Subject range editor */}
+                {editingRanges === e.id && (
+                  <div className="mt-3 p-3 bg-accent/5 rounded-xl border border-accent/20">
+                    <p className="text-xs font-semibold mb-2">📐 প্রশ্ন সিরিয়াল অনুযায়ী বিষয় ভাগ করুন (মোট {e.questions.length} প্রশ্ন)</p>
+                    <div className="space-y-2">
+                      {(rangeInputs[e.id] || []).map((r, ri) => (
+                        <div key={ri} className="flex items-center gap-2 flex-wrap">
+                          <input
+                            type="number" min={1} max={e.questions.length}
+                            value={r.from}
+                            onChange={(ev) => updateRange(e.id, ri, "from", Number(ev.target.value))}
+                            className="w-16 glass-strong rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            placeholder="থেকে"
+                          />
+                          <span className="text-xs text-muted-foreground">থেকে</span>
+                          <input
+                            type="number" min={1} max={e.questions.length}
+                            value={r.to}
+                            onChange={(ev) => updateRange(e.id, ri, "to", Number(ev.target.value))}
+                            className="w-16 glass-strong rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            placeholder="পর্যন্ত"
+                          />
+                          <span className="text-xs text-muted-foreground">→</span>
+                          <input
+                            value={r.subject}
+                            onChange={(ev) => updateRange(e.id, ri, "subject", ev.target.value)}
+                            className="flex-1 min-w-[100px] glass-strong rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
+                            placeholder="বিষয়ের নাম"
+                          />
+                          <button onClick={() => removeRange(e.id, ri)} className="p-1 rounded hover:bg-destructive/10">
+                            <X size={14} className="text-destructive" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={() => addRange(e.id)} className="text-xs px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 transition-all">
+                        + রেঞ্জ যোগ করুন
+                      </button>
+                      <button onClick={() => applyRanges(e)} className="text-xs px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all">
+                        ✓ প্রয়োগ করুন
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      উদাহরণ: ১-৩০ → পদার্থ, ৩১-৬০ → রসায়ন, ৬১-৯০ → জীববিজ্ঞান
+                    </p>
                   </div>
                 )}
 
