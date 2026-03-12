@@ -53,6 +53,87 @@ const AdminExams = () => {
     });
   };
 
+  // Initialize range inputs from existing question sections
+  const initRangeInputs = (exam: Exam) => {
+    const subjects = [...new Set(exam.questions.map((q) => q.section).filter(Boolean))];
+    const ranges: { from: number; to: number; subject: string }[] = [];
+    
+    // Detect existing ranges
+    let currentSubject = "";
+    let rangeStart = 0;
+    exam.questions.forEach((q, i) => {
+      if (q.section !== currentSubject) {
+        if (currentSubject && i > 0) {
+          ranges.push({ from: rangeStart + 1, to: i, subject: currentSubject });
+        }
+        currentSubject = q.section;
+        rangeStart = i;
+      }
+    });
+    if (currentSubject) {
+      ranges.push({ from: rangeStart + 1, to: exam.questions.length, subject: currentSubject });
+    }
+    
+    if (ranges.length === 0) {
+      ranges.push({ from: 1, to: exam.questions.length, subject: "" });
+    }
+    
+    setRangeInputs((prev) => ({ ...prev, [exam.id]: ranges }));
+  };
+
+  const addRange = (examId: string) => {
+    setRangeInputs((prev) => ({
+      ...prev,
+      [examId]: [...(prev[examId] || []), { from: 1, to: 1, subject: "" }],
+    }));
+  };
+
+  const removeRange = (examId: string, idx: number) => {
+    setRangeInputs((prev) => ({
+      ...prev,
+      [examId]: (prev[examId] || []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  const updateRange = (examId: string, idx: number, field: string, value: string | number) => {
+    setRangeInputs((prev) => ({
+      ...prev,
+      [examId]: (prev[examId] || []).map((r, i) => i === idx ? { ...r, [field]: value } : r),
+    }));
+  };
+
+  const applyRanges = (exam: Exam) => {
+    const ranges = rangeInputs[exam.id] || [];
+    if (ranges.length === 0) return;
+
+    // Validate ranges
+    for (const r of ranges) {
+      if (!r.subject.trim()) {
+        toast({ title: "ত্রুটি", description: "সব রেঞ্জে বিষয়ের নাম দিন", variant: "destructive" });
+        return;
+      }
+      if (r.from < 1 || r.to > exam.questions.length || r.from > r.to) {
+        toast({ title: "ত্রুটি", description: `রেঞ্জ ${r.from}-${r.to} সঠিক নয় (মোট ${exam.questions.length} প্রশ্ন)`, variant: "destructive" });
+        return;
+      }
+    }
+
+    const updatedQuestions = [...exam.questions];
+    ranges.forEach((r) => {
+      for (let i = r.from - 1; i < r.to && i < updatedQuestions.length; i++) {
+        updatedQuestions[i] = { ...updatedQuestions[i], section: r.subject.trim() };
+      }
+    });
+
+    const updatedExam = { ...exam, questions: updatedQuestions };
+    upsertExam.mutate(updatedExam, {
+      onSuccess: () => {
+        toast({ title: "বিষয় রেঞ্জ আপডেট হয়েছে!" });
+        setEditingRanges(null);
+      },
+    });
+  };
+
   if (isLoading) {
     return <div className="animate-fade-in p-12 text-center text-muted-foreground">লোড হচ্ছে...</div>;
   }
