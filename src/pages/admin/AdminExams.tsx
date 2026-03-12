@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useExams, useSections, useDeleteExam, useUpdateExamField, useUpsertExam } from "@/hooks/useSupabaseData";
-import { Exam } from "@/lib/types";
-import { Eye, EyeOff, Trash2, FolderOpen, Pencil, Lock, BookOpen, X, Check } from "lucide-react";
+import { Exam, Question } from "@/lib/types";
+import { Eye, EyeOff, Trash2, FolderOpen, Pencil, Lock, BookOpen, X, Check, Layers } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QuestionEditor from "@/components/QuestionEditor";
 
