@@ -164,7 +164,11 @@ const StudentExamAttempt = () => {
   const answeredCount = Object.keys(answers).length;
   const unansweredCount = questions.length - answeredCount;
 
-  const selectAnswer = (qId: string, opt: string) => setAnswers((prev) => ({ ...prev, [qId]: opt }));
+  // Lock answer after first selection - no changing allowed
+  const selectAnswer = (qId: string, opt: string) => {
+    if (answers[qId]) return; // already answered, locked
+    setAnswers((prev) => ({ ...prev, [qId]: opt }));
+  };
 
   // Group questions by subject for palette
   const subjectGroupedQuestions = currentSubjects.length > 1
@@ -223,8 +227,11 @@ const StudentExamAttempt = () => {
                         <div className="space-y-2.5">
                           {q.options.map((opt, oi) => (
                             <button key={oi} onClick={() => selectAnswer(q.id, opt)}
+                              disabled={!!answers[q.id]}
                               className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
-                                answers[q.id] === opt ? "bg-primary/10 border-primary text-primary" : "border-border hover:border-primary/30 hover:bg-primary/5"
+                                answers[q.id] === opt ? "bg-primary/10 border-primary text-primary ring-1 ring-primary/30" 
+                                : answers[q.id] ? "border-border opacity-50 cursor-not-allowed"
+                                : "border-border hover:border-primary/30 hover:bg-primary/5"
                               }`}>
                               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs mr-3 flex-shrink-0">{String.fromCharCode(65 + oi)}</span>
                               <span className="flex-1">{opt}</span>
@@ -250,8 +257,11 @@ const StudentExamAttempt = () => {
               <div className="space-y-2.5">
                 {q.options.map((opt, oi) => (
                   <button key={oi} onClick={() => selectAnswer(q.id, opt)}
+                    disabled={!!answers[q.id]}
                     className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
-                      answers[q.id] === opt ? "bg-primary/10 border-primary text-primary" : "border-border hover:border-primary/30 hover:bg-primary/5"
+                      answers[q.id] === opt ? "bg-primary/10 border-primary text-primary ring-1 ring-primary/30"
+                      : answers[q.id] ? "border-border opacity-50 cursor-not-allowed"
+                      : "border-border hover:border-primary/30 hover:bg-primary/5"
                     }`}>
                     <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs mr-3 flex-shrink-0">{String.fromCharCode(65 + oi)}</span>
                     <span className="flex-1">{opt}</span>
