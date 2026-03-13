@@ -88,9 +88,9 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
             return (
               <div key={q.id} className="border border-border rounded-2xl overflow-hidden bg-card">
                 <button onClick={() => setExpandedId(isOpen ? null : q.id)} className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-muted/50 transition-colors">
-                  <span className="text-sm sm:text-base font-medium truncate flex-1">
+                  <span className="text-sm sm:text-base font-medium flex-1" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     <span className="text-muted-foreground mr-2 font-bold">{qi + 1}.</span>
-                    {q.question.slice(0, 100)}{q.question.length > 100 ? "..." : ""}
+                    {q.question}
                   </span>
                   <div className="flex items-center gap-2 ml-3 flex-shrink-0">
                     {q.questionImage && <span className="text-sm">🖼️</span>}

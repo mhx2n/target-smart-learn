@@ -85,7 +85,7 @@ const StudentResult = () => {
                 </div>
                 <div className="text-right">
                   <span className={`text-lg font-bold ${r.percentage >= 60 ? "text-success" : "text-destructive"}`}>{r.percentage}%</span>
-                  <Link to={`/exams/${r.examId}/attempt`} className="block text-xs text-primary mt-1">আবার দিন →</Link>
+                  <Link to={`/exams/${r.examId}`} className="block text-xs text-primary mt-1">আবার দিন →</Link>
                 </div>
               </div>
             ))}

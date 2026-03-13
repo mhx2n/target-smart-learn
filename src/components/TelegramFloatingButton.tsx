@@ -5,8 +5,8 @@ const TelegramFloatingButton = () => {
   const settings = useSiteSettingsContext();
   
   // Find Telegram link from socialLinks
-  const telegramLink = settings.socialLinks.find(
-    (link) => link.label.toLowerCase().includes("telegram") || link.url.toLowerCase().includes("t.me")
+  const telegramLink = settings.socialLinks?.find(
+    (link) => link.label?.toLowerCase().includes("telegram") || link.url?.toLowerCase().includes("t.me")
   );
 
   if (!telegramLink?.url) return null;

@@ -164,7 +164,11 @@ const StudentExamAttempt = () => {
   const answeredCount = Object.keys(answers).length;
   const unansweredCount = questions.length - answeredCount;
 
-  const selectAnswer = (qId: string, opt: string) => setAnswers((prev) => ({ ...prev, [qId]: opt }));
+  // Lock answer after first selection - no changing allowed
+  const selectAnswer = (qId: string, opt: string) => {
+    if (answers[qId]) return; // already answered, locked
+    setAnswers((prev) => ({ ...prev, [qId]: opt }));
+  };
 
   // Group questions by subject for palette
   const subjectGroupedQuestions = currentSubjects.length > 1
