@@ -448,6 +448,7 @@ export interface WrongAnswerEntry {
   correctAnswer: string;
   userAnswer: string;
   explanation: string;
+  section?: string;
   createdAt?: string;
 }
 
@@ -481,6 +482,7 @@ export async function saveWrongAnswers(entries: WrongAnswerEntry[]): Promise<voi
       correct_answer: e.correctAnswer,
       user_answer: e.userAnswer,
       explanation: e.explanation || "",
+      section: e.section || "",
     }))
   );
   if (error) throw error;
@@ -507,6 +509,7 @@ export async function fetchWrongAnswers(): Promise<WrongAnswerEntry[]> {
     correctAnswer: r.correct_answer,
     userAnswer: r.user_answer,
     explanation: r.explanation,
+    section: r.section || "",
     createdAt: r.created_at,
   }));
 }

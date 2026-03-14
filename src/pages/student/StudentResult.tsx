@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, MinusCircle, RotateCcw, AlertTriangle, BookOpen 
 import { useMemo, useEffect, useState } from "react";
 import { useResults } from "@/hooks/useSupabaseData";
 import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
+import MathText from "@/components/MathText";
 import { saveWrongAnswers, WrongAnswerEntry } from "@/lib/api";
 
 const StudentResult = () => {
@@ -56,6 +57,7 @@ const StudentResult = () => {
         correctAnswer: resolveCorrectOptionText(sourceQ),
         userAnswer: result.answers[q.id] || "",
         explanation: q.explanation,
+        section: q.section || "",
       };
     });
     saveWrongAnswers(entries).catch(console.error);
@@ -119,7 +121,7 @@ const StudentResult = () => {
       <div key={q.id} className="glass-card-static p-4">
         <div className="flex items-center gap-2 mb-2">
           <p className="text-base font-semibold flex-1">
-            <span className="text-muted-foreground mr-2">{i + 1}.</span>{q.question}
+            <span className="text-muted-foreground mr-2">{i + 1}.</span><MathText text={q.question} />
           </p>
           {q.section && hasSubjectBreakdown && (
             <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full flex-shrink-0">{q.section}</span>
@@ -138,7 +140,7 @@ const StudentResult = () => {
                 <div className="flex items-center gap-2">
                   {isAnswer && <CheckCircle2 size={16} className="text-success flex-shrink-0" />}
                   {isUser && !isCorrect && <XCircle size={16} className="text-destructive flex-shrink-0" />}
-                  <span className="text-sm">{opt}</span>
+                  <MathText text={opt} className="text-sm" />
                 </div>
                 {q.optionImages?.[oi] && <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded border border-border object-contain" />}
               </div>

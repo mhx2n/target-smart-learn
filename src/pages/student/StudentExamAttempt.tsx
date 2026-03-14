@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ExamResult, SubjectBreakdown } from "@/lib/types";
 import { List, X, Clock, AlertTriangle } from "lucide-react";
 import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
+import MathText from "@/components/MathText";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -34,10 +35,23 @@ const StudentExamAttempt = () => {
     return exam.questions;
   }, [exam, selectedSubjects]);
 
-  // Questions maintain CSV upload order — no shuffle
+  // Shuffle questions within each subject during exam
   const questions = useMemo(() => {
     if (!originalQuestions.length) return [];
-    return originalQuestions.map((q) => ({ ...q }));
+    const subjects = [...new Set(originalQuestions.map(q => q.section).filter(Boolean))];
+    if (subjects.length <= 1) {
+      return shuffle(originalQuestions.map(q => ({ ...q })));
+    }
+    // Shuffle within each subject, then concatenate in subject order
+    const result: typeof originalQuestions = [];
+    subjects.forEach(s => {
+      const subjectQs = originalQuestions.filter(q => q.section === s).map(q => ({ ...q }));
+      result.push(...shuffle(subjectQs));
+    });
+    // Add questions without a section
+    const noSection = originalQuestions.filter(q => !q.section).map(q => ({ ...q }));
+    if (noSection.length) result.push(...shuffle(noSection));
+    return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exam?.id, selectedSubjects?.join(",")]);
 
@@ -222,7 +236,7 @@ const StudentExamAttempt = () => {
                     return (
                       <div key={q.id} ref={(el) => { questionRefs.current[globalIdx] = el; }} className="glass-card-static p-5">
                         <p className="text-xs text-muted-foreground mb-2">প্রশ্ন {globalIdx + 1} / {questions.length}</p>
-                        <h3 className="text-base font-semibold mb-2">{q.question}</h3>
+              <h3 className="text-base font-semibold mb-2"><MathText text={q.question} /></h3>
                         {q.questionImage && <img src={q.questionImage} alt="" className="max-w-full max-h-60 rounded-lg border border-border mb-4 object-contain" />}
                         <div className="space-y-2.5">
                           {q.options.map((opt, oi) => (
@@ -234,7 +248,7 @@ const StudentExamAttempt = () => {
                                 : "border-border hover:border-primary/30 hover:bg-primary/5"
                               }`}>
                               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs mr-3 flex-shrink-0">{String.fromCharCode(65 + oi)}</span>
-                              <span className="flex-1">{opt}</span>
+                              <span className="flex-1"><MathText text={opt} /></span>
                               {q.optionImages?.[oi] && <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded-lg border border-border object-contain" />}
                             </button>
                           ))}
@@ -252,7 +266,7 @@ const StudentExamAttempt = () => {
           {questions.map((q, i) => (
             <div key={q.id} ref={(el) => { questionRefs.current[i] = el; }} className="glass-card-static p-5">
               <p className="text-xs text-muted-foreground mb-2">প্রশ্ন {i + 1} / {questions.length}</p>
-              <h3 className="text-base font-semibold mb-2">{q.question}</h3>
+              <h3 className="text-base font-semibold mb-2"><MathText text={q.question} /></h3>
               {q.questionImage && <img src={q.questionImage} alt="" className="max-w-full max-h-60 rounded-lg border border-border mb-4 object-contain" />}
               <div className="space-y-2.5">
                 {q.options.map((opt, oi) => (
@@ -264,7 +278,7 @@ const StudentExamAttempt = () => {
                       : "border-border hover:border-primary/30 hover:bg-primary/5"
                     }`}>
                     <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs mr-3 flex-shrink-0">{String.fromCharCode(65 + oi)}</span>
-                    <span className="flex-1">{opt}</span>
+                    <span className="flex-1"><MathText text={opt} /></span>
                     {q.optionImages?.[oi] && <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded-lg border border-border object-contain" />}
                   </button>
                 ))}
