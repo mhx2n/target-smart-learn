@@ -448,6 +448,7 @@ export interface WrongAnswerEntry {
   correctAnswer: string;
   userAnswer: string;
   explanation: string;
+  section?: string;
   createdAt?: string;
 }
 
