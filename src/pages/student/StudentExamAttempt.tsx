@@ -34,10 +34,23 @@ const StudentExamAttempt = () => {
     return exam.questions;
   }, [exam, selectedSubjects]);
 
-  // Questions maintain CSV upload order — no shuffle
+  // Shuffle questions within each subject during exam
   const questions = useMemo(() => {
     if (!originalQuestions.length) return [];
-    return originalQuestions.map((q) => ({ ...q }));
+    const subjects = [...new Set(originalQuestions.map(q => q.section).filter(Boolean))];
+    if (subjects.length <= 1) {
+      return shuffle(originalQuestions.map(q => ({ ...q })));
+    }
+    // Shuffle within each subject, then concatenate in subject order
+    const result: typeof originalQuestions = [];
+    subjects.forEach(s => {
+      const subjectQs = originalQuestions.filter(q => q.section === s).map(q => ({ ...q }));
+      result.push(...shuffle(subjectQs));
+    });
+    // Add questions without a section
+    const noSection = originalQuestions.filter(q => !q.section).map(q => ({ ...q }));
+    if (noSection.length) result.push(...shuffle(noSection));
+    return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exam?.id, selectedSubjects?.join(",")]);
 
