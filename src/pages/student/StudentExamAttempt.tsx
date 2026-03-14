@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { ExamResult, SubjectBreakdown } from "@/lib/types";
 import { List, X, Clock, AlertTriangle } from "lucide-react";
 import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
+import MathText from "@/components/MathText";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
