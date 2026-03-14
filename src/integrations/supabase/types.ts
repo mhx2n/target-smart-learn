@@ -451,6 +451,7 @@ export type Database = {
           question_id: string
           question_image: string | null
           question_text: string
+          section: string
           session_id: string
           user_answer: string
         }
@@ -466,6 +467,7 @@ export type Database = {
           question_id: string
           question_image?: string | null
           question_text: string
+          section?: string
           session_id: string
           user_answer?: string
         }
@@ -481,6 +483,7 @@ export type Database = {
           question_id?: string
           question_image?: string | null
           question_text?: string
+          section?: string
           session_id?: string
           user_answer?: string
         }
