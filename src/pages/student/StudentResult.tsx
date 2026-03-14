@@ -140,7 +140,7 @@ const StudentResult = () => {
                 <div className="flex items-center gap-2">
                   {isAnswer && <CheckCircle2 size={16} className="text-success flex-shrink-0" />}
                   {isUser && !isCorrect && <XCircle size={16} className="text-destructive flex-shrink-0" />}
-                  <span className="text-sm">{opt}</span>
+                  <MathText text={opt} className="text-sm" />
                 </div>
                 {q.optionImages?.[oi] && <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded border border-border object-contain" />}
               </div>
