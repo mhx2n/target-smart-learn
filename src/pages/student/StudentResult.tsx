@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle, MinusCircle, RotateCcw, AlertTriangle, BookOpen 
 import { useMemo, useEffect, useState } from "react";
 import { useResults } from "@/hooks/useSupabaseData";
 import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
+import MathText from "@/components/MathText";
 import { saveWrongAnswers, WrongAnswerEntry } from "@/lib/api";
 
 const StudentResult = () => {
