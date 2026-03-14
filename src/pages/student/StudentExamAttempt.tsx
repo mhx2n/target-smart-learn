@@ -235,7 +235,7 @@ const StudentExamAttempt = () => {
                     return (
                       <div key={q.id} ref={(el) => { questionRefs.current[globalIdx] = el; }} className="glass-card-static p-5">
                         <p className="text-xs text-muted-foreground mb-2">প্রশ্ন {globalIdx + 1} / {questions.length}</p>
-                        <h3 className="text-base font-semibold mb-2">{q.question}</h3>
+              <h3 className="text-base font-semibold mb-2"><MathText text={q.question} /></h3>
                         {q.questionImage && <img src={q.questionImage} alt="" className="max-w-full max-h-60 rounded-lg border border-border mb-4 object-contain" />}
                         <div className="space-y-2.5">
                           {q.options.map((opt, oi) => (
