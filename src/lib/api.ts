@@ -482,6 +482,7 @@ export async function saveWrongAnswers(entries: WrongAnswerEntry[]): Promise<voi
       correct_answer: e.correctAnswer,
       user_answer: e.userAnswer,
       explanation: e.explanation || "",
+      section: e.section || "",
     }))
   );
   if (error) throw error;
