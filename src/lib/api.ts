@@ -509,6 +509,7 @@ export async function fetchWrongAnswers(): Promise<WrongAnswerEntry[]> {
     correctAnswer: r.correct_answer,
     userAnswer: r.user_answer,
     explanation: r.explanation,
+    section: r.section || "",
     createdAt: r.created_at,
   }));
 }

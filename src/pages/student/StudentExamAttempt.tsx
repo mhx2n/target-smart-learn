@@ -277,7 +277,7 @@ const StudentExamAttempt = () => {
                       : "border-border hover:border-primary/30 hover:bg-primary/5"
                     }`}>
                     <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs mr-3 flex-shrink-0">{String.fromCharCode(65 + oi)}</span>
-                    <span className="flex-1">{opt}</span>
+                    <span className="flex-1"><MathText text={opt} /></span>
                     {q.optionImages?.[oi] && <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded-lg border border-border object-contain" />}
                   </button>
                 ))}

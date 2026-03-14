@@ -56,6 +56,7 @@ const StudentResult = () => {
         correctAnswer: resolveCorrectOptionText(sourceQ),
         userAnswer: result.answers[q.id] || "",
         explanation: q.explanation,
+        section: q.section || "",
       };
     });
     saveWrongAnswers(entries).catch(console.error);
