@@ -141,9 +141,12 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
                           </button>
                         </div>
                       ) : (
-                        <label className="flex items-center justify-center gap-3 w-full py-8 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground cursor-pointer hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all">
-                          <ImagePlus size={24} />
-                          <span>ছবি যোগ করতে ট্যাপ করুন</span>
+                        <label className="flex flex-col items-center justify-center gap-2 w-full py-8 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground cursor-pointer hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all">
+                          <div className="flex items-center gap-3">
+                            <ImagePlus size={24} />
+                            <span>ছবি যোগ করতে ট্যাপ করুন</span>
+                          </div>
+                          <span className="text-[10px] opacity-60">(সেরা সাইজ: 600×400px)</span>
                           <input
                             type="file"
                             accept="image/*"
