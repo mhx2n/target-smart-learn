@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, forwardRef } from "react";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 
@@ -10,14 +10,12 @@ interface MathTextProps {
 /**
  * Renders text with inline LaTeX math expressions.
  * Supports $...$ for inline math and $$...$$ for display math.
- * Example: "m এর মান কত হলে $\vec{A} = m\hat{i}$"
  */
-const MathText = ({ text, className = "" }: MathTextProps) => {
+const MathText = forwardRef<HTMLSpanElement, MathTextProps>(({ text, className = "" }, ref) => {
   const html = useMemo(() => {
     if (!text) return "";
     
     try {
-      // Replace $$...$$ (display math) first, then $...$ (inline math)
       let result = text;
       
       // Display math: $$...$$
@@ -44,12 +42,13 @@ const MathText = ({ text, className = "" }: MathTextProps) => {
     }
   }, [text]);
 
-  // If no math delimiters found, render as plain text
   if (!text?.includes("$")) {
-    return <span className={className}>{text}</span>;
+    return <span ref={ref} className={className}>{text}</span>;
   }
 
-  return <span className={className} dangerouslySetInnerHTML={{ __html: html }} />;
-};
+  return <span ref={ref} className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+});
+
+MathText.displayName = "MathText";
 
 export default MathText;
