@@ -175,11 +175,11 @@ export function GeneralAIChatModal({ isOpen, onClose }: GeneralAIChatModalProps)
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-4 py-4 px-4 min-h-[300px] max-h-[60vh]">
+        <div className="flex-1 overflow-y-auto space-y-5 py-5 px-3 sm:px-5 min-h-[300px] max-h-[60vh]">
           {messages.map((message, index) => (
             <div key={index} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`flex gap-3 max-w-[90%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-md ${
+              <div className={`flex gap-3 max-w-[95%] sm:max-w-[88%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 shadow-md mt-1 ${
                   message.role === "user" 
                     ? "bg-gradient-to-r from-primary to-primary/80" 
                     : "bg-gradient-to-r from-secondary to-secondary/80 border-2 border-primary/20"
@@ -190,16 +190,16 @@ export function GeneralAIChatModal({ isOpen, onClose }: GeneralAIChatModalProps)
                     <Sparkles size={16} className="text-secondary-foreground" />
                   )}
                 </div>
-                <div className={`rounded-2xl p-4 shadow-sm border ${
+                <div className={`rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 shadow-sm border ${
                   message.role === "user"
                     ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground"
                     : "bg-gradient-to-r from-card to-card/80 border-border/50"
                 }`}>
-                  <div className="text-sm leading-relaxed">
+                  <div className="text-[15px] leading-[1.75] sm:text-base sm:leading-[1.8]">
                     <ReactMarkdown 
                       remarkPlugins={[remarkMath]}
                       rehypePlugins={[rehypeKatex]}
-                      className="prose prose-sm max-w-none prose-headings:text-inherit prose-p:text-inherit prose-strong:text-inherit prose-em:text-inherit prose-code:text-inherit prose-pre:text-inherit prose-blockquote:text-inherit prose-ul:text-inherit prose-ol:text-inherit prose-li:text-inherit [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                      className="prose prose-base max-w-none prose-headings:text-inherit prose-headings:font-bold prose-headings:mb-2 prose-p:text-inherit prose-p:mb-2 prose-strong:text-inherit prose-strong:font-bold prose-em:text-inherit prose-code:text-inherit prose-pre:text-inherit prose-blockquote:text-inherit prose-blockquote:border-primary/30 prose-ul:text-inherit prose-ul:my-2 prose-ol:text-inherit prose-ol:my-2 prose-li:text-inherit prose-li:my-0.5 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
                     >
                       {message.content}
                     </ReactMarkdown>

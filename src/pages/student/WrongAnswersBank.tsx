@@ -61,7 +61,7 @@ const WrongAnswersBank = () => {
   });
 
   return (
-    <div className="pt-24 pb-8 container max-w-2xl mx-auto animate-fade-in">
+    <div className="pt-24 pb-8 container max-w-3xl mx-auto animate-fade-in px-3 sm:px-4">
       <div className="flex items-center gap-3 mb-5">
         <Link to="/" className="text-muted-foreground hover:text-foreground"><ArrowLeft size={20} /></Link>
         <h1 className="text-xl font-bold">📕 ভুল উত্তর ব্যাংক</h1>
@@ -145,10 +145,10 @@ const WrongAnswersBank = () => {
                           {isSubjOpen && (
                             <div className="px-3 pb-3 space-y-3 animate-fade-in">
                               {items.map((entry, i) => (
-                                <div key={entry.id || i} className="p-4 border border-border/30 rounded-xl hover:border-primary/30 transition-colors bg-card">
+                                <div key={entry.id || i} className="p-4 sm:p-5 border border-border/30 rounded-xl hover:border-primary/30 transition-colors bg-card">
                                   <div className="flex items-start justify-between mb-3">
-                                    <div className="flex-1 pr-3">
-                                      <p className="text-sm font-semibold leading-relaxed">
+                                    <div className="flex-1 pr-2">
+                                      <p className="text-[15px] sm:text-base font-semibold leading-[1.7]">
                                         <span className="text-muted-foreground mr-2 font-mono">{i + 1}.</span>
                                         <MathText text={entry.questionText} />
                                       </p>
@@ -170,11 +170,11 @@ const WrongAnswersBank = () => {
                                       if (isCorrectOpt) cls = "border-success bg-success/10";
                                       else if (isUserOpt) cls = "border-destructive bg-destructive/10";
                                       return (
-                                        <div key={opt} className={`px-3 py-2.5 rounded-lg text-sm border ${cls} transition-colors`}>
-                                          <div className="flex items-center gap-2">
-                                            {isCorrectOpt && <CheckCircle2 size={16} className="text-success flex-shrink-0" />}
-                                            {isUserOpt && !isCorrectOpt && <XCircle size={16} className="text-destructive flex-shrink-0" />}
-                                            <MathText text={opt} className="leading-relaxed" />
+                                      <div key={opt} className={`px-3.5 py-3 rounded-lg text-[15px] sm:text-base border ${cls} transition-colors`}>
+                                          <div className="flex items-center gap-2.5">
+                                            {isCorrectOpt && <CheckCircle2 size={18} className="text-success flex-shrink-0" />}
+                                            {isUserOpt && !isCorrectOpt && <XCircle size={18} className="text-destructive flex-shrink-0" />}
+                                            <MathText text={opt} className="leading-[1.7]" />
                                           </div>
                                           {entry.optionImages?.[oi] && <img src={entry.optionImages[oi]!} alt="" className="mt-2 max-h-20 rounded-lg border border-border/30 object-contain" />}
                                         </div>
@@ -182,12 +182,12 @@ const WrongAnswersBank = () => {
                                     })}
                                   </div>
                                   {entry.explanation && (
-                                    <div className="text-sm bg-muted/50 rounded-lg p-3 border border-border/30">
-                                      <div className="flex items-start gap-2">
-                                        <span className="text-base">💡</span>
+                                    <div className="text-[15px] sm:text-base bg-muted/50 rounded-lg p-3.5 sm:p-4 border border-border/30">
+                                      <div className="flex items-start gap-2.5">
+                                        <span className="text-lg">💡</span>
                                         <div>
                                           <strong className="text-foreground">ব্যাখ্যা:</strong>
-                                          <p className="mt-1 leading-relaxed text-muted-foreground">
+                                          <p className="mt-1.5 leading-[1.7] text-muted-foreground">
                                             <MathText text={entry.explanation} />
                                           </p>
                                         </div>
