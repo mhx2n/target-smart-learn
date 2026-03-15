@@ -145,10 +145,10 @@ const WrongAnswersBank = () => {
                           {isSubjOpen && (
                             <div className="px-3 pb-3 space-y-3 animate-fade-in">
                               {items.map((entry, i) => (
-                                <div key={entry.id || i} className="p-4 border border-border/30 rounded-xl hover:border-primary/30 transition-colors bg-card">
+                                <div key={entry.id || i} className="p-4 sm:p-5 border border-border/30 rounded-xl hover:border-primary/30 transition-colors bg-card">
                                   <div className="flex items-start justify-between mb-3">
-                                    <div className="flex-1 pr-3">
-                                      <p className="text-sm font-semibold leading-relaxed">
+                                    <div className="flex-1 pr-2">
+                                      <p className="text-[15px] sm:text-base font-semibold leading-[1.7]">
                                         <span className="text-muted-foreground mr-2 font-mono">{i + 1}.</span>
                                         <MathText text={entry.questionText} />
                                       </p>
