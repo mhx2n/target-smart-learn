@@ -1,4 +1,4 @@
-import { useMemo, forwardRef } from "react";
+import { useMemo } from "react";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 
@@ -11,7 +11,7 @@ interface MathTextProps {
  * Renders text with inline LaTeX math expressions.
  * Supports $...$ for inline math and $$...$$ for display math.
  */
-const MathText = forwardRef<HTMLSpanElement, MathTextProps>(({ text, className = "" }, ref) => {
+const MathText = ({ text, className = "" }: MathTextProps) => {
   const html = useMemo(() => {
     if (!text) return "";
     
@@ -43,12 +43,10 @@ const MathText = forwardRef<HTMLSpanElement, MathTextProps>(({ text, className =
   }, [text]);
 
   if (!text?.includes("$")) {
-    return <span ref={ref} className={className}>{text}</span>;
+    return <span className={className}>{text}</span>;
   }
 
-  return <span ref={ref} className={className} dangerouslySetInnerHTML={{ __html: html }} />;
-});
-
-MathText.displayName = "MathText";
+  return <span className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+};
 
 export default MathText;
