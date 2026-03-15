@@ -182,12 +182,12 @@ const WrongAnswersBank = () => {
                                     })}
                                   </div>
                                   {entry.explanation && (
-                                    <div className="text-sm bg-muted/50 rounded-lg p-3 border border-border/30">
-                                      <div className="flex items-start gap-2">
-                                        <span className="text-base">💡</span>
+                                    <div className="text-[15px] sm:text-base bg-muted/50 rounded-lg p-3.5 sm:p-4 border border-border/30">
+                                      <div className="flex items-start gap-2.5">
+                                        <span className="text-lg">💡</span>
                                         <div>
                                           <strong className="text-foreground">ব্যাখ্যা:</strong>
-                                          <p className="mt-1 leading-relaxed text-muted-foreground">
+                                          <p className="mt-1.5 leading-[1.7] text-muted-foreground">
                                             <MathText text={entry.explanation} />
                                           </p>
                                         </div>

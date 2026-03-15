@@ -95,6 +95,7 @@ const AdminSections = () => {
           <div className="flex items-center gap-3">
             <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-border hover:bg-muted cursor-pointer transition-colors">
               <ImagePlus size={16} className="text-primary" /> ছবি যোগ করুন
+              <span className="text-[10px] text-muted-foreground opacity-70">(সেরা সাইজ: 800×400px)</span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file, setNewImage); }} />
             </label>
             {newImage && (

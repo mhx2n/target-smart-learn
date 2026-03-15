@@ -80,6 +80,7 @@ const AdminEventBanners = () => {
                 <Image size={16} /> ছবি আপলোড
                 <input type="file" accept="image/*" onChange={handleImage} className="hidden" />
               </label>
+              <span className="text-[10px] text-muted-foreground">(সেরা সাইজ: 200×200px)</span>
               {image && <img src={image} alt="" className="w-10 h-10 rounded-lg object-cover" />}
             </div>
           </div>

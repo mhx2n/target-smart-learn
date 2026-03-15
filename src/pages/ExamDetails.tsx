@@ -80,8 +80,8 @@ const ExamDetails = () => {
           <span className="text-xs font-medium bg-warning/15 text-warning dark:bg-warning/20 dark:text-warning px-3 py-1 rounded-full">{getLabel(`diff${exam.difficulty.charAt(0).toUpperCase() + exam.difficulty.slice(1)}`, diffLabel[exam.difficulty])}</span>
         </div>
         <h1 className="text-2xl font-bold">{exam.title}</h1>
-        {(exam.category || exam.chapter) && (
-          <p className="text-sm text-muted-foreground">{[exam.category, exam.chapter].filter(Boolean).join(" • ")}</p>
+        {exam.chapter && (
+          <p className="text-sm text-muted-foreground">{exam.chapter}</p>
         )}
         <div className="flex gap-6 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5"><HelpCircle size={16} /> {exam.questionCount} প্রশ্ন</span>
