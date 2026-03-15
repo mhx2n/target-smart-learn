@@ -170,11 +170,11 @@ const WrongAnswersBank = () => {
                                       if (isCorrectOpt) cls = "border-success bg-success/10";
                                       else if (isUserOpt) cls = "border-destructive bg-destructive/10";
                                       return (
-                                        <div key={opt} className={`px-3 py-2.5 rounded-lg text-sm border ${cls} transition-colors`}>
-                                          <div className="flex items-center gap-2">
-                                            {isCorrectOpt && <CheckCircle2 size={16} className="text-success flex-shrink-0" />}
-                                            {isUserOpt && !isCorrectOpt && <XCircle size={16} className="text-destructive flex-shrink-0" />}
-                                            <MathText text={opt} className="leading-relaxed" />
+                                      <div key={opt} className={`px-3.5 py-3 rounded-lg text-[15px] sm:text-base border ${cls} transition-colors`}>
+                                          <div className="flex items-center gap-2.5">
+                                            {isCorrectOpt && <CheckCircle2 size={18} className="text-success flex-shrink-0" />}
+                                            {isUserOpt && !isCorrectOpt && <XCircle size={18} className="text-destructive flex-shrink-0" />}
+                                            <MathText text={opt} className="leading-[1.7]" />
                                           </div>
                                           {entry.optionImages?.[oi] && <img src={entry.optionImages[oi]!} alt="" className="mt-2 max-h-20 rounded-lg border border-border/30 object-contain" />}
                                         </div>
