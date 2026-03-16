@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Question, Exam } from "@/lib/types";
 import { useUpsertExam } from "@/hooks/useSupabaseData";
 import { compressImage } from "@/lib/imageUtils";
-import { X, ImagePlus, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ImagePlus, Save, ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Props {
@@ -11,6 +11,8 @@ interface Props {
   onClose: () => void;
   onSaved: (exam: Exam) => void;
 }
+
+const generateId = () => crypto.randomUUID?.() || Math.random().toString(36).slice(2);
 
 const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
   const [questions, setQuestions] = useState<Question[]>(JSON.parse(JSON.stringify(exam.questions)));
@@ -20,6 +22,27 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
 
   const updateQ = (id: string, patch: Partial<Question>) => {
     setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...patch } : q)));
+  };
+
+  const addNewQuestion = () => {
+    const newQ: Question = {
+      id: generateId(),
+      question: "",
+      options: ["", "", "", ""],
+      answer: "",
+      explanation: "",
+      type: "mcq",
+      section: "",
+    };
+    setQuestions((prev) => [...prev, newQ]);
+    setExpandedId(newQ.id);
+    toast({ title: "✅ নতুন প্রশ্ন যোগ হয়েছে" });
+  };
+
+  const deleteQuestion = (id: string) => {
+    setQuestions((prev) => prev.filter((q) => q.id !== id));
+    if (expandedId === id) setExpandedId(null);
+    toast({ title: "🗑️ প্রশ্ন মুছে ফেলা হয়েছে" });
   };
 
   const handleQuestionImage = async (qId: string, file: File) => {
@@ -61,7 +84,7 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
   };
 
   const saveAll = () => {
-    const updatedExam = { ...exam, questions };
+    const updatedExam = { ...exam, questions, questionCount: questions.length };
     upsertExam.mutate(updatedExam, {
       onSuccess: () => {
         onSaved(updatedExam);
@@ -82,6 +105,12 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={addNewQuestion}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-accent text-accent-foreground hover:bg-accent/80 transition-all"
+            >
+              <Plus size={16} /> প্রশ্ন যোগ
+            </button>
             <button
               onClick={saveAll}
               disabled={upsertExam.isPending}
@@ -109,9 +138,10 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
                     style={{ display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}
                   >
                     <span className="text-muted-foreground mr-2 font-bold">{qi + 1}.</span>
-                    {q.question}
+                    {q.question || <span className="text-muted-foreground italic">নতুন প্রশ্ন...</span>}
                   </span>
                   <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                    {q.answer && <span className="text-xs bg-success/20 text-success px-2 py-0.5 rounded-full">✓</span>}
                     {q.questionImage && <span className="text-sm">🖼️</span>}
                     {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </div>
@@ -124,7 +154,18 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
                       <textarea
                         value={q.question}
                         onChange={(e) => updateQ(q.id, { question: e.target.value })}
+                        placeholder="এখানে প্রশ্ন লিখুন... (LaTeX সাপোর্ট: $x^2$, \(x^2\))"
                         className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base min-h-[80px] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-semibold text-foreground mb-2 block">📂 বিষয়/সেকশন</label>
+                      <input
+                        value={q.section}
+                        onChange={(e) => updateQ(q.id, { section: e.target.value })}
+                        placeholder="যেমন: পদার্থবিজ্ঞান, রসায়ন..."
+                        className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
                     </div>
 
@@ -158,11 +199,11 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
                     </div>
 
                     <div className="space-y-4">
-                      <label className="text-sm font-semibold text-foreground block">📋 অপশনসমূহ</label>
+                      <label className="text-sm font-semibold text-foreground block">📋 অপশনসমূহ (সঠিক উত্তর সিলেক্ট করুন)</label>
                       {q.options.map((opt, oi) => (
-                        <div key={oi} className={`p-4 rounded-xl border-2 ${opt === q.answer ? "border-success/60 bg-success/5" : "border-border"}`}>
+                        <div key={oi} className={`p-4 rounded-xl border-2 transition-all ${opt === q.answer && opt !== "" ? "border-success/60 bg-success/5 ring-1 ring-success/20" : "border-border"}`}>
                           <div className="flex items-center gap-3 mb-3">
-                            <span className="w-9 h-9 rounded-full bg-muted text-sm flex items-center justify-center font-bold flex-shrink-0">
+                            <span className={`w-9 h-9 rounded-full text-sm flex items-center justify-center font-bold flex-shrink-0 ${opt === q.answer && opt !== "" ? "bg-success/20 text-success" : "bg-muted"}`}>
                               {String.fromCharCode(65 + oi)}
                             </span>
                             <input
@@ -173,6 +214,7 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
                                 newOpts[oi] = e.target.value;
                                 updateQ(q.id, { options: newOpts, ...(wasAnswer ? { answer: e.target.value } : {}) });
                               }}
+                              placeholder={`অপশন ${String.fromCharCode(65 + oi)} লিখুন...`}
                               className="flex-1 bg-transparent text-base font-medium focus:outline-none border-b border-transparent focus:border-primary/30 pb-1"
                             />
                           </div>
@@ -180,10 +222,10 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
                             <button
                               onClick={() => updateQ(q.id, { answer: opt })}
                               className={`text-xs px-4 py-2 rounded-lg font-semibold transition-all ${
-                                opt === q.answer ? "bg-success/20 text-success" : "bg-muted text-muted-foreground hover:bg-success/10 hover:text-success"
+                                opt === q.answer && opt !== "" ? "bg-success/20 text-success ring-1 ring-success/30" : "bg-muted text-muted-foreground hover:bg-success/10 hover:text-success"
                               }`}
                             >
-                              {opt === q.answer ? "✅ সঠিক উত্তর" : "সঠিক করুন"}
+                              {opt === q.answer && opt !== "" ? "✅ সঠিক উত্তর" : "সঠিক করুন"}
                             </button>
                             {q.optionImages?.[oi] ? (
                               <div className="relative inline-block">
@@ -217,14 +259,33 @@ const QuestionEditor = ({ exam, onClose, onSaved }: Props) => {
                       <textarea
                         value={q.explanation}
                         onChange={(e) => updateQ(q.id, { explanation: e.target.value })}
+                        placeholder="উত্তরের ব্যাখ্যা লিখুন..."
                         className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base min-h-[70px] focus:outline-none focus:ring-2 focus:ring-primary/30"
                       />
+                    </div>
+
+                    <div className="pt-2 border-t border-border">
+                      <button
+                        onClick={() => deleteQuestion(q.id)}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-destructive bg-destructive/10 hover:bg-destructive/20 transition-all"
+                      >
+                        <Trash2 size={16} /> এই প্রশ্ন মুছুন
+                      </button>
                     </div>
                   </div>
                 )}
               </div>
             );
           })}
+
+          {/* Add question button at bottom */}
+          <button
+            onClick={addNewQuestion}
+            className="w-full flex items-center justify-center gap-2 p-5 rounded-2xl border-2 border-dashed border-border text-muted-foreground hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all"
+          >
+            <Plus size={20} />
+            <span className="font-semibold">নতুন প্রশ্ন যোগ করুন</span>
+          </button>
         </div>
       </div>
     </div>
