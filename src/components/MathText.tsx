@@ -8,17 +8,22 @@ interface MathTextProps {
 }
 
 /**
- * Renders text with inline LaTeX math expressions.
- * Supports $...$ for inline math and $$...$$ for display math.
+ * Renders text with LaTeX math expressions.
+ * Supports: $...$, $$...$$, \(...\), \[...\]
  */
 const MathText = ({ text, className = "" }: MathTextProps) => {
+  const hasMath = useMemo(() => {
+    if (!text) return false;
+    return /\$|\\\(|\\\[/.test(text);
+  }, [text]);
+
   const html = useMemo(() => {
-    if (!text) return "";
-    
+    if (!text || !hasMath) return "";
+
     try {
       let result = text;
-      
-      // Display math: $$...$$
+
+      // Display math: $$...$$ 
       result = result.replace(/\$\$([\s\S]*?)\$\$/g, (_, math) => {
         try {
           return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
@@ -26,8 +31,26 @@ const MathText = ({ text, className = "" }: MathTextProps) => {
           return `$$${math}$$`;
         }
       });
-      
-      // Inline math: $...$
+
+      // Display math: \[...\]
+      result = result.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => {
+        try {
+          return katex.renderToString(math.trim(), { displayMode: true, throwOnError: false });
+        } catch {
+          return `\\[${math}\\]`;
+        }
+      });
+
+      // Inline math: \(...\)
+      result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => {
+        try {
+          return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
+        } catch {
+          return `\\(${math}\\)`;
+        }
+      });
+
+      // Inline math: $...$  (single dollar, not already processed)
       result = result.replace(/\$([^\$]+?)\$/g, (_, math) => {
         try {
           return katex.renderToString(math.trim(), { displayMode: false, throwOnError: false });
@@ -35,14 +58,14 @@ const MathText = ({ text, className = "" }: MathTextProps) => {
           return `$${math}$`;
         }
       });
-      
+
       return result;
     } catch {
       return text;
     }
-  }, [text]);
+  }, [text, hasMath]);
 
-  if (!text?.includes("$")) {
+  if (!hasMath) {
     return <span className={className}>{text}</span>;
   }
 
