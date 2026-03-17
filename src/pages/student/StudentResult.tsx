@@ -147,7 +147,7 @@ const StudentResult = () => {
             );
           })}
         </div>
-        {q.explanation && <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mt-2">💡 <strong>ব্যাখ্যা:</strong> {q.explanation}</div>}
+        {q.explanation && <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mt-2">💡 <strong>ব্যাখ্যা:</strong> <MathText text={q.explanation} /></div>}
       </div>
     );
   };
