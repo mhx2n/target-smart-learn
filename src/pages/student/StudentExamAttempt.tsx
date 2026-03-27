@@ -140,6 +140,64 @@ const StudentExamAttempt = () => {
       subjectBreakdown,
     };
     addResult.mutate(result);
+    const { data: authData } = await supabase.auth.getUser();
+const user = authData.user;
+
+if (user) {
+  const { data: attemptRow, error: attemptError } = await supabase
+    .from("exam_attempts")
+    .insert({
+      user_id: user.id,
+      exam_id: exam.id,
+      exam_title: exam.title,
+      score: finalScore,
+      total_questions: questions.length,
+      correct_answers: correct,
+      wrong_answers: wrong,
+      skipped_answers: skipped,
+      percentage,
+      negative_marks: negativeMarks,
+      selected_subjects: selectedSubjects || currentSubjects,
+      subject_breakdown: subjectBreakdown,
+      submitted_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (attemptError) {
+    console.error("exam_attempts insert error:", attemptError);
+  }
+
+  if (attemptRow) {
+    const answersPayload = questions.map((question) => {
+      const originalQ = originalQuestions.find((oq) => oq.id === question.id);
+      const correctOptionText = originalQ ? resolveCorrectOptionText(originalQ) : "";
+      const userAnswer = currentAnswers[question.id] || "";
+
+      return {
+        attempt_id: attemptRow.id,
+        user_id: user.id,
+        exam_id: exam.id,
+        question_id: question.id,
+        question_text: question.question,
+        selected_answer: userAnswer,
+        correct_answer: correctOptionText,
+        is_correct: !!userAnswer && isAnswerMatch(userAnswer, correctOptionText),
+        is_skipped: !userAnswer,
+        section: question.section || null,
+        created_at: new Date().toISOString(),
+      };
+    });
+
+    const { error: answersError } = await supabase
+      .from("exam_answers")
+      .insert(answersPayload);
+
+    if (answersError) {
+      console.error("exam_answers insert error:", answersError);
+    }
+  }
+}
     navigate("/results", { state: { result, questions, originalQuestions } });
   }, [submitted, exam, questions, originalQuestions, negativeMarking, navigate, addResult, currentSubjects, selectedSubjects]);
 
