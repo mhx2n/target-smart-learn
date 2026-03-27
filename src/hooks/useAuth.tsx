@@ -8,17 +8,24 @@ interface AuthState {
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthState>({ user: null, isAdmin: false, loading: true });
+const AuthContext = createContext<AuthState>({
+  user: null,
+  isAdmin: false,
+  loading: true,
+});
 
 export function useAuth() {
   return useContext(AuthContext);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({ user: null, isAdmin: false, loading: true });
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    isAdmin: false,
+    loading: true,
+  });
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         checkAdmin(session.user);
@@ -27,8 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         checkAdmin(session.user);
       } else {
@@ -39,29 +47,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
- async function checkAdmin(user: User) {
-  const { data, error } = await supabase.rpc("has_role", {
-    user_id: user.id,
-    role: "admin",
-   });
+  async function checkAdmin(user: User) {
+    const adminEmails = ["himel2331@gmail.com"];
+    const isAdmin = adminEmails.includes((user.email || "").toLowerCase());
 
-  setState({
-    user,
-    isAdmin: !!data && !error,
-    loading: false,
-   });
+    setState({
+      user,
+      isAdmin,
+      loading: false,
+    });
   }
-  return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
+
+  return (
+    <AuthContext.Provider value={state}>{children}</AuthContext.Provider>
+  );
 }
 
 export async function signIn(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (error) throw error;
   return data;
 }
 
 export async function signUp(email: string, password: string) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
   if (error) throw error;
   return data;
 }
