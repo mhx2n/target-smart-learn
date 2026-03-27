@@ -6,6 +6,7 @@ import { ExamResult, SubjectBreakdown } from "@/lib/types";
 import { List, X, Clock, AlertTriangle } from "lucide-react";
 import { isAnswerMatch, resolveCorrectOptionText } from "@/lib/answerUtils";
 import MathText from "@/components/MathText";
+import { supabase } from "@/integrations/supabase/client";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -23,42 +24,41 @@ const StudentExamAttempt = () => {
   const { data: exam, isLoading } = useExamById(id);
   const addResult = useAddResult();
 
-  // Get selected subjects from navigation state
   const selectedSubjects: string[] | undefined = (location.state as any)?.selectedSubjects;
 
   const originalQuestions = useMemo(() => {
     if (!exam) return [];
-    // Filter by selected subjects if provided
     if (selectedSubjects && selectedSubjects.length > 0) {
       return exam.questions.filter((q) => selectedSubjects.includes(q.section));
     }
     return exam.questions;
   }, [exam, selectedSubjects]);
 
-  // Shuffle questions within each subject during exam
   const questions = useMemo(() => {
     if (!originalQuestions.length) return [];
-    const subjects = [...new Set(originalQuestions.map(q => q.section).filter(Boolean))];
+    const subjects = [...new Set(originalQuestions.map((q) => q.section).filter(Boolean))];
     if (subjects.length <= 1) {
-      return shuffle(originalQuestions.map(q => ({ ...q })));
+      return shuffle(originalQuestions.map((q) => ({ ...q })));
     }
-    // Shuffle within each subject, then concatenate in subject order
+
     const result: typeof originalQuestions = [];
-    subjects.forEach(s => {
-      const subjectQs = originalQuestions.filter(q => q.section === s).map(q => ({ ...q }));
+    subjects.forEach((s) => {
+      const subjectQs = originalQuestions
+        .filter((q) => q.section === s)
+        .map((q) => ({ ...q }));
       result.push(...shuffle(subjectQs));
     });
-    // Add questions without a section
-    const noSection = originalQuestions.filter(q => !q.section).map(q => ({ ...q }));
+
+    const noSection = originalQuestions
+      .filter((q) => !q.section)
+      .map((q) => ({ ...q }));
     if (noSection.length) result.push(...shuffle(noSection));
+
     return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exam?.id, selectedSubjects?.join(",")]);
+  }, [exam?.id, originalQuestions]);
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState((exam?.duration || 10) * 60);
-  const timeLeftRef = useRef(timeLeft);
-  timeLeftRef.current = timeLeft;
   const [showPalette, setShowPalette] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -68,138 +68,173 @@ const StudentExamAttempt = () => {
 
   const negativeMarking = exam?.negativeMarking ?? 0.25;
 
-  // Get unique subjects in current question set
   const currentSubjects = useMemo(() => {
     return [...new Set(questions.map((q) => q.section).filter(Boolean))];
   }, [questions]);
 
-  // Reset timer when exam loads
   useEffect(() => {
     if (exam) setTimeLeft(exam.duration * 60);
-  }, [exam?.id]);
+  }, [exam?.id, exam]);
 
-  const doSubmit = useCallback(() => {
+  const doSubmit = useCallback(async () => {
     if (submitted || !exam) return;
     setSubmitted(true);
 
-    const currentAnswers = answersRef.current;
-    let correct = 0, wrong = 0, skipped = 0;
+    try {
+      const currentAnswers = answersRef.current;
+      let correct = 0,
+        wrong = 0,
+        skipped = 0;
 
-    // Subject-wise breakdown
-    const subjectStats: Record<string, { total: number; correct: number; wrong: number; skipped: number }> = {};
-    currentSubjects.forEach((s) => {
-      subjectStats[s] = { total: 0, correct: 0, wrong: 0, skipped: 0 };
-    });
+      const subjectStats: Record<
+        string,
+        { total: number; correct: number; wrong: number; skipped: number }
+      > = {};
 
-    questions.forEach((question) => {
-      const userAnswer = currentAnswers[question.id];
-      const originalQ = originalQuestions.find((oq) => oq.id === question.id);
-      if (!originalQ) return;
-      const correctOptionText = resolveCorrectOptionText(originalQ);
-      const subj = question.section || "অন্যান্য";
-      if (!subjectStats[subj]) subjectStats[subj] = { total: 0, correct: 0, wrong: 0, skipped: 0 };
-      subjectStats[subj].total++;
+      currentSubjects.forEach((s) => {
+        subjectStats[s] = { total: 0, correct: 0, wrong: 0, skipped: 0 };
+      });
 
-      if (!userAnswer) { skipped++; subjectStats[subj].skipped++; }
-      else if (isAnswerMatch(userAnswer, correctOptionText)) { correct++; subjectStats[subj].correct++; }
-      else { wrong++; subjectStats[subj].wrong++; }
-    });
+      questions.forEach((question) => {
+        const userAnswer = currentAnswers[question.id];
+        const originalQ = originalQuestions.find((oq) => oq.id === question.id);
+        if (!originalQ) return;
 
-    const negativeMarks = wrong * negativeMarking;
-    const rawScore = correct - negativeMarks;
-    const finalScore = Math.max(0, rawScore);
-    const maxScore = questions.length;
-    const percentage = maxScore > 0 ? Math.round((finalScore / maxScore) * 100) : 0;
+        const correctOptionText = resolveCorrectOptionText(originalQ);
+        const subj = question.section || "অন্যান্য";
 
-    // Build subject breakdown
-    const subjectBreakdown: SubjectBreakdown[] = Object.entries(subjectStats).map(([subject, stats]) => {
-      const subNeg = stats.wrong * negativeMarking;
-      const subScore = Math.max(0, stats.correct - subNeg);
-      return {
-        subject,
-        total: stats.total,
-        correct: stats.correct,
-        wrong: stats.wrong,
-        skipped: stats.skipped,
-        negativeMarks: subNeg,
-        score: subScore,
-        maxScore: stats.total,
-        percentage: stats.total > 0 ? Math.round((subScore / stats.total) * 100) : 0,
+        if (!subjectStats[subj]) {
+          subjectStats[subj] = { total: 0, correct: 0, wrong: 0, skipped: 0 };
+        }
+
+        subjectStats[subj].total++;
+
+        if (!userAnswer) {
+          skipped++;
+          subjectStats[subj].skipped++;
+        } else if (isAnswerMatch(userAnswer, correctOptionText)) {
+          correct++;
+          subjectStats[subj].correct++;
+        } else {
+          wrong++;
+          subjectStats[subj].wrong++;
+        }
+      });
+
+      const negativeMarks = wrong * negativeMarking;
+      const rawScore = correct - negativeMarks;
+      const finalScore = Math.max(0, rawScore);
+      const maxScore = questions.length;
+      const percentage = maxScore > 0 ? Math.round((finalScore / maxScore) * 100) : 0;
+
+      const subjectBreakdown: SubjectBreakdown[] = Object.entries(subjectStats).map(
+        ([subject, stats]) => {
+          const subNeg = stats.wrong * negativeMarking;
+          const subScore = Math.max(0, stats.correct - subNeg);
+
+          return {
+            subject,
+            total: stats.total,
+            correct: stats.correct,
+            wrong: stats.wrong,
+            skipped: stats.skipped,
+            negativeMarks: subNeg,
+            score: subScore,
+            maxScore: stats.total,
+            percentage: stats.total > 0 ? Math.round((subScore / stats.total) * 100) : 0,
+          };
+        }
+      );
+
+      const result: ExamResult = {
+        examId: exam.id,
+        examTitle: exam.title,
+        totalQuestions: questions.length,
+        correct,
+        wrong,
+        skipped,
+        negativeMarks,
+        finalScore,
+        maxScore,
+        percentage,
+        answers: currentAnswers,
+        timestamp: new Date().toISOString(),
+        selectedSubjects: selectedSubjects || currentSubjects,
+        subjectBreakdown,
       };
-    });
 
-    const result: ExamResult = {
-      examId: exam.id,
-      examTitle: exam.title,
-      totalQuestions: questions.length,
-      correct, wrong, skipped,
-      negativeMarks, finalScore, maxScore, percentage,
-      answers: currentAnswers,
-      timestamp: new Date().toISOString(),
-      selectedSubjects: selectedSubjects || currentSubjects,
-      subjectBreakdown,
-    };
-    addResult.mutate(result);
-    const { data: authData } = await supabase.auth.getUser();
-const user = authData.user;
+      addResult.mutate(result);
 
-if (user) {
-  const { data: attemptRow, error: attemptError } = await supabase
-    .from("exam_attempts")
-    .insert({
-      user_id: user.id,
-      exam_id: exam.id,
-      exam_title: exam.title,
-      score: finalScore,
-      total_questions: questions.length,
-      correct_answers: correct,
-      wrong_answers: wrong,
-      skipped_answers: skipped,
-      percentage,
-      negative_marks: negativeMarks,
-      selected_subjects: selectedSubjects || currentSubjects,
-      subject_breakdown: subjectBreakdown,
-      submitted_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-  if (attemptError) {
-    console.error("exam_attempts insert error:", attemptError);
-  }
+      let attemptRow: { id: string } | null = null;
 
-  if (attemptRow) {
-    const answersPayload = questions.map((question) => {
-      const originalQ = originalQuestions.find((oq) => oq.id === question.id);
-      const correctOptionText = originalQ ? resolveCorrectOptionText(originalQ) : "";
-      const userAnswer = currentAnswers[question.id] || "";
+      if (user) {
+        const { data, error: attemptError } = await supabase
+          .from("exam_attempts")
+          .insert({
+            user_id: user.id,
+            exam_id: exam.id,
+            score: Math.round(finalScore),
+            total_questions: questions.length,
+            correct_answers: correct,
+            wrong_answers: wrong,
+          })
+          .select("id")
+          .single();
 
-      return {
-        attempt_id: attemptRow.id,
-        user_id: user.id,
-        exam_id: exam.id,
-        question_id: question.id,
-        question_text: question.question,
-        selected_answer: userAnswer,
-        correct_answer: correctOptionText,
-        is_correct: !!userAnswer && isAnswerMatch(userAnswer, correctOptionText),
-        is_skipped: !userAnswer,
-        section: question.section || null,
-        created_at: new Date().toISOString(),
-      };
-    });
+        if (attemptError) {
+          console.error("exam_attempts insert error:", attemptError);
+          throw attemptError;
+        }
 
-    const { error: answersError } = await supabase
-      .from("exam_answers")
-      .insert(answersPayload);
+        attemptRow = data;
 
-    if (answersError) {
-      console.error("exam_answers insert error:", answersError);
+        if (attemptRow) {
+          const answersPayload = questions.map((question) => {
+            const originalQ = originalQuestions.find((oq) => oq.id === question.id);
+            const correctOptionText = originalQ ? resolveCorrectOptionText(originalQ) : "";
+            const userAnswer = currentAnswers[question.id] || "";
+
+            return {
+              attempt_id: attemptRow!.id,
+              question_id: question.id,
+              selected_answer: userAnswer,
+              correct_answer: correctOptionText,
+              is_correct: !!userAnswer && isAnswerMatch(userAnswer, correctOptionText),
+            };
+          });
+
+          const { error: answersError } = await supabase
+            .from("exam_answers")
+            .insert(answersPayload);
+
+          if (answersError) {
+            console.error("exam_answers insert error:", answersError);
+            throw answersError;
+          }
+        }
+      }
+
+      navigate("/results", { state: { result, questions, originalQuestions } });
+    } catch (error: any) {
+      console.error("Exam submit failed:", error);
+      alert(error?.message || "Submit failed");
+      setSubmitted(false);
     }
-  }
-}
-    navigate("/results", { state: { result, questions, originalQuestions } });
-  }, [submitted, exam, questions, originalQuestions, negativeMarking, navigate, addResult, currentSubjects, selectedSubjects]);
+  }, [
+    submitted,
+    exam,
+    questions,
+    originalQuestions,
+    negativeMarking,
+    navigate,
+    addResult,
+    currentSubjects,
+    selectedSubjects,
+  ]);
 
   const submittedRef = useRef(false);
   submittedRef.current = submitted;
@@ -208,19 +243,26 @@ if (user) {
 
   useEffect(() => {
     if (submittedRef.current) return;
+
     const t = setInterval(() => {
-      if (submittedRef.current) { clearInterval(t); return; }
+      if (submittedRef.current) {
+        clearInterval(t);
+        return;
+      }
+
       setTimeLeft((p) => {
         if (p <= 1) {
           clearInterval(t);
-          setTimeout(() => doSubmitRef.current(), 0);
+          setTimeout(() => {
+            void doSubmitRef.current();
+          }, 0);
           return 0;
         }
         return p - 1;
       });
     }, 1000);
+
     return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const scrollToQuestion = useCallback((index: number) => {
@@ -236,19 +278,20 @@ if (user) {
   const answeredCount = Object.keys(answers).length;
   const unansweredCount = questions.length - answeredCount;
 
-  // Lock answer after first selection - no changing allowed
   const selectAnswer = (qId: string, opt: string) => {
-    if (answers[qId]) return; // already answered, locked
+    if (answers[qId]) return;
     setAnswers((prev) => ({ ...prev, [qId]: opt }));
   };
 
-  // Group questions by subject for palette
-  const subjectGroupedQuestions = currentSubjects.length > 1
-    ? currentSubjects.map((s) => ({
-        subject: s,
-        questions: questions.map((q, i) => ({ ...q, globalIndex: i })).filter((q) => q.section === s),
-      }))
-    : null;
+  const subjectGroupedQuestions =
+    currentSubjects.length > 1
+      ? currentSubjects.map((s) => ({
+          subject: s,
+          questions: questions
+            .map((q, i) => ({ ...q, globalIndex: i }))
+            .filter((q) => q.section === s),
+        }))
+      : null;
 
   return (
     <div className="pt-24 pb-24 container max-w-3xl mx-auto animate-fade-in relative">
@@ -256,8 +299,10 @@ if (user) {
         <div
           style={{ position: "fixed", top: 16, right: 16, zIndex: 9999 }}
           className={`flex items-center gap-2 px-4 py-2 rounded-2xl shadow-lg font-mono text-sm font-bold transition-all ${
-            timeLeft < 60 ? "bg-destructive text-destructive-foreground animate-pulse"
-              : timeLeft < 300 ? "bg-warning text-warning-foreground"
+            timeLeft < 60
+              ? "bg-destructive text-destructive-foreground animate-pulse"
+              : timeLeft < 300
+              ? "bg-warning text-warning-foreground"
               : "bg-card border border-border"
           }`}
         >
@@ -270,17 +315,17 @@ if (user) {
       <div className="glass-card-static p-4 mb-4">
         <h2 className="font-semibold text-sm truncate">{exam.title}</h2>
         <p className="text-xs text-muted-foreground mt-1">
-          মোট: {questions.length} প্রশ্ন • উত্তর দেওয়া: {answeredCount} • নেগেটিভ মার্ক: {negativeMarking}
+          মোট: {questions.length} প্রশ্ন • উত্তর দেওয়া: {answeredCount} • নেগেটিভ মার্ক:{" "}
+          {negativeMarking}
           {currentSubjects.length > 1 && ` • ${currentSubjects.length}টি বিষয়`}
         </p>
       </div>
 
-      {/* Subject-wise question groups */}
       {currentSubjects.length > 1 ? (
         <div className="space-y-6">
           {currentSubjects.map((subject) => {
             const subjectQs = questions.filter((q) => q.section === subject);
-            const globalStartIndex = questions.indexOf(subjectQs[0]);
+
             return (
               <div key={subject}>
                 <div className="flex items-center gap-2 mb-3 px-1">
@@ -288,26 +333,61 @@ if (user) {
                     📘 {subject} ({subjectQs.length} প্রশ্ন)
                   </span>
                 </div>
+
                 <div className="space-y-4">
                   {subjectQs.map((q) => {
                     const globalIdx = questions.indexOf(q);
+
                     return (
-                      <div key={q.id} ref={(el) => { questionRefs.current[globalIdx] = el; }} className="glass-card-static p-5">
-                        <p className="text-xs text-muted-foreground mb-2">প্রশ্ন {globalIdx + 1} / {questions.length}</p>
-              <h3 className="text-base font-semibold mb-2"><MathText text={q.question} /></h3>
-                        {q.questionImage && <img src={q.questionImage} alt="" className="max-w-full max-h-60 rounded-lg border border-border mb-4 object-contain" />}
+                      <div
+                        key={q.id}
+                        ref={(el) => {
+                          questionRefs.current[globalIdx] = el;
+                        }}
+                        className="glass-card-static p-5"
+                      >
+                        <p className="text-xs text-muted-foreground mb-2">
+                          প্রশ্ন {globalIdx + 1} / {questions.length}
+                        </p>
+                        <h3 className="text-base font-semibold mb-2">
+                          <MathText text={q.question} />
+                        </h3>
+
+                        {q.questionImage && (
+                          <img
+                            src={q.questionImage}
+                            alt=""
+                            className="max-w-full max-h-60 rounded-lg border border-border mb-4 object-contain"
+                          />
+                        )}
+
                         <div className="space-y-2.5">
                           {q.options.map((opt, oi) => (
-                            <button key={oi} onClick={() => selectAnswer(q.id, opt)}
+                            <button
+                              key={oi}
+                              onClick={() => selectAnswer(q.id, opt)}
                               disabled={!!answers[q.id]}
                               className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
-                                answers[q.id] === opt ? "bg-primary/10 border-primary text-primary ring-1 ring-primary/30" 
-                                : answers[q.id] ? "border-border opacity-50 cursor-not-allowed"
-                                : "border-border hover:border-primary/30 hover:bg-primary/5"
-                              }`}>
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs mr-3 flex-shrink-0">{String.fromCharCode(65 + oi)}</span>
-                              <span className="flex-1"><MathText text={opt} /></span>
-                              {q.optionImages?.[oi] && <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded-lg border border-border object-contain" />}
+                                answers[q.id] === opt
+                                  ? "bg-primary/10 border-primary text-primary ring-1 ring-primary/30"
+                                  : answers[q.id]
+                                  ? "border-border opacity-50 cursor-not-allowed"
+                                  : "border-border hover:border-primary/30 hover:bg-primary/5"
+                              }`}
+                            >
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs mr-3 flex-shrink-0">
+                                {String.fromCharCode(65 + oi)}
+                              </span>
+                              <span className="flex-1">
+                                <MathText text={opt} />
+                              </span>
+                              {q.optionImages?.[oi] && (
+                                <img
+                                  src={q.optionImages[oi]!}
+                                  alt=""
+                                  className="mt-2 max-h-24 rounded-lg border border-border object-contain"
+                                />
+                              )}
                             </button>
                           ))}
                         </div>
@@ -322,22 +402,55 @@ if (user) {
       ) : (
         <div className="space-y-4">
           {questions.map((q, i) => (
-            <div key={q.id} ref={(el) => { questionRefs.current[i] = el; }} className="glass-card-static p-5">
-              <p className="text-xs text-muted-foreground mb-2">প্রশ্ন {i + 1} / {questions.length}</p>
-              <h3 className="text-base font-semibold mb-2"><MathText text={q.question} /></h3>
-              {q.questionImage && <img src={q.questionImage} alt="" className="max-w-full max-h-60 rounded-lg border border-border mb-4 object-contain" />}
+            <div
+              key={q.id}
+              ref={(el) => {
+                questionRefs.current[i] = el;
+              }}
+              className="glass-card-static p-5"
+            >
+              <p className="text-xs text-muted-foreground mb-2">
+                প্রশ্ন {i + 1} / {questions.length}
+              </p>
+              <h3 className="text-base font-semibold mb-2">
+                <MathText text={q.question} />
+              </h3>
+
+              {q.questionImage && (
+                <img
+                  src={q.questionImage}
+                  alt=""
+                  className="max-w-full max-h-60 rounded-lg border border-border mb-4 object-contain"
+                />
+              )}
+
               <div className="space-y-2.5">
                 {q.options.map((opt, oi) => (
-                  <button key={oi} onClick={() => selectAnswer(q.id, opt)}
+                  <button
+                    key={oi}
+                    onClick={() => selectAnswer(q.id, opt)}
                     disabled={!!answers[q.id]}
                     className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all border ${
-                      answers[q.id] === opt ? "bg-primary/10 border-primary text-primary ring-1 ring-primary/30"
-                      : answers[q.id] ? "border-border opacity-50 cursor-not-allowed"
-                      : "border-border hover:border-primary/30 hover:bg-primary/5"
-                    }`}>
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs mr-3 flex-shrink-0">{String.fromCharCode(65 + oi)}</span>
-                    <span className="flex-1"><MathText text={opt} /></span>
-                    {q.optionImages?.[oi] && <img src={q.optionImages[oi]!} alt="" className="mt-2 max-h-24 rounded-lg border border-border object-contain" />}
+                      answers[q.id] === opt
+                        ? "bg-primary/10 border-primary text-primary ring-1 ring-primary/30"
+                        : answers[q.id]
+                        ? "border-border opacity-50 cursor-not-allowed"
+                        : "border-border hover:border-primary/30 hover:bg-primary/5"
+                    }`}
+                  >
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs mr-3 flex-shrink-0">
+                      {String.fromCharCode(65 + oi)}
+                    </span>
+                    <span className="flex-1">
+                      <MathText text={opt} />
+                    </span>
+                    {q.optionImages?.[oi] && (
+                      <img
+                        src={q.optionImages[oi]!}
+                        alt=""
+                        className="mt-2 max-h-24 rounded-lg border border-border object-contain"
+                      />
+                    )}
                   </button>
                 ))}
               </div>
@@ -347,12 +460,21 @@ if (user) {
       )}
 
       {createPortal(
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9998 }} className="bg-card/90 backdrop-blur-2xl border-t border-border p-3">
+        <div
+          style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9998 }}
+          className="bg-card/90 backdrop-blur-2xl border-t border-border p-3"
+        >
           <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
-            <button onClick={() => setShowPalette(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-muted hover:bg-muted/80 transition-all">
+            <button
+              onClick={() => setShowPalette(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-muted hover:bg-muted/80 transition-all"
+            >
               <List size={16} /> প্রশ্ন তালিকা
             </button>
-            <button onClick={() => setShowConfirm(true)} className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]">
+            <button
+              onClick={() => void doSubmit()}
+              className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]"
+            >
               জমা দিন ✓
             </button>
           </div>
@@ -360,71 +482,138 @@ if (user) {
         document.body
       )}
 
-      {showPalette && createPortal(
-        <div style={{ position: "fixed", inset: 0, zIndex: 10000 }} className="flex items-center justify-center bg-background/60 backdrop-blur-sm p-4" onClick={() => setShowPalette(false)}>
-          <div className="bg-card rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-border animate-fade-in max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-sm">📋 প্রশ্ন তালিকা</h3>
-              <button onClick={() => setShowPalette(false)} className="p-1 rounded-lg hover:bg-muted"><X size={18} /></button>
-            </div>
-            {subjectGroupedQuestions ? (
-              <div className="space-y-4 mb-4">
-                {subjectGroupedQuestions.map(({ subject, questions: sqs }) => (
-                  <div key={subject}>
-                    <p className="text-xs font-semibold text-primary mb-2">📘 {subject}</p>
-                    <div className="grid grid-cols-5 gap-2">
-                      {sqs.map((q) => (
-                        <button key={q.globalIndex} onClick={() => scrollToQuestion(q.globalIndex)}
-                          className={`w-10 h-10 rounded-lg text-xs font-medium transition-all ${answers[q.id] ? "bg-success/20 text-success border border-success/30" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
-                          {q.globalIndex + 1}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+      {showPalette &&
+        createPortal(
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 10000 }}
+            className="flex items-center justify-center bg-background/60 backdrop-blur-sm p-4"
+            onClick={() => setShowPalette(false)}
+          >
+            <div
+              className="bg-card rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-border animate-fade-in max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-sm">📋 প্রশ্ন তালিকা</h3>
+                <button
+                  onClick={() => setShowPalette(false)}
+                  className="p-1 rounded-lg hover:bg-muted"
+                >
+                  <X size={18} />
+                </button>
               </div>
-            ) : (
-              <div className="grid grid-cols-5 gap-2 mb-4">
-                {questions.map((q, i) => (
-                  <button key={i} onClick={() => scrollToQuestion(i)}
-                    className={`w-10 h-10 rounded-lg text-xs font-medium transition-all ${answers[q.id] ? "bg-success/20 text-success border border-success/30" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-success/20 border border-success/30" /> উত্তর দেওয়া</span>
-              <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-muted" /> বাকি</span>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
-      {showConfirm && createPortal(
-        <div style={{ position: "fixed", inset: 0, zIndex: 10000 }} className="flex items-center justify-center bg-background/60 backdrop-blur-sm p-4" onClick={() => setShowConfirm(false)}>
-          <div className="bg-card rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-border animate-fade-in" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 mb-4">
-              <AlertTriangle size={20} className="text-warning" />
-              <h3 className="font-semibold text-sm">পরীক্ষা জমা দিন</h3>
-            </div>
-            <div className="space-y-2 mb-5 text-sm">
-              <div className="flex justify-between p-2 rounded-lg bg-muted"><span className="text-muted-foreground">মোট প্রশ্ন</span><span className="font-semibold">{questions.length}</span></div>
-              <div className="flex justify-between p-2 rounded-lg bg-success/10"><span className="text-success">উত্তর দেওয়া</span><span className="font-semibold text-success">{answeredCount}</span></div>
-              <div className="flex justify-between p-2 rounded-lg bg-destructive/10"><span className="text-destructive">বাকি আছে</span><span className="font-semibold text-destructive">{unansweredCount}</span></div>
-              {currentSubjects.length > 1 && (
-                <div className="flex justify-between p-2 rounded-lg bg-accent/10"><span className="text-muted-foreground">বিষয় সংখ্যা</span><span className="font-semibold">{currentSubjects.length}</span></div>
+              {subjectGroupedQuestions ? (
+                <div className="space-y-4 mb-4">
+                  {subjectGroupedQuestions.map(({ subject, questions: sqs }) => (
+                    <div key={subject}>
+                      <p className="text-xs font-semibold text-primary mb-2">📘 {subject}</p>
+                      <div className="grid grid-cols-5 gap-2">
+                        {sqs.map((q) => (
+                          <button
+                            key={q.globalIndex}
+                            onClick={() => scrollToQuestion(q.globalIndex)}
+                            className={`w-10 h-10 rounded-lg text-xs font-medium transition-all ${
+                              answers[q.id]
+                                ? "bg-success/20 text-success border border-success/30"
+                                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                            }`}
+                          >
+                            {q.globalIndex + 1}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-5 gap-2 mb-4">
+                  {questions.map((q, i) => (
+                    <button
+                      key={i}
+                      onClick={() => scrollToQuestion(i)}
+                      className={`w-10 h-10 rounded-lg text-xs font-medium transition-all ${
+                        answers[q.id]
+                          ? "bg-success/20 text-success border border-success/30"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
               )}
+
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-success/20 border border-success/30" />
+                  উত্তর দেওয়া
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-muted" />
+                  বাকি
+                </span>
+              </div>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setShowConfirm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-border hover:bg-muted transition-all">ফিরে যান</button>
-              <button onClick={doSubmit} className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all">জমা দিন ✓</button>
+          </div>,
+          document.body
+        )}
+
+      {showConfirm &&
+        createPortal(
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 10000 }}
+            className="flex items-center justify-center bg-background/60 backdrop-blur-sm p-4"
+            onClick={() => setShowConfirm(false)}
+          >
+            <div
+              className="bg-card rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-border animate-fade-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle size={20} className="text-warning" />
+                <h3 className="font-semibold text-sm">পরীক্ষা জমা দিন</h3>
+              </div>
+
+              <div className="space-y-2 mb-5 text-sm">
+                <div className="flex justify-between p-2 rounded-lg bg-muted">
+                  <span className="text-muted-foreground">মোট প্রশ্ন</span>
+                  <span className="font-semibold">{questions.length}</span>
+                </div>
+                <div className="flex justify-between p-2 rounded-lg bg-success/10">
+                  <span className="text-success">উত্তর দেওয়া</span>
+                  <span className="font-semibold text-success">{answeredCount}</span>
+                </div>
+                <div className="flex justify-between p-2 rounded-lg bg-destructive/10">
+                  <span className="text-destructive">বাকি আছে</span>
+                  <span className="font-semibold text-destructive">{unansweredCount}</span>
+                </div>
+                {currentSubjects.length > 1 && (
+                  <div className="flex justify-between p-2 rounded-lg bg-accent/10">
+                    <span className="text-muted-foreground">বিষয় সংখ্যা</span>
+                    <span className="font-semibold">{currentSubjects.length}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-border hover:bg-muted transition-all"
+                >
+                  ফিরে যান
+                </button>
+                <button
+                  onClick={() => void doSubmit()}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
+                >
+                  জমা দিন ✓
+                </button>
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
