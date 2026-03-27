@@ -39,16 +39,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function checkAdmin(user: User) {
-    const adminEmails = ["himel2331@gmail.com"];
-    const isAdmin = adminEmails.includes((user.email || "").toLowerCase());
+ async function checkAdmin(user: User) {
+   const { data, error } = await supabase.rpc("has_role", {
+    _user_id: user.id,
+    _role: "admin",
+   });
 
-    setState({
-      user,
-      isAdmin,
-      loading: false,
-    });
-   }
+   setState({
+     user,
+     isAdmin: !!data && !error,
+     loading: false,
+   });
+  }
 
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
 }
