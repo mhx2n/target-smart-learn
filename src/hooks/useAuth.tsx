@@ -40,18 +40,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
  async function checkAdmin(user: User) {
-   const { data, error } = await supabase.rpc("has_role", {
-    _user_id: user.id,
-    _role: "admin",
+  const { data, error } = await supabase.rpc("has_role", {
+    user_id: user.id,
+    role: "admin",
    });
 
-   setState({
-     user,
-     isAdmin: !!data && !error,
-     loading: false,
+  setState({
+    user,
+    isAdmin: !!data && !error,
+    loading: false,
    });
   }
-
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
 }
 
