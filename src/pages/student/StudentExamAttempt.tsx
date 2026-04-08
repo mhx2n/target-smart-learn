@@ -165,57 +165,59 @@ const StudentExamAttempt = () => {
 
       addResult.mutate(result);
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      let attemptRow: { id: string } | null = null;
+        let attemptRow: { id: string } | null = null;
 
-      if (user) {
-        const { data, error: attemptError } = await (supabase as any)
-          .from("exam_attempts")
-          .insert({
-            user_id: user.id,
-            exam_id: exam.id,
-            score: Math.round(finalScore),
-            total_questions: questions.length,
-            correct_answers: correct,
-            wrong_answers: wrong,
-          })
-          .select("id")
-          .single();
+        if (user) {
+          const { data, error: attemptError } = await (supabase as any)
+            .from("exam_attempts")
+            .insert({
+              user_id: user.id,
+              exam_id: exam.id,
+              score: Math.round(finalScore),
+              total_questions: questions.length,
+              correct_answers: correct,
+              wrong_answers: wrong,
+            })
+            .select("id")
+            .single();
 
-        if (attemptError) {
-          console.error("exam_attempts insert error:", attemptError);
-          throw attemptError;
-        }
+          if (attemptError) {
+            throw attemptError;
+          }
 
-        attemptRow = data;
+          attemptRow = data;
 
-        if (attemptRow) {
-          const answersPayload = questions.map((question) => {
-            const originalQ = originalQuestions.find((oq) => oq.id === question.id);
-            const correctOptionText = originalQ ? resolveCorrectOptionText(originalQ) : "";
-            const userAnswer = currentAnswers[question.id] || "";
+          if (attemptRow) {
+            const answersPayload = questions.map((question) => {
+              const originalQ = originalQuestions.find((oq) => oq.id === question.id);
+              const correctOptionText = originalQ ? resolveCorrectOptionText(originalQ) : "";
+              const userAnswer = currentAnswers[question.id] || "";
 
-            return {
-              attempt_id: attemptRow!.id,
-              question_id: question.id,
-              selected_answer: userAnswer,
-              correct_answer: correctOptionText,
-              is_correct: !!userAnswer && isAnswerMatch(userAnswer, correctOptionText),
-            };
-          });
+              return {
+                attempt_id: attemptRow!.id,
+                question_id: question.id,
+                selected_answer: userAnswer,
+                correct_answer: correctOptionText,
+                is_correct: !!userAnswer && isAnswerMatch(userAnswer, correctOptionText),
+              };
+            });
 
-          const { error: answersError } = await (supabase as any)
-            .from("exam_answers")
-            .insert(answersPayload);
+            const { error: answersError } = await (supabase as any)
+              .from("exam_answers")
+              .insert(answersPayload);
 
-          if (answersError) {
-            console.error("exam_answers insert error:", answersError);
-            throw answersError;
+            if (answersError) {
+              throw answersError;
+            }
           }
         }
+      } catch (syncError) {
+        console.warn("Optional attempt sync skipped:", syncError);
       }
 
       navigate("/results", { state: { result, questions, originalQuestions } });
