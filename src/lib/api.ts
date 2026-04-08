@@ -130,7 +130,7 @@ export async function deleteExam(id: string): Promise<void> {
 
 export async function updateExamField(id: string, field: string, value: any): Promise<void> {
   const dbField = field === "sectionId" ? "section_id" : field;
-  const { error } = await supabase.from("exams").update({ [dbField]: value }).eq("id", id);
+  const { error } = await supabase.from("exams").update({ [dbField]: value } as any).eq("id", id);
   if (error) throw error;
 }
 
