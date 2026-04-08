@@ -4,8 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ScrollToTop from "@/components/ScrollToTop";
+import AuthRefreshController from "@/components/AuthRefreshController";
 import { SiteSettingsProvider } from "@/contexts/SiteSettingsContext";
 import { AuthProvider } from "@/hooks/useAuth";
+import { isBackendConnectivityError } from "@/lib/backend";
+import { supabase } from "@/integrations/supabase/client";
 
 // Layouts
 import PublicLayout from "@/layouts/PublicLayout";
@@ -39,7 +42,23 @@ import AdminThemeSettings from "./pages/admin/AdminThemeSettings";
 import AdminReminders from "./pages/admin/AdminReminders";
 import AdminEventBanners from "./pages/admin/AdminEventBanners";
 
-const queryClient = new QueryClient();
+if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin")) {
+  supabase.auth.stopAutoRefresh();
+}
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 10 * 60_000,
+      retry: (failureCount, error) => !isBackendConnectivityError(error) && failureCount < 1,
+      refetchOnWindowFocus: false,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -49,6 +68,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <AuthRefreshController />
           <ScrollToTop />
           <Routes>
           {/* Main site routes */}

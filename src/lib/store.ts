@@ -11,6 +11,7 @@ const SUBJECTS_KEY = "target_subjects";
 const CATEGORIES_KEY = "target_categories";
 const REMINDERS_KEY = "target_reminders";
 const EVENT_BANNERS_KEY = "target_event_banners";
+const WRONG_ANSWERS_KEY = "target_wrong_answers";
 
 const defaultSiteSettings: SiteSettings = {
   aboutTitle: "Target 🎯 কী?",
@@ -57,6 +58,7 @@ export const store = {
   setNotices: (notices: Notice[]) => save(NOTICES_KEY, notices),
 
   getResults: (): ExamResult[] => load(RESULTS_KEY, []),
+  setResults: (results: ExamResult[]) => save(RESULTS_KEY, results),
   addResult: (result: ExamResult) => {
     const results = load<ExamResult[]>(RESULTS_KEY, []);
     results.unshift(result);
@@ -80,6 +82,9 @@ export const store = {
 
   getEventBanners: (): EventBanner[] => load(EVENT_BANNERS_KEY, []),
   setEventBanners: (b: EventBanner[]) => save(EVENT_BANNERS_KEY, b),
+
+  getWrongAnswers: <T>() => load<T[]>(WRONG_ANSWERS_KEY, []),
+  setWrongAnswers: <T>(entries: T[]) => save(WRONG_ANSWERS_KEY, entries),
 
   isAdmin: (): boolean => load(ADMIN_KEY, false),
   setAdmin: (val: boolean) => save(ADMIN_KEY, val),
