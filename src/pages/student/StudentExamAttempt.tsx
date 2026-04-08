@@ -172,7 +172,7 @@ const StudentExamAttempt = () => {
       let attemptRow: { id: string } | null = null;
 
       if (user) {
-        const { data, error: attemptError } = await supabase
+        const { data, error: attemptError } = await (supabase as any)
           .from("exam_attempts")
           .insert({
             user_id: user.id,
@@ -207,7 +207,7 @@ const StudentExamAttempt = () => {
             };
           });
 
-          const { error: answersError } = await supabase
+          const { error: answersError } = await (supabase as any)
             .from("exam_answers")
             .insert(answersPayload);
 
