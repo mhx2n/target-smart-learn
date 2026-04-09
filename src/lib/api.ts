@@ -626,7 +626,7 @@ export async function fetchWrongAnswers(): Promise<WrongAnswerEntry[]> {
         .order("created_at", { ascending: false });
       if (error) throw error;
 
-      const mapped = (data || []).map((r: any) => ({
+      const mapped: WrongAnswerEntry[] = (data || []).map((r: any) => ({
         id: r.id,
         sessionId: r.session_id,
         examId: r.exam_id,
