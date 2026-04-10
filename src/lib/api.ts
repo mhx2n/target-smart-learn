@@ -46,12 +46,60 @@ function dbQuestionToApp(row: any): Question {
 }
 
 function upsertCachedExam(exam: Exam) {
-  const cachedExams = readCachedData<Exam[]>(BACKEND_CACHE_KEYS.exams, []);
-  const next = cachedExams.some((cachedExam) => cachedExam.id === exam.id)
-    ? cachedExams.map((cachedExam) => (cachedExam.id === exam.id ? exam : cachedExam))
-    : [exam, ...cachedExams];
+  const next = upsertById(store.getExams(), exam);
+  writeLocalExams(next);
+}
 
-  writeCachedData(BACKEND_CACHE_KEYS.exams, next);
+function upsertById<T extends { id: string }>(items: T[], item: T) {
+  return items.some((entry) => entry.id === item.id)
+    ? items.map((entry) => (entry.id === item.id ? item : entry))
+    : [item, ...items];
+}
+
+function removeById<T extends { id: string }>(items: T[], id: string) {
+  return items.filter((entry) => entry.id !== id);
+}
+
+function writeLocalExams(exams: Exam[]) {
+  store.setExams(exams);
+  writeCachedData(BACKEND_CACHE_KEYS.exams, exams);
+}
+
+function writeLocalNotices(notices: Notice[]) {
+  store.setNotices(notices);
+  writeCachedData(BACKEND_CACHE_KEYS.notices, notices);
+}
+
+function writeLocalSections(sections: Section[]) {
+  const sorted = [...sections].sort((a, b) => a.order - b.order);
+  store.setSections(sorted);
+  writeCachedData(BACKEND_CACHE_KEYS.sections, sorted);
+}
+
+function writeLocalSubjects(subjects: string[]) {
+  store.setSubjects(subjects);
+  writeCachedData(BACKEND_CACHE_KEYS.subjects, subjects);
+}
+
+function writeLocalCategories(categories: string[]) {
+  store.setCategories(categories);
+  writeCachedData(BACKEND_CACHE_KEYS.categories, categories);
+}
+
+function writeLocalReminders(reminders: Reminder[]) {
+  const sorted = [...reminders].sort(
+    (a, b) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime(),
+  );
+  store.setReminders(sorted);
+  writeCachedData(BACKEND_CACHE_KEYS.reminders, sorted);
+}
+
+function writeLocalEventBanners(banners: EventBanner[]) {
+  const sorted = [...banners].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+  store.setEventBanners(sorted);
+  writeCachedData(BACKEND_CACHE_KEYS.eventBanners, sorted);
 }
 
 // ============ EXAMS ============
@@ -81,8 +129,8 @@ export async function fetchExams(): Promise<Exam[]> {
 
       return exams.map((e) => dbExamToApp(e, qMap.get(e.id) || []));
     },
-    () => readCachedData<Exam[]>(BACKEND_CACHE_KEYS.exams, []),
-    (data) => writeCachedData(BACKEND_CACHE_KEYS.exams, data),
+    () => store.getExams(),
+    (data) => writeLocalExams(data),
   );
 }
 
@@ -105,7 +153,7 @@ export async function fetchExamById(id: string): Promise<Exam | null> {
 
       return dbExamToApp(exam, (questions || []).map(dbQuestionToApp));
     },
-    () => readCachedData<Exam[]>(BACKEND_CACHE_KEYS.exams, []).find((exam) => exam.id === id) || null,
+    () => store.getExams().find((exam) => exam.id === id) || null,
     (exam) => {
       if (exam) upsertCachedExam(exam);
     },
@@ -113,7 +161,14 @@ export async function fetchExamById(id: string): Promise<Exam | null> {
 }
 
 export async function upsertExam(exam: Exam): Promise<void> {
-  const { questions, ...rest } = exam;
+  const nextExam = {
+    ...exam,
+    questionCount: exam.questions.length,
+  };
+  const { questions, ...rest } = nextExam;
+
+  writeLocalExams(upsertById(store.getExams(), nextExam));
+
   await withBackendWrite(
     async () => {
       const { error } = await supabase.from("exams").upsert({
@@ -154,23 +209,32 @@ export async function upsertExam(exam: Exam): Promise<void> {
         if (qErr) throw qErr;
       }
     },
-    { action: "পরীক্ষা সেভ" },
+    { action: "পরীক্ষা সেভ", suppressConnectivityError: true },
   );
 }
 
 export async function deleteExam(id: string): Promise<void> {
+  writeLocalExams(removeById(store.getExams(), id));
+
   await withBackendWrite(async () => {
     const { error } = await supabase.from("exams").delete().eq("id", id);
     if (error) throw error;
-  }, { action: "পরীক্ষা ডিলিট" });
+  }, { action: "পরীক্ষা ডিলিট", suppressConnectivityError: true });
 }
 
 export async function updateExamField(id: string, field: string, value: any): Promise<void> {
   const dbField = field === "sectionId" ? "section_id" : field;
+
+  writeLocalExams(
+    store.getExams().map((exam) =>
+      exam.id === id ? { ...exam, [field]: value } : exam,
+    ),
+  );
+
   await withBackendWrite(async () => {
     const { error } = await supabase.from("exams").update({ [dbField]: value } as any).eq("id", id);
     if (error) throw error;
-  }, { action: "পরীক্ষা আপডেট" });
+  }, { action: "পরীক্ষা আপডেট", suppressConnectivityError: true });
 }
 
 // ============ NOTICES ============
@@ -189,12 +253,14 @@ export async function fetchNotices(): Promise<Notice[]> {
         createdAt: n.created_at,
       }));
     },
-    () => readCachedData<Notice[]>(BACKEND_CACHE_KEYS.notices, []),
-    (data) => writeCachedData(BACKEND_CACHE_KEYS.notices, data),
+    () => store.getNotices(),
+    (data) => writeLocalNotices(data),
   );
 }
 
 export async function upsertNotice(notice: Notice): Promise<void> {
+  writeLocalNotices(upsertById(store.getNotices(), notice));
+
   await withBackendWrite(async () => {
     const { error } = await supabase.from("notices").upsert({
       id: notice.id,
@@ -205,14 +271,16 @@ export async function upsertNotice(notice: Notice): Promise<void> {
       created_at: notice.createdAt,
     });
     if (error) throw error;
-  }, { action: "নোটিস সেভ" });
+  }, { action: "নোটিস সেভ", suppressConnectivityError: true });
 }
 
 export async function deleteNotice(id: string): Promise<void> {
+  writeLocalNotices(removeById(store.getNotices(), id));
+
   await withBackendWrite(async () => {
     const { error } = await supabase.from("notices").delete().eq("id", id);
     if (error) throw error;
-  }, { action: "নোটিস ডিলিট" });
+  }, { action: "নোটিস ডিলিট", suppressConnectivityError: true });
 }
 
 // ============ SECTIONS ============
@@ -232,12 +300,14 @@ export async function fetchSections(): Promise<Section[]> {
         createdAt: s.created_at,
       }));
     },
-    () => readCachedData<Section[]>(BACKEND_CACHE_KEYS.sections, []),
-    (data) => writeCachedData(BACKEND_CACHE_KEYS.sections, data),
+    () => store.getSections(),
+    (data) => writeLocalSections(data),
   );
 }
 
 export async function upsertSection(section: Section): Promise<void> {
+  writeLocalSections(upsertById(store.getSections(), section));
+
   await withBackendWrite(async () => {
     const { error } = await supabase.from("sections").upsert({
       id: section.id,
@@ -249,14 +319,16 @@ export async function upsertSection(section: Section): Promise<void> {
       created_at: section.createdAt,
     });
     if (error) throw error;
-  }, { action: "সেকশন সেভ" });
+  }, { action: "সেকশন সেভ", suppressConnectivityError: true });
 }
 
 export async function deleteSection(id: string): Promise<void> {
+  writeLocalSections(removeById(store.getSections(), id));
+
   await withBackendWrite(async () => {
     const { error } = await supabase.from("sections").delete().eq("id", id);
     if (error) throw error;
-  }, { action: "সেকশন ডিলিট" });
+  }, { action: "সেকশন ডিলিট", suppressConnectivityError: true });
 }
 
 // ============ SESSION ============
@@ -413,7 +485,7 @@ export async function saveSiteSettings(settings: SiteSettings): Promise<void> {
 
     const { error } = await supabase.from("site_settings").insert(row);
     if (error) throw error;
-  }, { action: "সাইট সেটিংস সেভ" });
+  }, { action: "সাইট সেটিংস সেভ", suppressConnectivityError: true });
 }
 
 // ============ SUBJECTS ============
@@ -425,19 +497,21 @@ export async function fetchSubjects(): Promise<string[]> {
       if (error) throw error;
       return (data || []).map((s) => s.name);
     },
-    () => readCachedData<string[]>(BACKEND_CACHE_KEYS.subjects, []),
-    (data) => writeCachedData(BACKEND_CACHE_KEYS.subjects, data),
+    () => store.getSubjects(),
+    (data) => writeLocalSubjects(data),
   );
 }
 
 export async function setSubjects(names: string[]): Promise<void> {
+  writeLocalSubjects(names);
+
   await withBackendWrite(async () => {
     await supabase.from("subjects").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     if (names.length > 0) {
       const { error } = await supabase.from("subjects").insert(names.map((n) => ({ name: n })));
       if (error) throw error;
     }
-  }, { action: "বিষয় সেভ" });
+  }, { action: "বিষয় সেভ", suppressConnectivityError: true });
 }
 
 // ============ CATEGORIES ============
@@ -449,19 +523,21 @@ export async function fetchCategories(): Promise<string[]> {
       if (error) throw error;
       return (data || []).map((c) => c.name);
     },
-    () => readCachedData<string[]>(BACKEND_CACHE_KEYS.categories, []),
-    (data) => writeCachedData(BACKEND_CACHE_KEYS.categories, data),
+    () => store.getCategories(),
+    (data) => writeLocalCategories(data),
   );
 }
 
 export async function setCategories(names: string[]): Promise<void> {
+  writeLocalCategories(names);
+
   await withBackendWrite(async () => {
     await supabase.from("categories").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     if (names.length > 0) {
       const { error } = await supabase.from("categories").insert(names.map((n) => ({ name: n })));
       if (error) throw error;
     }
-  }, { action: "ক্যাটেগরি সেভ" });
+  }, { action: "ক্যাটেগরি সেভ", suppressConnectivityError: true });
 }
 
 // ============ REMINDERS ============
@@ -480,12 +556,14 @@ export async function fetchReminders(): Promise<Reminder[]> {
         createdAt: r.created_at,
       }));
     },
-    () => readCachedData<Reminder[]>(BACKEND_CACHE_KEYS.reminders, []),
-    (data) => writeCachedData(BACKEND_CACHE_KEYS.reminders, data),
+    () => store.getReminders(),
+    (data) => writeLocalReminders(data),
   );
 }
 
 export async function upsertReminder(reminder: Reminder): Promise<void> {
+  writeLocalReminders(upsertById(store.getReminders(), reminder));
+
   await withBackendWrite(async () => {
     const { error } = await supabase.from("reminders").upsert({
       id: reminder.id,
@@ -496,14 +574,16 @@ export async function upsertReminder(reminder: Reminder): Promise<void> {
       created_at: reminder.createdAt,
     });
     if (error) throw error;
-  }, { action: "রিমাইন্ডার সেভ" });
+  }, { action: "রিমাইন্ডার সেভ", suppressConnectivityError: true });
 }
 
 export async function deleteReminder(id: string): Promise<void> {
+  writeLocalReminders(removeById(store.getReminders(), id));
+
   await withBackendWrite(async () => {
     const { error } = await supabase.from("reminders").delete().eq("id", id);
     if (error) throw error;
-  }, { action: "রিমাইন্ডার ডিলিট" });
+  }, { action: "রিমাইন্ডার ডিলিট", suppressConnectivityError: true });
 }
 
 // ============ EVENT BANNERS ============
@@ -522,12 +602,14 @@ export async function fetchEventBanners(): Promise<EventBanner[]> {
         createdAt: b.created_at,
       }));
     },
-    () => readCachedData<EventBanner[]>(BACKEND_CACHE_KEYS.eventBanners, []),
-    (data) => writeCachedData(BACKEND_CACHE_KEYS.eventBanners, data),
+    () => store.getEventBanners(),
+    (data) => writeLocalEventBanners(data),
   );
 }
 
 export async function upsertEventBanner(banner: EventBanner): Promise<void> {
+  writeLocalEventBanners(upsertById(store.getEventBanners(), banner));
+
   await withBackendWrite(async () => {
     const { error } = await supabase.from("event_banners").upsert({
       id: banner.id,
@@ -538,14 +620,16 @@ export async function upsertEventBanner(banner: EventBanner): Promise<void> {
       created_at: banner.createdAt,
     });
     if (error) throw error;
-  }, { action: "ইভেন্ট ব্যানার সেভ" });
+  }, { action: "ইভেন্ট ব্যানার সেভ", suppressConnectivityError: true });
 }
 
 export async function deleteEventBanner(id: string): Promise<void> {
+  writeLocalEventBanners(removeById(store.getEventBanners(), id));
+
   await withBackendWrite(async () => {
     const { error } = await supabase.from("event_banners").delete().eq("id", id);
     if (error) throw error;
-  }, { action: "ইভেন্ট ব্যানার ডিলিট" });
+  }, { action: "ইভেন্ট ব্যানার ডিলিট", suppressConnectivityError: true });
 }
 
 // ============ WRONG ANSWERS BANK ============

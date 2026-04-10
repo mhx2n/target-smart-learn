@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api";
 import type { Exam, Notice, Section, SiteSettings, ExamResult, Reminder, EventBanner } from "@/lib/types";
-import { BACKEND_CACHE_KEYS, readCachedData, toUserFacingError } from "@/lib/backend";
+import { toUserFacingError } from "@/lib/backend";
 import { store } from "@/lib/store";
 import { toast } from "@/hooks/use-toast";
 
@@ -20,7 +20,7 @@ export function useExams() {
   return useQuery({
     queryKey: ["exams"],
     queryFn: api.fetchExams,
-    initialData: () => readCachedData<Exam[]>(BACKEND_CACHE_KEYS.exams, []),
+    initialData: () => store.getExams(),
     initialDataUpdatedAt: INITIAL_DATA_UPDATED_AT,
   });
 }
@@ -32,7 +32,7 @@ export function useExamById(id: string | undefined) {
     enabled: !!id,
     initialData: () => {
       if (!id) return undefined;
-      return readCachedData<Exam[]>(BACKEND_CACHE_KEYS.exams, []).find((exam) => exam.id === id);
+      return store.getExams().find((exam) => exam.id === id);
     },
     initialDataUpdatedAt: INITIAL_DATA_UPDATED_AT,
   });
@@ -71,7 +71,7 @@ export function useNotices() {
   return useQuery({
     queryKey: ["notices"],
     queryFn: api.fetchNotices,
-    initialData: () => readCachedData<Notice[]>(BACKEND_CACHE_KEYS.notices, []),
+    initialData: () => store.getNotices(),
     initialDataUpdatedAt: INITIAL_DATA_UPDATED_AT,
   });
 }
@@ -99,7 +99,7 @@ export function useSections() {
   return useQuery({
     queryKey: ["sections"],
     queryFn: api.fetchSections,
-    initialData: () => readCachedData<Section[]>(BACKEND_CACHE_KEYS.sections, []),
+    initialData: () => store.getSections(),
     initialDataUpdatedAt: INITIAL_DATA_UPDATED_AT,
   });
 }
@@ -165,7 +165,7 @@ export function useSubjects() {
   return useQuery({
     queryKey: ["subjects"],
     queryFn: api.fetchSubjects,
-    initialData: () => readCachedData<string[]>(BACKEND_CACHE_KEYS.subjects, []),
+    initialData: () => store.getSubjects(),
     initialDataUpdatedAt: INITIAL_DATA_UPDATED_AT,
   });
 }
@@ -184,7 +184,7 @@ export function useCategories() {
   return useQuery({
     queryKey: ["categories"],
     queryFn: api.fetchCategories,
-    initialData: () => readCachedData<string[]>(BACKEND_CACHE_KEYS.categories, []),
+    initialData: () => store.getCategories(),
     initialDataUpdatedAt: INITIAL_DATA_UPDATED_AT,
   });
 }
@@ -203,7 +203,7 @@ export function useReminders() {
   return useQuery({
     queryKey: ["reminders"],
     queryFn: api.fetchReminders,
-    initialData: () => readCachedData<Reminder[]>(BACKEND_CACHE_KEYS.reminders, []),
+    initialData: () => store.getReminders(),
     initialDataUpdatedAt: INITIAL_DATA_UPDATED_AT,
   });
 }
@@ -231,7 +231,7 @@ export function useEventBanners() {
   return useQuery({
     queryKey: ["event-banners"],
     queryFn: api.fetchEventBanners,
-    initialData: () => readCachedData<EventBanner[]>(BACKEND_CACHE_KEYS.eventBanners, []),
+    initialData: () => store.getEventBanners(),
     initialDataUpdatedAt: INITIAL_DATA_UPDATED_AT,
   });
 }

@@ -18,10 +18,18 @@ const AdminLoginPage = () => {
     setLoading(true);
     try {
       if (isSignUp) {
-        await signUp(email, password);
-        toast({ title: "অ্যাকাউন্ট তৈরি হয়েছে ✅", description: "প্রথম ইউজার হলে আপনি স্বয়ংক্রিয়ভাবে অ্যাডমিন হবেন।" });
-        // Auto sign in after signup (auto-confirm enabled)
-        await signIn(email, password);
+        const result = await signUp(email, password);
+
+        if (!result?.session) {
+          toast({
+            title: "ভেরিফিকেশন ইমেইল পাঠানো হয়েছে ✅",
+            description: "ইমেইল verify করে পরে লগইন করুন।",
+          });
+          setIsSignUp(false);
+          return;
+        }
+
+        toast({ title: "অ্যাকাউন্ট তৈরি হয়েছে ✅" });
       } else {
         await signIn(email, password);
       }

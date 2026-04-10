@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import type { Session, User } from "@supabase/supabase-js";
 import { isBackendConnectivityError, toUserFacingError } from "@/lib/backend";
 
 interface AuthState {
@@ -34,30 +34,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState({ user: null, isAdmin: false, loading: false });
     };
 
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
-        if (!isMounted) return;
+    const syncSession = (session: Session | null) => {
+      if (!isMounted) return;
 
-        if (session?.user) {
-          void checkAdmin(session.user);
-          return;
-        }
+      if (session?.user) {
+        checkAdmin(session.user);
+        return;
+      }
 
-        setLoggedOutState();
-      })
-      .catch(() => {
-        setLoggedOutState();
-      });
+      setLoggedOutState();
+    };
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        void checkAdmin(session.user);
-      } else {
-        setLoggedOutState();
-      }
+      syncSession(session);
     });
+
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        syncSession(session);
+      })
+      .catch(() => {
+        setLoggedOutState();
+      });
 
     return () => {
       isMounted = false;
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  async function checkAdmin(user: User) {
+  function checkAdmin(user: User) {
     const adminEmails = ["himel2331@gmail.com"];
     const isAdmin = adminEmails.includes((user.email || "").toLowerCase());
 
@@ -81,6 +81,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+async function restoreLocalSession(email: string) {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session?.user?.email?.toLowerCase() === email.toLowerCase()) {
+      return session;
+    }
+  } catch {}
+
+  return null;
+}
+
 export async function signIn(email: string, password: string) {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -91,6 +105,11 @@ export async function signIn(email: string, password: string) {
     return data;
   } catch (error) {
     if (isBackendConnectivityError(error)) {
+      const session = await restoreLocalSession(email);
+      if (session?.user) {
+        return { session, user: session.user };
+      }
+
       await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
     }
 
@@ -103,6 +122,9 @@ export async function signUp(email: string, password: string) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+      },
     });
     if (error) throw error;
     return data;
