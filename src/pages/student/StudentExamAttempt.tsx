@@ -474,7 +474,7 @@ const StudentExamAttempt = () => {
               <List size={16} /> প্রশ্ন তালিকা
             </button>
             <button
-              onClick={() => void doSubmit()}
+              onClick={() => setShowConfirm(true)}
               className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-[0.98]"
             >
               জমা দিন ✓
