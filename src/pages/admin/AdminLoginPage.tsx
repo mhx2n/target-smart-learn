@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Lock, Mail, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { signIn, signUp } from "@/hooks/useAuth";
+import { signIn, signUp, signInWithGoogle } from "@/hooks/useAuth";
 
 const AdminLoginPage = () => {
   const [email, setEmail] = useState("");
