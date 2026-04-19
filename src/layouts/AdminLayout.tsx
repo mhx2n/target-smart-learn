@@ -3,11 +3,12 @@ import { useAuth, signOut } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
-  LayoutDashboard, FileText, Bell, Upload, BookOpen, Settings, LogOut, Menu, X, HelpCircle, FolderOpen, Globe, Palette, Clock, PartyPopper,
+  LayoutDashboard, FileText, Bell, Upload, BookOpen, Settings, LogOut, Menu, X, HelpCircle, FolderOpen, Globe, Palette, Clock, PartyPopper, Users,
 } from "lucide-react";
 
 const navItems = [
   { to: "/admin/dashboard", label: "ড্যাশবোর্ড", icon: LayoutDashboard },
+  { to: "/admin/users", label: "ইউজার ও ব্যাচ", icon: Users },
   { to: "/admin/exams", label: "পরীক্ষা", icon: FileText },
   { to: "/admin/sections", label: "সেকশন", icon: FolderOpen },
   { to: "/admin/questions", label: "প্রশ্ন ব্যাংক", icon: HelpCircle },
