@@ -145,6 +145,210 @@ export type Database = {
           },
         ]
       }
+      live_exam_access_codes: {
+        Row: {
+          assigned_to_user_id: string | null
+          code: string
+          created_at: string
+          id: string
+          live_exam_id: string
+          used_at: string | null
+          used_by_user_id: string | null
+        }
+        Insert: {
+          assigned_to_user_id?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          live_exam_id: string
+          used_at?: string | null
+          used_by_user_id?: string | null
+        }
+        Update: {
+          assigned_to_user_id?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          live_exam_id?: string
+          used_at?: string | null
+          used_by_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_exam_access_codes_live_exam_id_fkey"
+            columns: ["live_exam_id"]
+            isOneToOne: false
+            referencedRelation: "live_exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_exam_answers: {
+        Row: {
+          answered_at: string
+          id: string
+          is_correct: boolean
+          live_exam_id: string
+          participant_id: string
+          question_id: string
+          selected_answer: string
+          user_id: string
+        }
+        Insert: {
+          answered_at?: string
+          id?: string
+          is_correct?: boolean
+          live_exam_id: string
+          participant_id: string
+          question_id: string
+          selected_answer?: string
+          user_id: string
+        }
+        Update: {
+          answered_at?: string
+          id?: string
+          is_correct?: boolean
+          live_exam_id?: string
+          participant_id?: string
+          question_id?: string
+          selected_answer?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_exam_answers_live_exam_id_fkey"
+            columns: ["live_exam_id"]
+            isOneToOne: false
+            referencedRelation: "live_exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_exam_answers_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "live_exam_participants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_exam_participants: {
+        Row: {
+          correct: number
+          id: string
+          joined_at: string
+          live_exam_id: string
+          max_score: number
+          negative_marks: number
+          percentage: number
+          score: number
+          skipped: number
+          started_at: string | null
+          status: string
+          submitted_at: string | null
+          time_taken_seconds: number
+          user_id: string
+          wrong: number
+        }
+        Insert: {
+          correct?: number
+          id?: string
+          joined_at?: string
+          live_exam_id: string
+          max_score?: number
+          negative_marks?: number
+          percentage?: number
+          score?: number
+          skipped?: number
+          started_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          time_taken_seconds?: number
+          user_id: string
+          wrong?: number
+        }
+        Update: {
+          correct?: number
+          id?: string
+          joined_at?: string
+          live_exam_id?: string
+          max_score?: number
+          negative_marks?: number
+          percentage?: number
+          score?: number
+          skipped?: number
+          started_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          time_taken_seconds?: number
+          user_id?: string
+          wrong?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_exam_participants_live_exam_id_fkey"
+            columns: ["live_exam_id"]
+            isOneToOne: false
+            referencedRelation: "live_exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_exams: {
+        Row: {
+          access_mode: string
+          created_at: string
+          created_by: string | null
+          description: string
+          duration: number
+          end_time: string
+          exam_id: string
+          id: string
+          show_leaderboard: boolean
+          start_time: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          access_mode?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          duration?: number
+          end_time: string
+          exam_id: string
+          id?: string
+          show_leaderboard?: boolean
+          start_time: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          access_mode?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          duration?: number
+          end_time?: string
+          exam_id?: string
+          id?: string
+          show_leaderboard?: boolean
+          start_time?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_exams_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notices: {
         Row: {
           content: string
@@ -582,6 +786,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      redeem_live_exam_code: { Args: { _code: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
