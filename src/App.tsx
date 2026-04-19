@@ -42,6 +42,7 @@ import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 import AdminThemeSettings from "./pages/admin/AdminThemeSettings";
 import AdminReminders from "./pages/admin/AdminReminders";
 import AdminEventBanners from "./pages/admin/AdminEventBanners";
+import AdminUsers from "./pages/admin/AdminUsers";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -100,6 +101,7 @@ const App = () => (
                     <Route path="/admin/theme" element={<AdminThemeSettings />} />
                     <Route path="/admin/reminders" element={<AdminReminders />} />
                     <Route path="/admin/event-banners" element={<AdminEventBanners />} />
+                    <Route path="/admin/users" element={<AdminUsers />} />
                   </Route>
                 </Route>
               </Route>
