@@ -5,10 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ScrollToTop from "@/components/ScrollToTop";
 import AuthRefreshController from "@/components/AuthRefreshController";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { SiteSettingsProvider } from "@/contexts/SiteSettingsContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { isBackendConnectivityError } from "@/lib/backend";
-import { supabase } from "@/integrations/supabase/client";
 
 // Layouts
 import PublicLayout from "@/layouts/PublicLayout";
@@ -16,6 +16,7 @@ import AdminLayout from "@/layouts/AdminLayout";
 
 // Pages
 import Index from "./pages/Index";
+import AuthPage from "./pages/AuthPage";
 import ExamsPage from "./pages/ExamsPage";
 import ExamDetails from "./pages/ExamDetails";
 import ExamAttempt from "./pages/student/StudentExamAttempt";
@@ -42,10 +43,6 @@ import AdminThemeSettings from "./pages/admin/AdminThemeSettings";
 import AdminReminders from "./pages/admin/AdminReminders";
 import AdminEventBanners from "./pages/admin/AdminEventBanners";
 
-if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin")) {
-  supabase.auth.stopAutoRefresh();
-}
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -54,59 +51,64 @@ const queryClient = new QueryClient({
       retry: (failureCount, error) => !isBackendConnectivityError(error) && failureCount < 1,
       refetchOnWindowFocus: false,
     },
-    mutations: {
-      retry: 0,
-    },
+    mutations: { retry: 0 },
   },
 });
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-    <SiteSettingsProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthRefreshController />
-          <ScrollToTop />
-          <Routes>
-          {/* Main site routes */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/exams" element={<ExamsPage />} />
-            <Route path="/exams/:id" element={<ExamDetails />} />
-            <Route path="/exams/:id/attempt" element={<ExamAttempt />} />
-            <Route path="/results" element={<ResultsPage />} />
-            <Route path="/wrong-answers" element={<WrongAnswersBank />} />
-            <Route path="/notices" element={<NoticesPage />} />
-            <Route path="/notices/:id" element={<NoticeDetails />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/about" element={<AboutContact />} />
-          </Route>
+      <SiteSettingsProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthRefreshController />
+            <ScrollToTop />
+            <Routes>
+              {/* Public auth pages */}
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/secure-admin-login" element={<AdminLoginPage />} />
 
-          {/* Admin routes — hidden from public UI */}
-          <Route path="/secure-admin-login" element={<AdminLoginPage />} />
-          <Route element={<AdminLayout />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/exams" element={<AdminExams />} />
-            <Route path="/admin/sections" element={<AdminSections />} />
-            <Route path="/admin/questions" element={<AdminQuestions />} />
-            <Route path="/admin/upload-csv" element={<AdminCSVUpload />} />
-            <Route path="/admin/notices" element={<AdminNotices />} />
-            <Route path="/admin/subjects" element={<AdminSubjects />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-            <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
-            <Route path="/admin/theme" element={<AdminThemeSettings />} />
-            <Route path="/admin/reminders" element={<AdminReminders />} />
-            <Route path="/admin/event-banners" element={<AdminEventBanners />} />
-          </Route>
+              {/* Login required for entire site */}
+              <Route element={<ProtectedRoute />}>
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/exams" element={<ExamsPage />} />
+                  <Route path="/exams/:id" element={<ExamDetails />} />
+                  <Route path="/exams/:id/attempt" element={<ExamAttempt />} />
+                  <Route path="/results" element={<ResultsPage />} />
+                  <Route path="/wrong-answers" element={<WrongAnswersBank />} />
+                  <Route path="/notices" element={<NoticesPage />} />
+                  <Route path="/notices/:id" element={<NoticeDetails />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/about" element={<AboutContact />} />
+                </Route>
 
-          <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </SiteSettingsProvider>
+                {/* Admin routes */}
+                <Route element={<ProtectedRoute adminOnly />}>
+                  <Route element={<AdminLayout />}>
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                    <Route path="/admin/exams" element={<AdminExams />} />
+                    <Route path="/admin/sections" element={<AdminSections />} />
+                    <Route path="/admin/questions" element={<AdminQuestions />} />
+                    <Route path="/admin/upload-csv" element={<AdminCSVUpload />} />
+                    <Route path="/admin/notices" element={<AdminNotices />} />
+                    <Route path="/admin/subjects" element={<AdminSubjects />} />
+                    <Route path="/admin/settings" element={<AdminSettings />} />
+                    <Route path="/admin/site-settings" element={<AdminSiteSettings />} />
+                    <Route path="/admin/theme" element={<AdminThemeSettings />} />
+                    <Route path="/admin/reminders" element={<AdminReminders />} />
+                    <Route path="/admin/event-banners" element={<AdminEventBanners />} />
+                  </Route>
+                </Route>
+              </Route>
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </SiteSettingsProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
