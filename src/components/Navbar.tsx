@@ -18,6 +18,7 @@ const Navbar = () => {
   const links = [
     { to: "/", label: getLabel("navHome") },
     { to: "/exams", label: getLabel("navExams") },
+    { to: "/live-exams", label: "লাইভ" },
     { to: "/results", label: getLabel("navResults") },
     { to: "/notices", label: getLabel("navNotices") },
     { to: "/profile", label: getLabel("navProfile") },

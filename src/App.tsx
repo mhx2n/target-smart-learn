@@ -43,6 +43,9 @@ import AdminThemeSettings from "./pages/admin/AdminThemeSettings";
 import AdminReminders from "./pages/admin/AdminReminders";
 import AdminEventBanners from "./pages/admin/AdminEventBanners";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminLiveExams from "./pages/admin/AdminLiveExams";
+import StudentLiveExams from "./pages/student/StudentLiveExams";
+import LiveExamAttempt from "./pages/student/LiveExamAttempt";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +87,8 @@ const App = () => (
                   <Route path="/notices/:id" element={<NoticeDetails />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/about" element={<AboutContact />} />
+                  <Route path="/live-exams" element={<StudentLiveExams />} />
+                  <Route path="/live-exam/:id" element={<LiveExamAttempt />} />
                 </Route>
 
                 {/* Admin routes */}
@@ -102,6 +107,7 @@ const App = () => (
                     <Route path="/admin/reminders" element={<AdminReminders />} />
                     <Route path="/admin/event-banners" element={<AdminEventBanners />} />
                     <Route path="/admin/users" element={<AdminUsers />} />
+                    <Route path="/admin/live-exams" element={<AdminLiveExams />} />
                   </Route>
                 </Route>
               </Route>
