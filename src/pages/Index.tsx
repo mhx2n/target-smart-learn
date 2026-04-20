@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { Search, ArrowRight, BookOpen, FolderOpen, Bell, BarChart3, Clock, X as XIcon, BookX } from "lucide-react";
+import { Search, ArrowRight, BookOpen, FolderOpen, Bell, BarChart3, Clock, X as XIcon, BookX, Radio } from "lucide-react";
 import { useExams, useNotices, useResults, useSections } from "@/hooks/useSupabaseData";
 import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import ExamCard from "@/components/ExamCard";
 import heroBg from "@/assets/hero-bg.jpg";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { getLabel } from "@/lib/labels";
 
 const Index = () => {
@@ -17,6 +18,13 @@ const Index = () => {
   const featured = exams.filter((e) => e.featured);
   const [search, setSearch] = useState("");
   const recentResults = results.slice(0, 3);
+  const [liveBanner, setLiveBanner] = useState<{ id: string; title: string; status: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from("live_exams").select("id,title,status").in("status", ["live", "scheduled"])
+      .order("start_time", { ascending: true }).limit(3)
+      .then(({ data }) => setLiveBanner((data || []) as any));
+  }, []);
 
   const filtered = search
     ? exams.filter((e) => e.title.toLowerCase().includes(search.toLowerCase()) || e.subject.toLowerCase().includes(search.toLowerCase()))
@@ -88,6 +96,36 @@ const Index = () => {
       </section>
 
       <div className="container space-y-12 pb-8">
+        {liveBanner.length > 0 && (
+          <section className="-mt-6">
+            <Link to="/live-exams" className="block group">
+              <div className="relative overflow-hidden rounded-2xl p-4 md:p-5 border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent hover:from-primary/15 transition-all">
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-primary/20 rounded-full blur-3xl" />
+                <div className="relative flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                    <Radio size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      {liveBanner.some((b) => b.status === "live") && (
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+                        </span>
+                      )}
+                      <p className="font-bold text-sm">
+                        {liveBanner.some((b) => b.status === "live") ? "লাইভ পরীক্ষা চলছে!" : "নতুন লাইভ পরীক্ষা নির্ধারিত"}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{liveBanner.map((b) => b.title).join(" • ")}</p>
+                  </div>
+                  <ArrowRight size={18} className="text-primary shrink-0 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </Link>
+          </section>
+        )}
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 -mt-8 relative z-10">
           {[
             { icon: BookOpen, label: getLabel("statTotalExams"), val: exams.length, link: "/exams" },

@@ -5,7 +5,7 @@ import { Plus, Radio, Trash2, KeyRound, Users as UsersIcon, Download, Trophy, X 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-interface ExamRow { id: string; title: string; question_count: number; duration: number; }
+interface ExamRow { id: string; title: string; question_count: number; duration: number; published: boolean; }
 interface LiveExam {
   id: string; title: string; description: string; exam_id: string;
   start_time: string; end_time: string; duration: number;
@@ -43,7 +43,7 @@ const AdminLiveExams = () => {
   const load = async () => {
     setLoading(true);
     const [e, l] = await Promise.all([
-      supabase.from("exams").select("id,title,question_count,duration").eq("published", true).order("created_at", { ascending: false }),
+      supabase.from("exams").select("id,title,question_count,duration,published").order("created_at", { ascending: false }),
       supabase.from("live_exams").select("*").order("start_time", { ascending: false }),
     ]);
     if (e.data) setExams(e.data as ExamRow[]);
@@ -176,8 +176,9 @@ const AdminLiveExams = () => {
           <select className="w-full glass-strong rounded-lg px-3 py-2 text-sm"
             value={form.exam_id} onChange={(e) => setForm({ ...form, exam_id: e.target.value })}>
             <option value="">পরীক্ষা সিলেক্ট করুন</option>
-            {exams.map((x) => <option key={x.id} value={x.id}>{x.title} ({x.question_count}টি)</option>)}
+            {exams.map((x) => <option key={x.id} value={x.id}>{x.title} ({x.question_count}টি) {x.published ? "✓" : "• অপ্রকাশিত"}</option>)}
           </select>
+          <p className="text-[11px] text-muted-foreground -mt-1">💡 অপ্রকাশিত পরীক্ষাও সিলেক্ট করা যাবে — লাইভ শেষ হলে প্রকাশ করে প্র্যাকটিসে রাখতে পারেন।</p>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-muted-foreground">শুরু</label>
