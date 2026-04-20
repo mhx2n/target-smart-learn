@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Clock, Trophy, CheckCircle2, Send, Medal } from "lucide-react";
 import MathText from "@/components/MathText";
+import { resolveCorrectOptionText } from "@/lib/answerUtils";
 
 interface Question { id: string; question: string; options: string[]; answer: string; section: string; }
 interface LiveExam { id: string; title: string; exam_id: string; duration: number; status: string; show_leaderboard: boolean; end_time: string; }
@@ -41,7 +42,19 @@ const LiveExamAttempt = () => {
       const parsed: Question[] = (q || []).map((row: any) => ({
         id: row.id,
         question: row.question,
-        answer: row.answer,
+        answer: resolveCorrectOptionText({
+          id: row.id,
+          question: row.question,
+          questionImage: undefined,
+          options: Array.isArray(row.options)
+            ? row.options
+            : (typeof row.options === "string" ? (() => { try { return JSON.parse(row.options); } catch { return []; } })() : []),
+          optionImages: undefined,
+          answer: row.answer,
+          explanation: "",
+          type: "mcq",
+          section: row.section || "",
+        }),
         section: row.section || "",
         options: Array.isArray(row.options)
           ? row.options
@@ -191,14 +204,15 @@ const LiveExamAttempt = () => {
               <CheckCircle2 className="mx-auto text-success" size={48} />
               <h2 className="text-xl font-bold">পরীক্ষা জমা হয়েছে</h2>
               <p className="text-sm text-muted-foreground">আপনার র‍্যাঙ্ক: <span className="font-bold text-primary">{myRank || "—"}</span></p>
+              <p className="text-sm text-muted-foreground">স্কোর: <span className="font-bold text-foreground">{participant?.score ?? 0}/{questions.length}</span></p>
               <button onClick={() => navigate("/live-exams")} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
                 ফিরে যান
               </button>
             </div>
           ) : questions.map((q, i) => (
-            <div key={q.id} className="glass-card-static p-4">
+            <div key={q.id} className="glass-card-static p-4 md:p-5">
               <p className="text-xs text-muted-foreground mb-1">প্রশ্ন {i + 1} / {questions.length}</p>
-              <div className="font-medium mb-3"><MathText text={q.question} /></div>
+              <div className="text-base font-semibold mb-3 leading-relaxed"><MathText text={q.question} /></div>
               <div className="space-y-2">
                 {q.options.map((opt, idx) => {
                   const selected = answers[q.id] === opt;

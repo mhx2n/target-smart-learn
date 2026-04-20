@@ -82,41 +82,22 @@ const ExamPdfExporter = ({ exam, open, onClose }: Props) => {
     if (!previewRef.current) return;
     setGenerating(true);
     try {
-      // Wait a tick for fonts/math layout
       await new Promise((r) => setTimeout(r, 200));
       const pages = previewRef.current.querySelectorAll<HTMLElement>("[data-pdf-page]");
       const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 6;
 
       for (let i = 0; i < pages.length; i++) {
         const el = pages[i];
         const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
         const img = canvas.toDataURL("image/jpeg", 0.92);
         const ratio = canvas.height / canvas.width;
-        const imgW = pageW;
+        const imgW = pageW - margin * 2;
         const imgH = imgW * ratio;
         if (i > 0) pdf.addPage();
-        if (imgH <= pageH) {
-          pdf.addImage(img, "JPEG", 0, 0, imgW, imgH);
-        } else {
-          // Slice tall pages across multiple PDF pages
-          let y = 0;
-          const sliceH = pageH * (canvas.width / imgW);
-          while (y < canvas.height) {
-            const slice = document.createElement("canvas");
-            slice.width = canvas.width;
-            slice.height = Math.min(sliceH, canvas.height - y);
-            const ctx = slice.getContext("2d")!;
-            ctx.drawImage(canvas, 0, y, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
-            const sliceImg = slice.toDataURL("image/jpeg", 0.92);
-            const sliceImgH = (slice.height / canvas.width) * pageW;
-            if (y > 0) pdf.addPage();
-            pdf.addImage(sliceImg, "JPEG", 0, 0, pageW, sliceImgH);
-            y += sliceH;
-          }
-        }
-        // Add footer link as clickable annotation on each generated page
+        pdf.addImage(img, "JPEG", margin, margin, imgW, Math.min(imgH, pageH - margin * 2));
         if (cfg.footerLink) {
           try {
             pdf.link(0, pageH - 12, pageW, 12, { url: cfg.footerLink });
@@ -146,10 +127,10 @@ const ExamPdfExporter = ({ exam, open, onClose }: Props) => {
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-stretch md:items-center justify-center p-2 md:p-6 overflow-auto">
-      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-6xl flex flex-col md:flex-row overflow-hidden max-h-[95vh]">
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-start justify-center p-2 md:p-6 overflow-y-auto overscroll-contain">
+      <div className="bg-card rounded-2xl shadow-2xl w-full max-w-6xl flex flex-col md:flex-row overflow-hidden my-4 md:my-0 md:max-h-[92vh]">
         {/* Settings panel */}
-        <div className="md:w-80 shrink-0 border-r border-border p-5 overflow-auto">
+        <div className="md:w-80 shrink-0 border-r border-border p-5 overflow-y-auto max-h-[45vh] md:max-h-[92vh]">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-lg">PDF কাস্টমাইজ</h2>
             <button onClick={onClose} className="p-1.5 hover:bg-muted rounded-lg"><X size={16} /></button>
@@ -215,7 +196,7 @@ const ExamPdfExporter = ({ exam, open, onClose }: Props) => {
         </div>
 
         {/* Preview */}
-        <div className="flex-1 overflow-auto bg-muted/30 p-4">
+        <div className="flex-1 overflow-y-auto bg-muted/30 p-4 max-h-[50vh] md:max-h-[92vh]">
           <p className="text-xs text-center text-muted-foreground mb-3">প্রিভিউ (PDF এর ভিতরে এমনই দেখাবে)</p>
           <div ref={previewRef} className="space-y-4">
             {pages.map((qs, pi) => (
