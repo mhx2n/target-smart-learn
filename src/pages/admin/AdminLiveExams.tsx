@@ -33,7 +33,9 @@ const AdminLiveExams = () => {
   const [codes, setCodes] = useState<AccessCode[]>([]);
   const [parts, setParts] = useState<Participant[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [allUsers, setAllUsers] = useState<Profile[]>([]);
   const [genCount, setGenCount] = useState(10);
+  const [assignedUserId, setAssignedUserId] = useState<string>("");
 
   const [form, setForm] = useState({
     title: "", description: "", exam_id: "", start_time: "", end_time: "",
@@ -48,6 +50,11 @@ const AdminLiveExams = () => {
     ]);
     if (e.data) setExams(e.data as ExamRow[]);
     if (l.data) setLiveExams(l.data as LiveExam[]);
+    const { data: users } = await supabase
+      .from("profiles")
+      .select("user_id,full_name,email,unique_code,batch_name,phone")
+      .order("created_at", { ascending: false });
+    if (users) setAllUsers(users as Profile[]);
     setLoading(false);
   };
 
@@ -107,11 +114,13 @@ const AdminLiveExams = () => {
   const generateCodes = async () => {
     if (!selected) return;
     const rows = Array.from({ length: genCount }, () => ({
-      live_exam_id: selected.id, code: randomCode(),
+      live_exam_id: selected.id,
+      code: randomCode(),
+      assigned_to_user_id: assignedUserId || null,
     }));
     const { error } = await supabase.from("live_exam_access_codes").insert(rows);
     if (error) return toast({ title: "ত্রুটি", description: error.message, variant: "destructive" });
-    toast({ title: `${genCount}টি কোড তৈরি হয়েছে ✅` });
+    toast({ title: `${genCount}টি কোড তৈরি হয়েছে ✅`, description: assignedUserId ? "নির্বাচিত ইউজারের নামে assign করা হয়েছে" : "কোডগুলো এখনই ব্যবহার করা যাবে" });
     loadDetail(selected);
   };
 
@@ -264,14 +273,27 @@ const AdminLiveExams = () => {
               <div className="flex gap-2 mb-3 flex-wrap">
                 <input type="number" min={1} max={500} value={genCount} onChange={(e) => setGenCount(Number(e.target.value))}
                   className="w-24 glass-strong rounded-lg px-3 py-2 text-sm" />
+                  <select value={assignedUserId} onChange={(e) => setAssignedUserId(e.target.value)} className="min-w-56 glass-strong rounded-lg px-3 py-2 text-xs">
+                    <option value="">সবার জন্য জেনারেট (unassigned)</option>
+                    {allUsers.map((user) => (
+                      <option key={user.user_id} value={user.user_id}>
+                        {(user.full_name || user.email || "ইউজার")} {user.unique_code ? `• ${user.unique_code}` : ""}
+                      </option>
+                    ))}
+                  </select>
                 <button onClick={generateCodes} className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">কোড জেনারেট</button>
                 <button onClick={exportCodesPDF} className="px-3 py-2 rounded-lg glass-strong text-xs flex items-center gap-1"><Download size={12} /> PDF</button>
               </div>
+                <p className="text-[11px] text-muted-foreground mb-3">Student নিজের profile code না, এই exam access code দিয়েই live exam-এ ঢুকবে। চাইলে নির্দিষ্ট user-এর জন্য আলাদা code assign করতে পারবেন।</p>
               <div className="max-h-64 overflow-auto space-y-1">
                 {codes.map((c) => (
                   <div key={c.id} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-1.5 text-xs">
                     <span className="font-mono font-bold">{c.code}</span>
-                    <span className="text-muted-foreground">{c.used_by_user_id ? `ব্যবহৃত: ${profiles[c.used_by_user_id]?.full_name || c.used_by_user_id.slice(0, 8)}` : "অব্যবহৃত"}</span>
+                      <span className="text-muted-foreground text-right">
+                        {c.assigned_to_user_id ? `Assigned: ${profiles[c.assigned_to_user_id]?.full_name || profiles[c.assigned_to_user_id]?.email || c.assigned_to_user_id.slice(0, 8)}` : "Open code"}
+                        <br />
+                        {c.used_by_user_id ? `Used: ${profiles[c.used_by_user_id]?.full_name || profiles[c.used_by_user_id]?.email || c.used_by_user_id.slice(0, 8)}` : "Unused"}
+                      </span>
                     <button onClick={() => deleteCode(c.id)} className="text-destructive"><Trash2 size={12} /></button>
                   </div>
                 ))}
