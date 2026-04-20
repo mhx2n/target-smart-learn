@@ -38,7 +38,19 @@ const LiveExamAttempt = () => {
 
       const { data: q } = await supabase.from("questions").select("id,question,options,answer,section")
         .eq("exam_id", le.exam_id).order("sort_order");
-      setQuestions((q || []) as any);
+      const parsed: Question[] = (q || []).map((row: any) => ({
+        id: row.id,
+        question: row.question,
+        answer: row.answer,
+        section: row.section || "",
+        options: Array.isArray(row.options)
+          ? row.options
+          : (typeof row.options === "string" ? (() => { try { return JSON.parse(row.options); } catch { return []; } })() : []),
+      }));
+      setQuestions(parsed);
+      if (parsed.length === 0) {
+        toast({ title: "এই পরীক্ষায় কোনো প্রশ্ন নেই", description: "অ্যাডমিনকে জানান", variant: "destructive" });
+      }
 
       let { data: p } = await supabase.from("live_exam_participants").select("*")
         .eq("live_exam_id", id).eq("user_id", user.id).maybeSingle();
