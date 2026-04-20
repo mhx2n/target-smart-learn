@@ -4,6 +4,8 @@ import { Exam, Question } from "@/lib/types";
 import { Eye, EyeOff, Trash2, FolderOpen, Pencil, Lock, BookOpen, X, Check, Layers } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import QuestionEditor from "@/components/QuestionEditor";
+import ExamPdfExporter from "@/components/ExamPdfExporter";
+import { FileDown } from "lucide-react";
 
 const AdminExams = () => {
   const { data: exams = [], isLoading } = useExams();
@@ -15,6 +17,7 @@ const AdminExams = () => {
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [editingMandatory, setEditingMandatory] = useState<string | null>(null);
   const [editingRanges, setEditingRanges] = useState<string | null>(null);
+  const [pdfExam, setPdfExam] = useState<Exam | null>(null);
   const [rangeInputs, setRangeInputs] = useState<Record<string, { from: number; to: number; subject: string }[]>>({});
 
   const sorted = [...exams].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -192,6 +195,9 @@ const AdminExams = () => {
                   <button onClick={() => setEditingExam(e)} className="p-2 rounded-lg hover:bg-primary/10 transition-colors" title="প্রশ্ন সম্পাদনা">
                     <Pencil size={16} className="text-primary" />
                   </button>
+                  <button onClick={() => setPdfExam(e)} className="p-2 rounded-lg hover:bg-primary/10 transition-colors" title="PDF এক্সপোর্ট">
+                    <FileDown size={16} className="text-primary" />
+                  </button>
                   <button onClick={() => togglePublish(e.id, e.published)} className="p-2 rounded-lg hover:bg-muted transition-colors">
                     {e.published ? <Eye size={16} className="text-success" /> : <EyeOff size={16} className="text-muted-foreground" />}
                   </button>
@@ -299,6 +305,9 @@ const AdminExams = () => {
 
       {editingExam && (
         <QuestionEditor exam={editingExam} onClose={() => setEditingExam(null)} onSaved={() => setEditingExam(null)} />
+      )}
+      {pdfExam && (
+        <ExamPdfExporter exam={pdfExam} open={!!pdfExam} onClose={() => setPdfExam(null)} />
       )}
     </div>
   );
