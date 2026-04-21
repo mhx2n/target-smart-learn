@@ -169,6 +169,16 @@ const StudentProfile = () => {
                 <span className="text-xs px-3 py-1.5 rounded-full bg-muted">ব্যাচ: <span className="font-semibold">{profile.batch_name}</span></span>
               )}
             </div>
+            <div className="mt-4 grid gap-2 md:grid-cols-2">
+              <div className="glass-strong rounded-2xl p-3 text-left">
+                <p className="text-[11px] font-semibold text-primary mb-1">প্রোফাইল কোড কিভাবে পাবেন</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">এডমিন প্যানেলের <span className="font-medium text-foreground">ইউজার ও ব্যাচ</span> থেকে আপনার নামে ব্যাচ assign করলে এই কোড অটো তৈরি হবে।</p>
+              </div>
+              <div className="glass-strong rounded-2xl p-3 text-left">
+                <p className="text-[11px] font-semibold text-primary mb-1">গুরুত্বপূর্ণ</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">এই profile code আর live exam access code এক জিনিস না—লাইভ পরীক্ষার কোড আলাদা করে <span className="font-medium text-foreground">লাইভ</span> পেজে দেখাবে।</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -219,7 +219,7 @@ const StudentLiveExams = () => {
         </div>
       </div>
 
-      {codes.length > 0 && (
+      {codes.length > 0 ? (
         <div className="glass-card-static p-5">
           <div className="flex items-center justify-between gap-3 mb-3">
             <h2 className="text-sm font-bold flex items-center gap-2">
@@ -253,6 +253,11 @@ const StudentLiveExams = () => {
               );
             })}
           </div>
+        </div>
+      ) : (
+        <div className="glass-card-static p-5">
+          <h2 className="text-sm font-bold mb-2 flex items-center gap-2"><KeyRound size={14} className="text-primary" /> আমার অ্যাক্সেস কোড</h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">এখনও আপনার নামে কোনো live exam access code assign করা হয়নি। এডমিন চাইলে নির্দিষ্ট user-এর জন্য আলাদা কোড generate করে assign করতে পারবে, আর assign হলেই সেটা এখানে দেখাবে।</p>
         </div>
       )}
 

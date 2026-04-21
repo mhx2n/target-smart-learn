@@ -54,7 +54,17 @@ const AdminLiveExams = () => {
       .from("profiles")
       .select("user_id,full_name,email,unique_code,batch_name,phone")
       .order("created_at", { ascending: false });
-    if (users) setAllUsers(users as Profile[]);
+    if (users) {
+      const userRows = users as Profile[];
+      setAllUsers(userRows);
+      setProfiles((prev) => {
+        const next = { ...prev };
+        userRows.forEach((user) => {
+          next[user.user_id] = user;
+        });
+        return next;
+      });
+    }
     setLoading(false);
   };
 

@@ -90,6 +90,10 @@ const AdminUsers = () => {
       <div>
         <h1 className="text-2xl font-bold mb-1">ইউজার ও ব্যাচ ম্যানেজমেন্ট</h1>
         <p className="text-sm text-muted-foreground">ব্যাচ যোগ করুন ও ইউজারদের ইউনিক কোড বরাদ্দ করুন</p>
+        <div className="mt-3 glass-card-static p-4 text-xs text-muted-foreground leading-relaxed">
+          <p><span className="font-semibold text-foreground">Flow:</span> আগে ব্যাচ তৈরি করুন → তারপর ইউজারের পাশে ব্যাচ assign করুন → সাথে সাথে profile code তৈরি হবে।</p>
+          <p className="mt-1">এই profile code শুধু পরিচয়ের জন্য। live exam-এর জন্য আলাদা access code <span className="font-semibold text-foreground">লাইভ পরীক্ষা</span> প্যানেল থেকে generate/assign করতে হবে।</p>
+        </div>
       </div>
 
       {/* Batches */}
@@ -157,6 +161,9 @@ const AdminUsers = () => {
                     <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                     {u.unique_code && (
                       <p className="text-xs font-mono text-primary mt-0.5">{u.unique_code}</p>
+                    )}
+                    {!u.unique_code && (
+                      <p className="text-[11px] text-warning mt-0.5">এখনও profile code দেওয়া হয়নি</p>
                     )}
                   </div>
                 </div>

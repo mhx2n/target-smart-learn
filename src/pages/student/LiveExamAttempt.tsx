@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Trophy, CheckCircle2, Send, Medal } from "lucide-react";
+import { Clock, Trophy, CheckCircle2, Send } from "lucide-react";
 import MathText from "@/components/MathText";
 import { resolveCorrectOptionText } from "@/lib/answerUtils";
 
@@ -134,13 +134,32 @@ const LiveExamAttempt = () => {
   }, [id]);
 
   const selectAnswer = async (q: Question, opt: string) => {
-    if (submitted || !participant) return;
-    if (answers[q.id]) return; // lock once selected
+    if (submitted || !participant || !user) return;
+    if (answers[q.id]) return;
     setAnswers((prev) => ({ ...prev, [q.id]: opt }));
-    await supabase.from("live_exam_answers").upsert({
-      participant_id: participant.id, live_exam_id: id!, user_id: user!.id,
-      question_id: q.id, selected_answer: opt, is_correct: opt === q.answer,
-    }, { onConflict: "participant_id,question_id" });
+
+    const payload = {
+      participant_id: participant.id,
+      live_exam_id: id!,
+      user_id: user.id,
+      question_id: q.id,
+      selected_answer: opt,
+      is_correct: opt === q.answer,
+    };
+
+    const { data: existing } = await supabase
+      .from("live_exam_answers")
+      .select("id")
+      .eq("participant_id", participant.id)
+      .eq("question_id", q.id)
+      .maybeSingle();
+
+    if (existing?.id) {
+      await supabase.from("live_exam_answers").update(payload).eq("id", existing.id);
+      return;
+    }
+
+    await supabase.from("live_exam_answers").insert(payload);
   };
 
   const handleSubmit = async (auto = false) => {
@@ -165,6 +184,17 @@ const LiveExamAttempt = () => {
       percentage: pct, time_taken_seconds: elapsed,
     }).eq("id", participant.id);
 
+    setParticipant((prev) => prev ? {
+      ...prev,
+      status: "submitted",
+      score,
+      max_score: max,
+      correct,
+      wrong,
+      skipped,
+      percentage: pct,
+      time_taken_seconds: elapsed,
+    } : prev);
     setSubmitted(true);
     toast({ title: auto ? "সময় শেষ! জমা হয়েছে" : "জমা সফল ✅" });
   };
@@ -177,10 +207,10 @@ const LiveExamAttempt = () => {
   const mins = Math.floor(timeLeft / 60), secs = timeLeft % 60;
 
   return (
-    <div className="min-h-screen p-4 md:p-6 max-w-7xl mx-auto">
+    <div className="min-h-screen pt-24 pb-8 px-4 md:px-6 max-w-7xl mx-auto">
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
-          <div className="glass-card-static p-4 flex items-center justify-between sticky top-2 z-10">
+          <div className="glass-card-static p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h1 className="font-bold">{liveExam.title}</h1>
               <p className="text-xs text-muted-foreground">প্রশ্ন: {questions.length} • উত্তর: {Object.keys(answers).length}</p>
@@ -234,7 +264,7 @@ const LiveExamAttempt = () => {
 
         {liveExam.show_leaderboard && (
           <div className="lg:col-span-1">
-            <div className="glass-card-static p-4 sticky top-2">
+            <div className="glass-card-static p-4 lg:sticky lg:top-24">
               <h3 className="font-bold mb-3 flex items-center gap-2"><Trophy size={16} className="text-warning" /> লাইভ র‍্যাঙ্কিং</h3>
               <div className="space-y-1.5 max-h-[70vh] overflow-auto">
                 {sortedLB.map((p, i) => {
