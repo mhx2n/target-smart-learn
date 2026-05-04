@@ -83,6 +83,36 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_premium_batches: {
+        Row: {
+          exam_id: string
+          premium_batch_id: string
+        }
+        Insert: {
+          exam_id: string
+          premium_batch_id: string
+        }
+        Update: {
+          exam_id?: string
+          premium_batch_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_premium_batches_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_premium_batches_premium_batch_id_fkey"
+            columns: ["premium_batch_id"]
+            isOneToOne: false
+            referencedRelation: "premium_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exams: {
         Row: {
           category: string
@@ -397,6 +427,59 @@ export type Database = {
           id?: string
           page_path?: string
           session_id?: string
+        }
+        Relationships: []
+      }
+      premium_batch_members: {
+        Row: {
+          added_at: string
+          id: string
+          premium_batch_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          premium_batch_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          premium_batch_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_batch_members_premium_batch_id_fkey"
+            columns: ["premium_batch_id"]
+            isOneToOne: false
+            referencedRelation: "premium_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      premium_batches: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
