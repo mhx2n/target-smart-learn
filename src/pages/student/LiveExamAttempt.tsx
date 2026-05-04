@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Trophy, CheckCircle2, Send } from "lucide-react";
+import { Clock, CheckCircle2, Send, Trophy, ChevronLeft, ChevronRight, Home } from "lucide-react";
 import MathText from "@/components/MathText";
 import { resolveCorrectOptionText } from "@/lib/answerUtils";
 
@@ -22,14 +22,16 @@ const LiveExamAttempt = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [participant, setParticipant] = useState<Participant | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [allParts, setAllParts] = useState<Participant[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentIdx, setCurrentIdx] = useState(0);
   const startedAtRef = useRef<Date | null>(null);
 
-  // Load exam + participant + questions
+  // Post-submit ranking state
+  const [allParts, setAllParts] = useState<Participant[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+
   useEffect(() => {
     if (!id || !user) return;
     (async () => {
@@ -39,31 +41,22 @@ const LiveExamAttempt = () => {
 
       const { data: q } = await supabase.from("questions").select("id,question,options,answer,section")
         .eq("exam_id", le.exam_id).order("sort_order");
-      const parsed: Question[] = (q || []).map((row: any) => ({
-        id: row.id,
-        question: row.question,
-        answer: resolveCorrectOptionText({
+      const parsed: Question[] = (q || []).map((row: any) => {
+        const opts = Array.isArray(row.options)
+          ? row.options
+          : (typeof row.options === "string" ? (() => { try { return JSON.parse(row.options); } catch { return []; } })() : []);
+        return {
           id: row.id,
           question: row.question,
-          questionImage: undefined,
-          options: Array.isArray(row.options)
-            ? row.options
-            : (typeof row.options === "string" ? (() => { try { return JSON.parse(row.options); } catch { return []; } })() : []),
-          optionImages: undefined,
-          answer: row.answer,
-          explanation: "",
-          type: "mcq",
           section: row.section || "",
-        }),
-        section: row.section || "",
-        options: Array.isArray(row.options)
-          ? row.options
-          : (typeof row.options === "string" ? (() => { try { return JSON.parse(row.options); } catch { return []; } })() : []),
-      }));
+          options: opts,
+          answer: resolveCorrectOptionText({
+            id: row.id, question: row.question, options: opts, answer: row.answer,
+            explanation: "", type: "mcq", section: row.section || "",
+          }),
+        };
+      });
       setQuestions(parsed);
-      if (parsed.length === 0) {
-        toast({ title: "এই পরীক্ষায় কোনো প্রশ্ন নেই", description: "অ্যাডমিনকে জানান", variant: "destructive" });
-      }
 
       let { data: p } = await supabase.from("live_exam_participants").select("*")
         .eq("live_exam_id", id).eq("user_id", user.id).maybeSingle();
@@ -71,20 +64,22 @@ const LiveExamAttempt = () => {
       if (!p) {
         const { data: ins } = await supabase.from("live_exam_participants").insert({
           live_exam_id: id, user_id: user.id, status: "in_progress",
-          started_at: new Date().toISOString(), max_score: (q || []).length,
+          started_at: new Date().toISOString(), max_score: parsed.length,
         }).select().single();
         p = ins;
       } else if (!p.started_at) {
         const { data: upd } = await supabase.from("live_exam_participants").update({
-          started_at: new Date().toISOString(), status: "in_progress", max_score: (q || []).length,
+          started_at: new Date().toISOString(), status: "in_progress", max_score: parsed.length,
         }).eq("id", p.id).select().single();
         p = upd;
       }
       setParticipant(p as Participant);
       startedAtRef.current = p?.started_at ? new Date(p.started_at) : new Date();
-      if (p?.status === "submitted") setSubmitted(true);
+      if (p?.status === "submitted") {
+        setSubmitted(true);
+        await loadRankings(id);
+      }
 
-      // Load existing answers
       const { data: ans } = await supabase.from("live_exam_answers").select("question_id,selected_answer")
         .eq("participant_id", p!.id);
       const map: Record<string, string> = {};
@@ -95,43 +90,34 @@ const LiveExamAttempt = () => {
     })();
   }, [id, user]);
 
-  // Timer
+  // Timer tick — uses RAF-equivalent setInterval but recomputes from real time
   useEffect(() => {
     if (!liveExam || !startedAtRef.current || submitted) return;
+    const total = liveExam.duration * 60;
     const tick = () => {
       const elapsed = Math.floor((Date.now() - startedAtRef.current!.getTime()) / 1000);
-      const total = liveExam.duration * 60;
       const left = Math.max(0, total - elapsed);
       setTimeLeft(left);
-      if (left === 0) handleSubmit(true);
+      if (left <= 0) handleSubmit(true);
     };
     tick();
-    const i = setInterval(tick, 1000);
-    return () => clearInterval(i);
+    const i = window.setInterval(tick, 1000);
+    return () => window.clearInterval(i);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveExam, submitted]);
 
-  // Realtime leaderboard
-  useEffect(() => {
-    if (!id) return;
-    const refresh = async () => {
-      const { data } = await supabase.from("live_exam_participants").select("*")
-        .eq("live_exam_id", id).order("score", { ascending: false });
-      setAllParts((data || []) as Participant[]);
-      const ids = Array.from(new Set((data || []).map((x: any) => x.user_id)));
-      if (ids.length) {
-        const { data: pr } = await supabase.from("profiles").select("user_id,full_name,unique_code,avatar_url").in("user_id", ids);
-        const map: Record<string, Profile> = {};
-        (pr || []).forEach((x: any) => { map[x.user_id] = x; });
-        setProfiles(map);
-      }
-    };
-    refresh();
-    const ch = supabase.channel(`live-exam-${id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_exam_participants", filter: `live_exam_id=eq.${id}` },
-        () => refresh())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [id]);
+  const loadRankings = async (liveExamId: string) => {
+    const { data } = await supabase.from("live_exam_participants").select("*")
+      .eq("live_exam_id", liveExamId).eq("status", "submitted").order("score", { ascending: false });
+    setAllParts((data || []) as Participant[]);
+    const ids = Array.from(new Set((data || []).map((x: any) => x.user_id)));
+    if (ids.length) {
+      const { data: pr } = await supabase.from("profiles").select("user_id,full_name,unique_code,avatar_url").in("user_id", ids);
+      const map: Record<string, Profile> = {};
+      (pr || []).forEach((x: any) => { map[x.user_id] = x; });
+      setProfiles(map);
+    }
+  };
 
   const selectAnswer = async (q: Question, opt: string) => {
     if (submitted || !participant || !user) return;
@@ -139,27 +125,19 @@ const LiveExamAttempt = () => {
     setAnswers((prev) => ({ ...prev, [q.id]: opt }));
 
     const payload = {
-      participant_id: participant.id,
-      live_exam_id: id!,
-      user_id: user.id,
-      question_id: q.id,
-      selected_answer: opt,
-      is_correct: opt === q.answer,
+      participant_id: participant.id, live_exam_id: id!, user_id: user.id,
+      question_id: q.id, selected_answer: opt, is_correct: opt === q.answer,
     };
 
     const { data: existing } = await supabase
-      .from("live_exam_answers")
-      .select("id")
-      .eq("participant_id", participant.id)
-      .eq("question_id", q.id)
-      .maybeSingle();
+      .from("live_exam_answers").select("id")
+      .eq("participant_id", participant.id).eq("question_id", q.id).maybeSingle();
 
     if (existing?.id) {
       await supabase.from("live_exam_answers").update(payload).eq("id", existing.id);
-      return;
+    } else {
+      await supabase.from("live_exam_answers").insert(payload);
     }
-
-    await supabase.from("live_exam_answers").insert(payload);
   };
 
   const handleSubmit = async (auto = false) => {
@@ -184,117 +162,157 @@ const LiveExamAttempt = () => {
       percentage: pct, time_taken_seconds: elapsed,
     }).eq("id", participant.id);
 
-    setParticipant((prev) => prev ? {
-      ...prev,
-      status: "submitted",
-      score,
-      max_score: max,
-      correct,
-      wrong,
-      skipped,
-      percentage: pct,
-      time_taken_seconds: elapsed,
-    } : prev);
+    setParticipant((prev) => prev ? { ...prev, status: "submitted", score, max_score: max, correct, wrong, skipped, percentage: pct, time_taken_seconds: elapsed } : prev);
     setSubmitted(true);
+    if (id) await loadRankings(id);
     toast({ title: auto ? "সময় শেষ! জমা হয়েছে" : "জমা সফল ✅" });
   };
 
-  if (loading) return <div className="p-6 text-center text-sm text-muted-foreground">লোড হচ্ছে...</div>;
+  if (loading) return <div className="p-6 text-center text-sm text-muted-foreground pt-32">লোড হচ্ছে...</div>;
   if (!liveExam) return null;
 
-  const sortedLB = [...allParts].sort((a, b) => b.score - a.score || a.time_taken_seconds - b.time_taken_seconds);
-  const myRank = sortedLB.findIndex((p) => p.user_id === user?.id) + 1;
-  const mins = Math.floor(timeLeft / 60), secs = timeLeft % 60;
-
-  return (
-    <div className="min-h-screen pt-24 pb-8 px-4 md:px-6 max-w-7xl mx-auto">
-      <div className="grid lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="glass-card-static p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1 className="font-bold">{liveExam.title}</h1>
-              <p className="text-xs text-muted-foreground">প্রশ্ন: {questions.length} • উত্তর: {Object.keys(answers).length}</p>
+  // ============ POST-SUBMIT RESULT + RANKING ============
+  if (submitted) {
+    const sorted = [...allParts].sort((a, b) => b.score - a.score || a.time_taken_seconds - b.time_taken_seconds);
+    const myRank = sorted.findIndex((p) => p.user_id === user?.id) + 1;
+    return (
+      <div className="min-h-screen pt-24 pb-10 px-4 max-w-4xl mx-auto space-y-5 will-change-scroll">
+        <div className="glass-card-static p-6 text-center space-y-3">
+          <CheckCircle2 className="mx-auto text-success" size={56} />
+          <h1 className="text-2xl font-bold">পরীক্ষা জমা হয়েছে</h1>
+          <p className="text-sm text-muted-foreground">{liveExam.title}</p>
+          <div className="grid grid-cols-3 gap-3 max-w-md mx-auto pt-2">
+            <div className="p-3 rounded-xl bg-primary/10">
+              <p className="text-xs text-muted-foreground">র‍্যাঙ্ক</p>
+              <p className="text-2xl font-extrabold text-primary">{myRank || "—"}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono font-bold ${
-                timeLeft < 60 ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"
-              }`}>
-                <Clock size={14} /> {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
-              </div>
-              {!submitted && (
-                <button onClick={() => handleSubmit(false)} className="px-3 py-1.5 rounded-lg bg-success text-success-foreground text-xs font-bold flex items-center gap-1">
-                  <Send size={12} /> জমা
-                </button>
-              )}
+            <div className="p-3 rounded-xl bg-success/10">
+              <p className="text-xs text-muted-foreground">স্কোর</p>
+              <p className="text-2xl font-extrabold text-success">{participant?.score ?? 0}/{questions.length}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-warning/10">
+              <p className="text-xs text-muted-foreground">শতাংশ</p>
+              <p className="text-2xl font-extrabold text-warning">{Math.round(participant?.percentage || 0)}%</p>
             </div>
           </div>
-
-          {submitted ? (
-            <div className="glass-card-static p-8 text-center space-y-3">
-              <CheckCircle2 className="mx-auto text-success" size={48} />
-              <h2 className="text-xl font-bold">পরীক্ষা জমা হয়েছে</h2>
-              <p className="text-sm text-muted-foreground">আপনার র‍্যাঙ্ক: <span className="font-bold text-primary">{myRank || "—"}</span></p>
-              <p className="text-sm text-muted-foreground">স্কোর: <span className="font-bold text-foreground">{participant?.score ?? 0}/{questions.length}</span></p>
-              <button onClick={() => navigate("/live-exams")} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
-                ফিরে যান
-              </button>
-            </div>
-          ) : questions.map((q, i) => (
-            <div key={q.id} className="glass-card-static p-4 md:p-5">
-              <p className="text-xs text-muted-foreground mb-1">প্রশ্ন {i + 1} / {questions.length}</p>
-              <div className="text-base font-semibold mb-3 leading-relaxed"><MathText text={q.question} /></div>
-              <div className="space-y-2">
-                {q.options.map((opt, idx) => {
-                  const selected = answers[q.id] === opt;
-                  const locked = !!answers[q.id];
-                  return (
-                    <button key={idx} onClick={() => selectAnswer(q, opt)} disabled={locked}
-                      className={`w-full text-left p-3 rounded-lg border-2 transition-all text-sm ${
-                        selected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
-                      } ${locked && !selected ? "opacity-50 cursor-not-allowed" : ""}`}>
-                      <span className="font-bold mr-2">{String.fromCharCode(65 + idx)}.</span>
-                      <MathText text={opt} />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+          <button onClick={() => navigate("/live-exams")} className="mt-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold inline-flex items-center gap-2">
+            <Home size={14} /> লাইভ পরীক্ষায় ফিরে যান
+          </button>
         </div>
 
-        {liveExam.show_leaderboard && (
-          <div className="lg:col-span-1">
-            <div className="glass-card-static p-4 lg:sticky lg:top-24">
-              <h3 className="font-bold mb-3 flex items-center gap-2"><Trophy size={16} className="text-warning" /> লাইভ র‍্যাঙ্কিং</h3>
-              <div className="space-y-1.5 max-h-[70vh] overflow-auto">
-                {sortedLB.map((p, i) => {
-                  const pr = profiles[p.user_id];
-                  const isMe = p.user_id === user?.id;
-                  return (
-                    <div key={p.id} className={`flex items-center gap-2 p-2 rounded-lg ${isMe ? "bg-primary/15 border border-primary/30" : "bg-muted/30"}`}>
-                      <div className="w-6 text-center font-bold text-xs">
-                        {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
-                      </div>
-                      {pr?.avatar_url ? <img src={pr.avatar_url} className="w-7 h-7 rounded-full object-cover" alt="" /> :
-                        <div className="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold">
-                          {(pr?.full_name || "U")[0]}
-                        </div>}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold truncate">{pr?.full_name || "—"} {isMe && <span className="text-primary">(আপনি)</span>}</p>
-                        <p className="text-[10px] text-muted-foreground font-mono truncate">{pr?.unique_code}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-bold">{p.score}/{p.max_score}</p>
-                        <p className="text-[10px] text-muted-foreground">{p.status === "submitted" ? "✓" : "..."}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-                {sortedLB.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">এখনও কেউ যোগ দেয়নি</p>}
-              </div>
-            </div>
+        <div className="glass-card-static p-5">
+          <h2 className="text-base font-bold mb-3 flex items-center gap-2"><Trophy size={16} className="text-warning" /> চূড়ান্ত র‍্যাঙ্কিং ({sorted.length})</h2>
+          <div className="space-y-1.5">
+            {sorted.map((p, i) => {
+              const pr = profiles[p.user_id];
+              const isMe = p.user_id === user?.id;
+              return (
+                <div key={p.id} className={`flex items-center gap-3 p-2.5 rounded-xl ${isMe ? "bg-primary/15 border border-primary/30" : "bg-muted/30"}`}>
+                  <div className="w-8 text-center font-bold text-sm">
+                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                  </div>
+                  {pr?.avatar_url ? <img src={pr.avatar_url} className="w-9 h-9 rounded-full object-cover" alt="" /> :
+                    <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-bold">
+                      {(pr?.full_name || "U")[0]}
+                    </div>}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{pr?.full_name || "—"} {isMe && <span className="text-primary text-xs">(আপনি)</span>}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono truncate">{pr?.unique_code || ""}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold">{p.score}/{p.max_score}</p>
+                    <p className="text-[10px] text-muted-foreground">{Math.round(p.percentage)}%</p>
+                  </div>
+                </div>
+              );
+            })}
+            {sorted.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">কেউ এখনো জমা দেয়নি</p>}
           </div>
-        )}
+        </div>
+      </div>
+    );
+  }
+
+  // ============ EXAM IN PROGRESS — simple portal style ============
+  const mins = Math.floor(timeLeft / 60), secs = timeLeft % 60;
+  const total = questions.length;
+  const answered = Object.keys(answers).length;
+  const q = questions[currentIdx];
+
+  return (
+    <div className="min-h-screen pt-20 pb-20 px-4 max-w-3xl mx-auto">
+      {/* Sticky compact bar */}
+      <div className="sticky top-16 z-10 -mx-4 px-4 py-2 bg-background/95 backdrop-blur border-b border-border">
+        <div className="flex items-center justify-between gap-3 max-w-3xl mx-auto">
+          <div className="min-w-0">
+            <p className="text-xs font-bold truncate">{liveExam.title}</p>
+            <p className="text-[10px] text-muted-foreground">প্রশ্ন {currentIdx + 1}/{total} • উত্তর {answered}/{total}</p>
+          </div>
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono font-bold text-sm ${timeLeft < 60 ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"}`}>
+            <Clock size={14} /> {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+          </div>
+        </div>
+      </div>
+
+      {q ? (
+        <div className="mt-4 glass-card-static p-5">
+          <p className="text-xs text-muted-foreground mb-2">প্রশ্ন {currentIdx + 1} / {total}</p>
+          <div className="text-base font-semibold mb-4 leading-relaxed"><MathText text={q.question} /></div>
+          <div className="space-y-2">
+            {q.options.map((opt, idx) => {
+              const selected = answers[q.id] === opt;
+              const locked = !!answers[q.id];
+              return (
+                <button key={idx} onClick={() => selectAnswer(q, opt)} disabled={locked}
+                  className={`w-full text-left p-3 rounded-xl border-2 transition-all text-sm ${
+                    selected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+                  } ${locked && !selected ? "opacity-50 cursor-not-allowed" : ""}`}>
+                  <span className="font-bold mr-2">{String.fromCharCode(65 + idx)}.</span>
+                  <MathText text={opt} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="text-center text-muted-foreground py-10">এই পরীক্ষায় কোনো প্রশ্ন নেই।</div>
+      )}
+
+      {/* Question palette */}
+      <div className="mt-5 glass-card-static p-3">
+        <p className="text-[11px] text-muted-foreground mb-2">প্রশ্নে যান:</p>
+        <div className="grid grid-cols-8 sm:grid-cols-10 gap-1.5">
+          {questions.map((qq, i) => {
+            const done = !!answers[qq.id];
+            const isCurrent = i === currentIdx;
+            return (
+              <button key={qq.id} onClick={() => setCurrentIdx(i)}
+                className={`aspect-square rounded-md text-xs font-bold transition ${
+                  isCurrent ? "bg-primary text-primary-foreground" :
+                  done ? "bg-success/15 text-success" : "bg-muted text-muted-foreground hover:bg-muted/70"
+                }`}>
+                {i + 1}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Bottom nav */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border p-3">
+        <div className="max-w-3xl mx-auto flex items-center gap-2">
+          <button onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))} disabled={currentIdx === 0}
+            className="px-3 py-2 rounded-xl bg-muted text-sm font-semibold flex items-center gap-1 disabled:opacity-40">
+            <ChevronLeft size={14} /> পূর্ব
+          </button>
+          <button onClick={() => setCurrentIdx((i) => Math.min(total - 1, i + 1))} disabled={currentIdx >= total - 1}
+            className="flex-1 px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-semibold flex items-center justify-center gap-1 disabled:opacity-40">
+            পরবর্তী <ChevronRight size={14} />
+          </button>
+          <button onClick={() => handleSubmit(false)} className="px-4 py-2 rounded-xl bg-success text-success-foreground text-sm font-bold flex items-center gap-1">
+            <Send size={14} /> জমা
+          </button>
+        </div>
       </div>
     </div>
   );
