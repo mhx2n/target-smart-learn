@@ -70,7 +70,7 @@ const AdminUsers = () => {
       _batch_id: batchId,
     });
     if (error) return toast({ title: "ত্রুটি", description: error.message, variant: "destructive" });
-    toast({ title: "ইউনিক কোড বরাদ্দ হয়েছে ✅" });
+    toast({ title: "ব্যাচ অ্যাসাইন হয়েছে ✅" });
     load();
   };
 
@@ -80,7 +80,6 @@ const AdminUsers = () => {
     return (
       (u.full_name || "").toLowerCase().includes(q) ||
       (u.email || "").toLowerCase().includes(q) ||
-      (u.unique_code || "").toLowerCase().includes(q) ||
       (u.batch_name || "").toLowerCase().includes(q)
     );
   });
