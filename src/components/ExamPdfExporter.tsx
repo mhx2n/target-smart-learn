@@ -242,7 +242,7 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
               </div>
             </div>
 
-            <div className="fixed -left-[10000px] top-0 pointer-events-none opacity-0" aria-hidden="true">
+            <div className="fixed -left-[10000px] top-0 pointer-events-none" aria-hidden="true">
               <PdfPreview ref={previewRef} exam={exam} cfg={cfg} pagedQuestions={pagedQuestions} />
             </div>
 
