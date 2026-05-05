@@ -228,6 +228,9 @@ const AdminExams = () => {
                   <button onClick={() => setPdfExam(e)} className="p-2 rounded-lg hover:bg-primary/10 transition-colors" title="PDF এক্সপোর্ট">
                     <FileDown size={16} className="text-primary" />
                   </button>
+                  <button onClick={() => setPremiumExam(premiumExam?.id === e.id ? null : e)} className="p-2 rounded-lg hover:bg-warning/10 transition-colors" title="প্রিমিয়াম ব্যাচ অ্যাক্সেস">
+                    <Crown size={16} className={(examPremiumMap[e.id]?.length || 0) > 0 ? "text-warning" : "text-muted-foreground"} />
+                  </button>
                   <button onClick={() => togglePublish(e.id, e.published)} className="p-2 rounded-lg hover:bg-muted transition-colors">
                     {e.published ? <Eye size={16} className="text-success" /> : <EyeOff size={16} className="text-muted-foreground" />}
                   </button>
@@ -325,6 +328,28 @@ const AdminExams = () => {
                         <option key={s.id} value={s.id}>{s.name}</option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {premiumExam?.id === e.id && (
+                  <div className="mt-3 p-3 bg-warning/5 rounded-xl border border-warning/20">
+                    <p className="text-xs font-semibold mb-2 flex items-center gap-1.5"><Crown size={12} className="text-warning" /> প্রিমিয়াম ব্যাচ অ্যাক্সেস</p>
+                    <p className="text-[11px] text-muted-foreground mb-2">কোনো ব্যাচ সিলেক্ট না করলে সবাই দেখবে। সিলেক্ট করলে শুধু সেই ব্যাচের সদস্যরাই এই পরীক্ষা দিতে পারবে।</p>
+                    {premiumBatches.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">আগে "প্রিমিয়াম ব্যাচ" পেজ থেকে ব্যাচ তৈরি করুন।</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {premiumBatches.map((b) => {
+                          const on = (examPremiumMap[e.id] || []).includes(b.id);
+                          return (
+                            <button key={b.id} onClick={() => togglePremiumBatchOnExam(e.id, b.id)}
+                              className={`text-xs px-3 py-1 rounded-full transition ${on ? "bg-warning text-warning-foreground" : "bg-muted text-muted-foreground"}`}>
+                              {on && <Check size={10} className="inline mr-1" />}{b.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
