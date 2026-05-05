@@ -5,7 +5,7 @@ import { Plus, Trash2, Crown, UserPlus, X } from "lucide-react";
 
 interface PB { id: string; name: string; description: string; }
 interface Member { id: string; user_id: string; premium_batch_id: string; }
-interface Profile { user_id: string; full_name: string | null; email: string | null; unique_code: string | null; }
+interface Profile { user_id: string; full_name: string | null; email: string | null; }
 
 const AdminPremiumBatches = () => {
   const { toast } = useToast();
@@ -21,7 +21,7 @@ const AdminPremiumBatches = () => {
     const [b, m, u] = await Promise.all([
       supabase.from("premium_batches").select("*").order("created_at", { ascending: false }),
       supabase.from("premium_batch_members").select("*"),
-      supabase.from("profiles").select("user_id,full_name,email,unique_code").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("user_id,full_name,email").order("created_at", { ascending: false }),
     ]);
     if (b.data) setBatches(b.data as PB[]);
     if (m.data) setMembers(m.data as Member[]);
@@ -111,7 +111,7 @@ const AdminPremiumBatches = () => {
               <option value="">— ইউজার সিলেক্ট করুন —</option>
               {users.filter((u) => !selMembers.some((m) => m.user_id === u.user_id)).map((u) => (
                 <option key={u.user_id} value={u.user_id}>
-                  {u.full_name || u.email} {u.unique_code ? `• ${u.unique_code}` : ""}
+                  {u.full_name || u.email}
                 </option>
               ))}
             </select>
@@ -127,7 +127,7 @@ const AdminPremiumBatches = () => {
                 <div key={m.id} className="glass-strong rounded-lg p-2.5 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{u?.full_name || u?.email || m.user_id.slice(0, 8)}</p>
-                    <p className="text-[11px] text-muted-foreground font-mono truncate">{u?.unique_code || u?.email}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{u?.email}</p>
                   </div>
                   <button onClick={() => removeMember(m.id)} className="p-1.5 rounded-lg bg-destructive/10 text-destructive"><Trash2 size={12} /></button>
                 </div>

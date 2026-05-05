@@ -6,17 +6,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Clock, CheckCircle2, Send, Trophy, ChevronLeft, ChevronRight, Home } from "lucide-react";
 import MathText from "@/components/MathText";
 import { resolveCorrectOptionText } from "@/lib/answerUtils";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
 
 interface Question { id: string; question: string; options: string[]; answer: string; section: string; }
 interface LiveExam { id: string; title: string; exam_id: string; duration: number; status: string; show_leaderboard: boolean; end_time: string; }
 interface Participant { id: string; user_id: string; score: number; max_score: number; correct: number; wrong: number; skipped: number; percentage: number; time_taken_seconds: number; status: string; started_at: string | null; }
-interface Profile { user_id: string; full_name: string | null; unique_code: string | null; avatar_url: string | null; }
+interface Profile { user_id: string; full_name: string | null; avatar_url: string | null; }
 
 const LiveExamAttempt = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { canAccess, loading: accessLoading } = usePremiumAccess();
 
   const [liveExam, setLiveExam] = useState<LiveExam | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -33,10 +35,20 @@ const LiveExamAttempt = () => {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
 
   useEffect(() => {
-    if (!id || !user) return;
+    if (!id || !user || accessLoading) return;
     (async () => {
       const { data: le } = await supabase.from("live_exams").select("*").eq("id", id).single();
       if (!le) { toast({ title: "পরীক্ষা পাওয়া যায়নি", variant: "destructive" }); navigate("/live-exams"); return; }
+      if (le.status !== "live") {
+        toast({ title: "পরীক্ষা এখন লাইভ নয়", variant: "destructive" });
+        navigate("/live-exams");
+        return;
+      }
+      if (!accessLoading && !canAccess(le.exam_id)) {
+        toast({ title: "এই পরীক্ষার অ্যাক্সেস নেই", variant: "destructive" });
+        navigate("/live-exams");
+        return;
+      }
       setLiveExam(le as LiveExam);
 
       const { data: q } = await supabase.from("questions").select("id,question,options,answer,section")
@@ -88,7 +100,7 @@ const LiveExamAttempt = () => {
 
       setLoading(false);
     })();
-  }, [id, user]);
+  }, [id, user, accessLoading]);
 
   // Timer tick — uses RAF-equivalent setInterval but recomputes from real time
   useEffect(() => {
@@ -112,7 +124,7 @@ const LiveExamAttempt = () => {
     setAllParts((data || []) as Participant[]);
     const ids = Array.from(new Set((data || []).map((x: any) => x.user_id)));
     if (ids.length) {
-      const { data: pr } = await supabase.from("profiles").select("user_id,full_name,unique_code,avatar_url").in("user_id", ids);
+      const { data: pr } = await supabase.from("profiles").select("user_id,full_name,avatar_url").in("user_id", ids);
       const map: Record<string, Profile> = {};
       (pr || []).forEach((x: any) => { map[x.user_id] = x; });
       setProfiles(map);
@@ -217,7 +229,6 @@ const LiveExamAttempt = () => {
                     </div>}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate">{pr?.full_name || "—"} {isMe && <span className="text-primary text-xs">(আপনি)</span>}</p>
-                    <p className="text-[10px] text-muted-foreground font-mono truncate">{pr?.unique_code || ""}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-sm font-bold">{p.score}/{p.max_score}</p>

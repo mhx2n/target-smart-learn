@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useResults } from "@/hooks/useSupabaseData";
-import { BarChart3, Award, BookOpen, Camera, Save, Copy, Trophy, Target, TrendingUp, Radio, CheckCircle2, XCircle } from "lucide-react";
+import { BarChart3, Award, BookOpen, Camera, Save, Trophy, Target, TrendingUp, Radio, CheckCircle2, XCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -122,12 +122,6 @@ const StudentProfile = () => {
     }
   };
 
-  const copyCode = () => {
-    if (!profile?.unique_code) return;
-    navigator.clipboard.writeText(profile.unique_code);
-    toast({ title: "কোড কপি হয়েছে ✅" });
-  };
-
   const initial = (fullName[0] || user?.email?.[0] || "U").toUpperCase();
 
   return (
@@ -157,27 +151,9 @@ const StudentProfile = () => {
             <h1 className="text-2xl font-extrabold">{fullName || "অনুশীলনকারী"}</h1>
             <p className="text-xs text-muted-foreground">{user?.email}</p>
             <div className="flex flex-wrap gap-2 mt-3 justify-center md:justify-start">
-              {profile?.unique_code ? (
-                <button onClick={copyCode} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                  <span className="font-mono font-bold">{profile.unique_code}</span>
-                  <Copy size={12} />
-                </button>
-              ) : (
-                <span className="text-xs px-3 py-1.5 rounded-full bg-warning/10 text-warning">⏳ কোড বরাদ্দের অপেক্ষা</span>
-              )}
               {profile?.batch_name && (
                 <span className="text-xs px-3 py-1.5 rounded-full bg-muted">ব্যাচ: <span className="font-semibold">{profile.batch_name}</span></span>
               )}
-            </div>
-            <div className="mt-4 grid gap-2 md:grid-cols-2">
-              <div className="glass-strong rounded-2xl p-3 text-left">
-                <p className="text-[11px] font-semibold text-primary mb-1">প্রোফাইল কোড কিভাবে পাবেন</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">এডমিন প্যানেলের <span className="font-medium text-foreground">ইউজার ও ব্যাচ</span> থেকে আপনার নামে ব্যাচ assign করলে এই কোড অটো তৈরি হবে।</p>
-              </div>
-              <div className="glass-strong rounded-2xl p-3 text-left">
-                <p className="text-[11px] font-semibold text-primary mb-1">গুরুত্বপূর্ণ</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">এই profile code আর live exam access code এক জিনিস না—লাইভ পরীক্ষার কোড আলাদা করে <span className="font-medium text-foreground">লাইভ</span> পেজে দেখাবে।</p>
-              </div>
             </div>
           </div>
         </div>
