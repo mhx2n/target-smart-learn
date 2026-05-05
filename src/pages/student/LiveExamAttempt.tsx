@@ -35,7 +35,7 @@ const LiveExamAttempt = () => {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
 
   useEffect(() => {
-    if (!id || !user) return;
+    if (!id || !user || accessLoading) return;
     (async () => {
       const { data: le } = await supabase.from("live_exams").select("*").eq("id", id).single();
       if (!le) { toast({ title: "পরীক্ষা পাওয়া যায়নি", variant: "destructive" }); navigate("/live-exams"); return; }
@@ -95,7 +95,7 @@ const LiveExamAttempt = () => {
 
       setLoading(false);
     })();
-  }, [id, user]);
+  }, [id, user, accessLoading]);
 
   // Timer tick — uses RAF-equivalent setInterval but recomputes from real time
   useEffect(() => {
