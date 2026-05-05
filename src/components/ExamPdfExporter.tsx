@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { Download, X, Image as ImageIcon, Loader2, Link as LinkIcon } from "lucide-react";
-import type { Exam, Question } from "@/lib/types";
+import type { Exam } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { resolveCorrectOptionText } from "@/lib/answerUtils";
-import { preloadBengaliFont, registerBengaliFont } from "@/lib/pdfFont";
+import MathText from "@/components/MathText";
 
 interface Slot {
   text: string;
@@ -46,66 +47,33 @@ const DEFAULT_CFG: PdfConfig = {
   },
 };
 
+const PAGE_WIDTH = 794;
+const PAGE_MIN_HEIGHT = 1123;
+const PAGE_PADDING = 44;
+
 function normalizeUrl(u: string) {
   const t = u.trim();
   if (!t) return "";
   return /^https?:\/\//i.test(t) ? t : `https://${t}`;
 }
 
-function hexToRgb(hex: string): [number, number, number] {
-  const m = hex.replace("#", "");
-  const v = m.length === 3 ? m.split("").map((c) => c + c).join("") : m;
-  const n = parseInt(v, 16);
-  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-}
-
-// Strip math delimiters / common LaTeX commands so plain text shows on PDF.
-// Native jsPDF can't render KaTeX, so we keep the math source readable.
-function cleanText(t: string): string {
-  if (!t) return "";
-  return String(t)
-    .replace(/\$\$([\s\S]*?)\$\$/g, "$1")
-    .replace(/\\\[([\s\S]*?)\\\]/g, "$1")
-    .replace(/\\\(([\s\S]*?)\\\)/g, "$1")
-    .replace(/\$([^$\n]+?)\$/g, "$1")
-    .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, "($1)/($2)")
-    .replace(/\\sqrt\{([^{}]+)\}/g, "√($1)")
-    .replace(/\\times/g, "×")
-    .replace(/\\div/g, "÷")
-    .replace(/\\pm/g, "±")
-    .replace(/\\cdot/g, "·")
-    .replace(/\\leq/g, "≤")
-    .replace(/\\geq/g, "≥")
-    .replace(/\\neq/g, "≠")
-    .replace(/\\approx/g, "≈")
-    .replace(/\\infty/g, "∞")
-    .replace(/\\pi/g, "π")
-    .replace(/\\theta/g, "θ")
-    .replace(/\\alpha/g, "α")
-    .replace(/\\beta/g, "β")
-    .replace(/\^(\{[^}]+\}|\S)/g, (_, g) => `^${g.replace(/[{}]/g, "")}`)
-    .replace(/_(\{[^}]+\}|\S)/g, (_, g) => `_${g.replace(/[{}]/g, "")}`)
-    .replace(/\\\\/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+function safeFileName(name: string) {
+  return (name || "exam").replace(/[\\/:*?"<>|]+/g, "_").slice(0, 80);
 }
 
 const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose: () => void }) => {
   const { toast } = useToast();
+  const previewRef = useRef<HTMLDivElement>(null);
   const [cfg, setCfg] = useState<PdfConfig>({
     ...DEFAULT_CFG,
     title: exam.title,
     subtitle: exam.subject || "",
   });
   const [generating, setGenerating] = useState(false);
-  const [fontReady, setFontReady] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setCfg((c) => ({ ...c, title: exam.title, subtitle: exam.subject || c.subtitle }));
-    preloadBengaliFont()
-      .then(() => setFontReady(true))
-      .catch(() => setFontReady(true)); // proceed even if font failed; PDF still works for ASCII
   }, [open, exam.id, exam.title, exam.subject]);
 
   const updateSlot = (
@@ -121,242 +89,55 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
   const onLogo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    if (f.size > 1024 * 1024) return toast({ title: "লোগো ১MB এর মধ্যে হতে হবে", variant: "destructive" });
+    if (f.size > 1024 * 1024) {
+      return toast({ title: "লোগো ১MB এর মধ্যে হতে হবে", variant: "destructive" });
+    }
     const r = new FileReader();
     r.onload = () => setCfg((c) => ({ ...c, logoDataUrl: String(r.result || "") }));
     r.readAsDataURL(f);
   };
 
   const generate = async () => {
+    if (!previewRef.current) return;
     setGenerating(true);
     try {
-      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-      await registerBengaliFont(pdf);
-      pdf.setFont("NotoBn", "normal");
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const pages = Array.from(previewRef.current.querySelectorAll<HTMLElement>("[data-pdf-page]"));
+      if (!pages.length) throw new Error("PDF preview তৈরি হয়নি");
 
-      const pageW = pdf.internal.pageSize.getWidth();   // 210
-      const pageH = pdf.internal.pageSize.getHeight();  // 297
-      const margin = 14;
-      const contentW = pageW - margin * 2;
-      const headerH = 22;
-      const footerH = 12;
-      const bodyTop = margin + headerH;
-      const bodyBottom = pageH - margin - footerH;
-      const [pr, pg, pb] = hexToRgb(cfg.primaryColor);
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
 
-      const drawHeader = (pageNum: number, totalPages: number) => {
-        // Top text row (3 columns)
-        pdf.setFont("NotoBn", "normal");
-        pdf.setFontSize(8);
-        pdf.setTextColor(110, 110, 110);
-        const cellW = contentW / 3;
-        const drawSlot = (slot: Slot, x: number, align: "left" | "center" | "right", y: number) => {
-          if (!slot.text) return;
-          const tx = align === "left" ? x : align === "right" ? x + cellW : x + cellW / 2;
-          pdf.text(cleanText(slot.text), tx, y, { align, maxWidth: cellW - 2 });
-          if (slot.link.trim()) {
-            pdf.link(x, y - 3, cellW, 5, { url: normalizeUrl(slot.link) });
-          }
-        };
-        drawSlot(cfg.header.left, margin, "left", margin + 3);
-        drawSlot(cfg.header.center, margin + cellW, "center", margin + 3);
-        drawSlot(cfg.header.right, margin + cellW * 2, "right", margin + 3);
-
-        // Logo + title
-        let titleX = margin;
-        if (cfg.logoDataUrl) {
-          try {
-            pdf.addImage(cfg.logoDataUrl, "PNG", margin, margin + 5, 12, 12);
-          } catch { /* invalid image */ }
-          titleX = margin + 14;
-        }
-        pdf.setFont("NotoBn", "bold");
-        pdf.setFontSize(13);
-        pdf.setTextColor(pr, pg, pb);
-        pdf.text(cleanText(cfg.title || "Exam"), titleX, margin + 10, { maxWidth: contentW - 50 });
-        if (cfg.subtitle) {
-          pdf.setFont("NotoBn", "normal");
-          pdf.setFontSize(9);
-          pdf.setTextColor(90, 90, 90);
-          pdf.text(cleanText(cfg.subtitle), titleX, margin + 15, { maxWidth: contentW - 50 });
-        }
-
-        // Right-side meta
-        pdf.setFont("NotoBn", "normal");
-        pdf.setFontSize(8);
-        pdf.setTextColor(90, 90, 90);
-        const metaX = pageW - margin;
-        pdf.text(`সময়: ${exam.duration} মিনিট`, metaX, margin + 8, { align: "right" });
-        pdf.text(`মোট প্রশ্ন: ${exam.questions.length}`, metaX, margin + 12, { align: "right" });
-        pdf.text(`পেজ ${pageNum}/${totalPages}`, metaX, margin + 16, { align: "right" });
-
-        // Divider
-        pdf.setDrawColor(pr, pg, pb);
-        pdf.setLineWidth(0.4);
-        pdf.line(margin, margin + headerH - 2, pageW - margin, margin + headerH - 2);
-      };
-
-      const drawFooter = (pageNum: number, totalPages: number) => {
-        pdf.setDrawColor(pr, pg, pb);
-        pdf.setLineWidth(0.2);
-        pdf.line(margin, pageH - margin - footerH + 2, pageW - margin, pageH - margin - footerH + 2);
-        pdf.setFont("NotoBn", "normal");
-        pdf.setFontSize(8);
-        pdf.setTextColor(110, 110, 110);
-        const cellW = contentW / 3;
-        const yText = pageH - margin - 4;
-        const drawSlot = (slot: Slot, x: number, align: "left" | "center" | "right") => {
-          if (!slot.text) return;
-          const tx = align === "left" ? x : align === "right" ? x + cellW : x + cellW / 2;
-          pdf.text(cleanText(slot.text), tx, yText, { align, maxWidth: cellW - 2 });
-          if (slot.link.trim()) {
-            pdf.link(x, yText - 3, cellW, 5, { url: normalizeUrl(slot.link) });
-          }
-        };
-        drawSlot(cfg.footer.left, margin, "left");
-        drawSlot(cfg.footer.center, margin + cellW, "center");
-        drawSlot(cfg.footer.right, margin + cellW * 2, "right");
-        // Page indicator center bottom (always shown)
-        pdf.setFontSize(7);
-        pdf.setTextColor(150, 150, 150);
-        pdf.text(`— ${pageNum} / ${totalPages} —`, pageW / 2, pageH - margin + 1, { align: "center" });
-      };
-
-      // First-pass measure to know totalPages — we'll do a streaming layout
-      // by drawing into a buffer of "page operations" then committing.
-      type Op = (page: number, totalPages: number) => void;
-      const pages: Op[][] = [[]];
-      let cursor = bodyTop + 2;
-      let column = 0; // 0 = left, 1 = right (for two-column)
-      const colCount = cfg.twoColumn ? 2 : 1;
-      const colGap = 6;
-      const colW = (contentW - colGap * (colCount - 1)) / colCount;
-      const colX = (i: number) => margin + i * (colW + colGap);
-
-      const newPage = () => {
-        pages.push([]);
-        cursor = bodyTop + 2;
-        column = 0;
-      };
-
-      const ensureSpace = (needed: number) => {
-        if (cursor + needed <= bodyBottom) return;
-        if (cfg.twoColumn && column === 0) {
-          column = 1;
-          cursor = bodyTop + 2;
-          if (cursor + needed <= bodyBottom) return;
-        }
-        newPage();
-      };
-
-      const renderQuestion = (q: Question, qIndex: number) => {
-        const correct = resolveCorrectOptionText(q);
-        const numStr = `${qIndex + 1}.`;
-        const numW = 8;
-        const qText = cleanText(q.question);
-
-        // Pre-measure this whole question block so it doesn't get split badly
-        pdf.setFont("NotoBn", "bold");
-        pdf.setFontSize(10.5);
-        const qLines = pdf.splitTextToSize(qText, colW - numW);
-        const qHeight = qLines.length * 5 + 2;
-
-        const optsLines: string[][] = q.options.map((opt) => {
-          pdf.setFontSize(10);
-          return pdf.splitTextToSize(`${String.fromCharCode(65 + 0)}.  ${cleanText(opt)}`, colW - 6);
+      for (let i = 0; i < pages.length; i++) {
+        if (i > 0) pdf.addPage();
+        const canvas = await html2canvas(pages[i], {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+          windowWidth: PAGE_WIDTH,
         });
-        const optsHeight = optsLines.reduce((sum, lines) => sum + lines.length * 5 + 1.5, 0) + 2;
-        let explHeight = 0;
-        let explLines: string[] = [];
-        if (cfg.showExplanations && q.explanation) {
-          pdf.setFontSize(8.5);
-          explLines = pdf.splitTextToSize("ব্যাখ্যা: " + cleanText(q.explanation), colW - 4);
-          explHeight = explLines.length * 4 + 4;
-        }
-        const totalHeight = qHeight + optsHeight + explHeight + 4;
-        ensureSpace(Math.min(totalHeight, bodyBottom - bodyTop));
+        const img = canvas.toDataURL("image/jpeg", 0.96);
+        pdf.addImage(img, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
 
-        const xBase = colX(column);
-        const startY = cursor;
-
-        pages[pages.length - 1].push(() => {
-          // Question number
-          pdf.setFont("NotoBn", "bold");
-          pdf.setFontSize(10.5);
-          pdf.setTextColor(pr, pg, pb);
-          pdf.text(numStr, xBase, startY);
-          // Question text
-          pdf.setTextColor(20, 20, 20);
-          pdf.text(qLines, xBase + numW, startY);
+        const pageLinks = pages[i].querySelectorAll<HTMLElement>("[data-pdf-link]");
+        pageLinks.forEach((node) => {
+          const href = normalizeUrl(node.dataset.pdfLink || "");
+          if (!href) return;
+          const pageBox = pages[i].getBoundingClientRect();
+          const box = node.getBoundingClientRect();
+          pdf.link(
+            ((box.left - pageBox.left) / pageBox.width) * pageW,
+            ((box.top - pageBox.top) / pageBox.height) * pageH,
+            (box.width / pageBox.width) * pageW,
+            (box.height / pageBox.height) * pageH,
+            { url: href },
+          );
         });
-        cursor += qHeight;
+      }
 
-        // Options
-        q.options.forEach((opt, oi) => {
-          const letter = String.fromCharCode(65 + oi);
-          const isCorrect = cfg.showAnswers && opt === correct;
-          pdf.setFontSize(10);
-          const lines = pdf.splitTextToSize(`${letter}.  ${cleanText(opt)}`, colW - 6);
-          const h = lines.length * 5 + 1.5;
-          // If this option doesn't fit, push to next column/page
-          if (cursor + h > bodyBottom) {
-            ensureSpace(h);
-          }
-          const oxBase = colX(column);
-          const oy = cursor;
-          pages[pages.length - 1].push(() => {
-            if (isCorrect) {
-              pdf.setFillColor(220, 252, 231); // light green
-              pdf.setDrawColor(34, 197, 94);
-              pdf.setLineWidth(0.3);
-              pdf.roundedRect(oxBase + 2, oy - 3.5, colW - 4, h - 0.5, 1.5, 1.5, "FD");
-              pdf.setTextColor(21, 128, 61);
-              pdf.setFont("NotoBn", "bold");
-            } else {
-              pdf.setTextColor(45, 45, 45);
-              pdf.setFont("NotoBn", "normal");
-            }
-            pdf.setFontSize(10);
-            pdf.text(lines, oxBase + 4, oy);
-            if (isCorrect) {
-              // small "✓ Correct" tag at right
-              pdf.setFontSize(7.5);
-              pdf.setTextColor(21, 128, 61);
-              pdf.text("✓ সঠিক", oxBase + colW - 3, oy, { align: "right" });
-            }
-          });
-          cursor += h;
-        });
-
-        if (explHeight > 0) {
-          if (cursor + explHeight > bodyBottom) ensureSpace(explHeight);
-          const eX = colX(column);
-          const eY = cursor + 1;
-          pages[pages.length - 1].push(() => {
-            pdf.setFillColor(245, 245, 250);
-            pdf.roundedRect(eX + 2, eY - 3, colW - 4, explHeight - 1, 1.5, 1.5, "F");
-            pdf.setFont("NotoBn", "normal");
-            pdf.setFontSize(8.5);
-            pdf.setTextColor(70, 70, 90);
-            pdf.text(explLines, eX + 4, eY);
-          });
-          cursor += explHeight;
-        }
-
-        cursor += 4; // gap between questions
-      };
-
-      exam.questions.forEach((q, i) => renderQuestion(q, i));
-
-      // Commit pages
-      pages.forEach((ops, pageIdx) => {
-        if (pageIdx > 0) pdf.addPage();
-        drawHeader(pageIdx + 1, pages.length);
-        ops.forEach((op) => op(pageIdx + 1, pages.length));
-        drawFooter(pageIdx + 1, pages.length);
-      });
-
-      pdf.save(`${(cfg.title || "exam").replace(/[^\w\s\-একু-৯ঁ-৾]/gi, "_")}.pdf`);
+      pdf.save(`${safeFileName(cfg.title)}.pdf`);
       toast({ title: "PDF তৈরি হয়েছে ✅" });
     } catch (err: any) {
       toast({ title: "PDF তৈরিতে ত্রুটি", description: err.message, variant: "destructive" });
@@ -365,21 +146,28 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
     }
   };
 
+  const pagedQuestions = useMemo(() => {
+    const perPage = cfg.twoColumn ? 10 : 6;
+    const chunks = [] as typeof exam.questions[];
+    for (let i = 0; i < exam.questions.length; i += perPage) chunks.push(exam.questions.slice(i, i + perPage));
+    return chunks.length ? chunks : [[]];
+  }, [exam.questions, cfg.twoColumn]);
+
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm overflow-y-auto p-2 md:p-6">
-      <div className="min-h-[calc(100vh-1rem)] flex items-start md:items-center justify-center">
-        <div className="bg-card rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden my-2">
-          <div className="flex items-center justify-between p-5 border-b border-border">
+    <div className="fixed inset-0 z-[200] bg-background/80 backdrop-blur-sm overflow-y-auto p-2 md:p-6">
+      <div className="min-h-[calc(100vh-1rem)] flex items-start justify-center">
+        <div className="bg-card rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col overflow-hidden my-2 border border-border">
+          <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
             <div>
               <h2 className="font-bold text-lg">PDF এক্সপোর্ট</h2>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{exam.questions.length} প্রশ্ন • selectable text • Bengali সাপোর্ট</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">আগের visual PDF style • alignment fixed • LaTeX render support</p>
             </div>
             <button onClick={onClose} className="p-1.5 hover:bg-muted rounded-lg"><X size={16} /></button>
           </div>
 
-          <div className="p-5 space-y-5 max-h-[80vh] overflow-y-auto">
+          <div className="p-5 space-y-5 max-h-[calc(100vh-9rem)] overflow-y-auto overscroll-contain">
             <section className="grid sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-muted-foreground">শিরোনাম</label>
@@ -447,11 +235,17 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
               </label>
             </section>
 
-            <button onClick={generate} disabled={generating || !fontReady} className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50">
+            <div className="rounded-xl border border-border bg-muted/20 p-3 overflow-auto">
+              <div className="text-[11px] text-muted-foreground mb-2">প্রিভিউ</div>
+              <div className="origin-top-left scale-[0.42] sm:scale-[0.58] md:scale-[0.72] h-[480px] sm:h-[660px] md:h-[820px] w-[794px] pointer-events-none">
+                <PdfPreview ref={previewRef} exam={exam} cfg={cfg} pagedQuestions={pagedQuestions} />
+              </div>
+            </div>
+
+            <button onClick={generate} disabled={generating} className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50">
               {generating ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
-              {!fontReady ? "ফন্ট লোড হচ্ছে..." : generating ? "তৈরি হচ্ছে..." : "PDF ডাউনলোড"}
+              {generating ? "তৈরি হচ্ছে..." : "PDF ডাউনলোড"}
             </button>
-            <p className="text-[10px] text-muted-foreground text-center -mt-2">* প্রথমবার ফন্ট ডাউনলোড হবে (~১MB), পরে cache থেকে instant।</p>
           </div>
         </div>
       </div>
@@ -459,6 +253,138 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
     document.body,
   );
 };
+
+const PdfPreview = ({
+  exam,
+  cfg,
+  pagedQuestions,
+}: {
+  exam: Exam;
+  cfg: PdfConfig;
+  pagedQuestions: Exam["questions"][];
+}) => {
+  return (
+    <div ref={arguments[0]?.ref} className="pdf-export-preview" style={{ width: PAGE_WIDTH, color: "#111827", fontFamily: "Inter, Noto Sans Bengali, sans-serif" }}>
+      {pagedQuestions.map((questions, pageIndex) => (
+        <div
+          key={pageIndex}
+          data-pdf-page
+          style={{
+            width: PAGE_WIDTH,
+            minHeight: PAGE_MIN_HEIGHT,
+            background: "#ffffff",
+            padding: PAGE_PADDING,
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+            pageBreakAfter: "always",
+          }}
+        >
+          <PdfHeader cfg={cfg} exam={exam} page={pageIndex + 1} total={pagedQuestions.length} />
+          <div
+            style={{
+              flex: 1,
+              display: "grid",
+              gridTemplateColumns: cfg.twoColumn ? "1fr 1fr" : "1fr",
+              gap: cfg.twoColumn ? 18 : 0,
+              alignContent: "start",
+              paddingTop: 22,
+            }}
+          >
+            {questions.map((question, index) => {
+              const absoluteIndex = pageIndex * (cfg.twoColumn ? 10 : 6) + index;
+              const correct = resolveCorrectOptionText(question);
+              return (
+                <div key={question.id || `${pageIndex}-${index}`} style={{ breakInside: "avoid", marginBottom: 18 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "32px 1fr", gap: 8, alignItems: "start", marginBottom: 10 }}>
+                    <div style={{ color: cfg.primaryColor, fontWeight: 800, fontSize: 17, lineHeight: "26px" }}>{absoluteIndex + 1}.</div>
+                    <div style={{ fontWeight: 700, fontSize: 15.5, lineHeight: "26px", wordBreak: "break-word" }}><MathText text={question.question} /></div>
+                  </div>
+                  <div style={{ display: "grid", gap: 7, paddingLeft: cfg.twoColumn ? 0 : 40 }}>
+                    {question.options.map((opt, optionIndex) => {
+                      const isCorrect = cfg.showAnswers && opt === correct;
+                      return (
+                        <div
+                          key={`${question.id}-${optionIndex}`}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "30px minmax(0, 1fr) auto",
+                            gap: 8,
+                            alignItems: "start",
+                            border: isCorrect ? "1.5px solid #16a34a" : "1px solid #dbe2ea",
+                            background: isCorrect ? "#dcfce7" : "#f8fafc",
+                            color: isCorrect ? "#166534" : "#1f2937",
+                            borderRadius: 10,
+                            padding: "8px 10px",
+                            boxSizing: "border-box",
+                            minHeight: 38,
+                            lineHeight: "21px",
+                          }}
+                        >
+                          <span style={{ fontWeight: 800, fontSize: 13, lineHeight: "21px" }}>{String.fromCharCode(65 + optionIndex)}.</span>
+                          <span style={{ fontWeight: isCorrect ? 700 : 500, fontSize: 13.5, lineHeight: "21px", wordBreak: "break-word", minWidth: 0 }}><MathText text={opt} /></span>
+                          {isCorrect && <span style={{ fontWeight: 800, fontSize: 11, lineHeight: "21px", whiteSpace: "nowrap" }}>✓ সঠিক</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {cfg.showExplanations && question.explanation && (
+                    <div style={{ marginTop: 8, marginLeft: cfg.twoColumn ? 0 : 40, padding: 10, borderRadius: 10, background: "#f1f5f9", color: "#475569", fontSize: 12.5, lineHeight: "20px" }}>
+                      <strong>ব্যাখ্যা: </strong><MathText text={question.explanation} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <PdfFooter cfg={cfg} page={pageIndex + 1} total={pagedQuestions.length} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const PdfHeader = ({ cfg, exam, page, total }: { cfg: PdfConfig; exam: Exam; page: number; total: number }) => (
+  <div style={{ borderBottom: `3px solid ${cfg.primaryColor}`, paddingBottom: 12 }}>
+    <SlotRow slots={cfg.header} />
+    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
+      {cfg.logoDataUrl && <img src={cfg.logoDataUrl} alt="" style={{ width: 54, height: 54, objectFit: "contain" }} />}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ color: cfg.primaryColor, fontSize: 26, fontWeight: 900, lineHeight: "32px", wordBreak: "break-word" }}>{cfg.title || exam.title}</div>
+        {cfg.subtitle && <div style={{ color: "#64748b", fontSize: 13, marginTop: 3 }}>{cfg.subtitle}</div>}
+      </div>
+      <div style={{ textAlign: "right", color: "#64748b", fontSize: 12, lineHeight: "20px", whiteSpace: "nowrap" }}>
+        <div>সময়: {exam.duration} মিনিট</div>
+        <div>মোট প্রশ্ন: {exam.questions.length}</div>
+        <div>পেজ {page}/{total}</div>
+      </div>
+    </div>
+  </div>
+);
+
+const PdfFooter = ({ cfg, page, total }: { cfg: PdfConfig; page: number; total: number }) => (
+  <div style={{ borderTop: `1.5px solid ${cfg.primaryColor}`, paddingTop: 10, marginTop: 16 }}>
+    <SlotRow slots={cfg.footer} />
+    <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 10, marginTop: 5 }}>— {page} / {total} —</div>
+  </div>
+);
+
+const SlotRow = ({ slots }: { slots: { left: Slot; center: Slot; right: Slot } }) => (
+  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, color: "#64748b", fontSize: 11, lineHeight: "16px" }}>
+    {(["left", "center", "right"] as const).map((pos) => {
+      const slot = slots[pos];
+      return (
+        <div
+          key={pos}
+          data-pdf-link={slot.link || undefined}
+          style={{ textAlign: pos, minHeight: 16, overflowWrap: "anywhere", textDecoration: slot.link ? "underline" : "none" }}
+        >
+          {slot.text}
+        </div>
+      );
+    })}
+  </div>
+);
 
 function SlotEditor({ slot, label, onText, onLink }: { slot: Slot; label: string; onText: (v: string) => void; onLink: (v: string) => void }) {
   return (
