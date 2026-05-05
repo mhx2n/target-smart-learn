@@ -89,11 +89,7 @@ const AdminUsers = () => {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold mb-1">ইউজার ও ব্যাচ ম্যানেজমেন্ট</h1>
-        <p className="text-sm text-muted-foreground">ব্যাচ যোগ করুন ও ইউজারদের ইউনিক কোড বরাদ্দ করুন</p>
-        <div className="mt-3 glass-card-static p-4 text-xs text-muted-foreground leading-relaxed">
-          <p><span className="font-semibold text-foreground">Flow:</span> আগে ব্যাচ তৈরি করুন → তারপর ইউজারের পাশে ব্যাচ assign করুন → সাথে সাথে profile code তৈরি হবে।</p>
-          <p className="mt-1">এই profile code শুধু পরিচয়ের জন্য। live exam-এর জন্য আলাদা access code <span className="font-semibold text-foreground">লাইভ পরীক্ষা</span> প্যানেল থেকে generate/assign করতে হবে।</p>
-        </div>
+        <p className="text-sm text-muted-foreground">ব্যাচ যোগ করুন এবং ইউজারদের ব্যাচে অ্যাসাইন করুন</p>
       </div>
 
       {/* Batches */}
@@ -134,7 +130,7 @@ const AdminUsers = () => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="নাম/ইমেইল/কোড সার্চ..."
+              placeholder="নাম/ইমেইল/ব্যাচ সার্চ..."
               className="w-full glass-strong rounded-lg pl-9 pr-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
@@ -159,12 +155,7 @@ const AdminUsers = () => {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold truncate">{u.full_name || "—"}</p>
                     <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                    {u.unique_code && (
-                      <p className="text-xs font-mono text-primary mt-0.5">{u.unique_code}</p>
-                    )}
-                    {!u.unique_code && (
-                      <p className="text-[11px] text-warning mt-0.5">এখনও profile code দেওয়া হয়নি</p>
-                    )}
+                    {u.batch_name && <p className="text-[11px] text-primary mt-0.5">ব্যাচ: {u.batch_name}</p>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
