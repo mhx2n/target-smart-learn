@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -254,17 +254,15 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
   );
 };
 
-const PdfPreview = ({
-  exam,
-  cfg,
-  pagedQuestions,
-}: {
+interface PdfPreviewProps {
   exam: Exam;
   cfg: PdfConfig;
   pagedQuestions: Exam["questions"][];
-}) => {
+}
+
+const PdfPreview = forwardRef<HTMLDivElement, PdfPreviewProps>(({ exam, cfg, pagedQuestions }, ref) => {
   return (
-    <div ref={arguments[0]?.ref} className="pdf-export-preview" style={{ width: PAGE_WIDTH, color: "#111827", fontFamily: "Inter, Noto Sans Bengali, sans-serif" }}>
+    <div ref={ref} className="pdf-export-preview" style={{ width: PAGE_WIDTH, color: "#111827", fontFamily: "Inter, Noto Sans Bengali, sans-serif" }}>
       {pagedQuestions.map((questions, pageIndex) => (
         <div
           key={pageIndex}
@@ -342,7 +340,9 @@ const PdfPreview = ({
       ))}
     </div>
   );
-};
+});
+
+PdfPreview.displayName = "PdfPreview";
 
 const PdfHeader = ({ cfg, exam, page, total }: { cfg: PdfConfig; exam: Exam; page: number; total: number }) => (
   <div style={{ borderBottom: `3px solid ${cfg.primaryColor}`, paddingBottom: 12 }}>
