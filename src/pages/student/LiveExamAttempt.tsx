@@ -39,6 +39,11 @@ const LiveExamAttempt = () => {
     (async () => {
       const { data: le } = await supabase.from("live_exams").select("*").eq("id", id).single();
       if (!le) { toast({ title: "পরীক্ষা পাওয়া যায়নি", variant: "destructive" }); navigate("/live-exams"); return; }
+      if (le.status !== "live") {
+        toast({ title: "পরীক্ষা এখন লাইভ নয়", variant: "destructive" });
+        navigate("/live-exams");
+        return;
+      }
       if (!accessLoading && !canAccess(le.exam_id)) {
         toast({ title: "এই পরীক্ষার অ্যাক্সেস নেই", variant: "destructive" });
         navigate("/live-exams");
