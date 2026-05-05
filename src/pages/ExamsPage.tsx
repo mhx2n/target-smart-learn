@@ -1,4 +1,5 @@
 import { useExams, useSections } from "@/hooks/useSupabaseData";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
 import ExamCard from "@/components/ExamCard";
 import { useState } from "react";
 import { Search, X, FolderOpen, BookOpen } from "lucide-react";
@@ -8,6 +9,7 @@ import { useSearchParams } from "react-router-dom";
 const ExamsPage = () => {
   const { data: allExamsRaw = [] } = useExams();
   const { data: sections = [] } = useSections();
+  const { canAccess } = usePremiumAccess();
   const [search, setSearch] = useState("");
   const [subject, setSubject] = useState("all");
   const [difficulty, setDifficulty] = useState("all");
@@ -15,7 +17,7 @@ const ExamsPage = () => {
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<"sections" | "subjects">((searchParams.get("tab") as "sections" | "subjects") || "sections");
 
-  const allExams = allExamsRaw.filter((e) => e.published);
+  const allExams = allExamsRaw.filter((e) => e.published && canAccess(e.id));
 
   const diffLabels: Record<string, string> = { all: getLabel("diffAll"), easy: getLabel("diffEasy"), medium: getLabel("diffMedium"), hard: getLabel("diffHard") };
 

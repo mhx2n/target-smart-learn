@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Search, ArrowRight, BookOpen, FolderOpen, Bell, BarChart3, Clock, X as XIcon, BookX, Radio } from "lucide-react";
 import { useExams, useNotices, useResults, useSections } from "@/hooks/useSupabaseData";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
 import { useSiteSettingsContext } from "@/contexts/SiteSettingsContext";
 import ExamCard from "@/components/ExamCard";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -14,7 +15,8 @@ const Index = () => {
   const { data: notices = [] } = useNotices();
   const { data: results = [] } = useResults();
   const { data: sections = [] } = useSections();
-  const exams = allExams.filter((e) => e.published).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const { canAccess } = usePremiumAccess();
+  const exams = allExams.filter((e) => e.published && canAccess(e.id)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const featured = exams.filter((e) => e.featured);
   const [search, setSearch] = useState("");
   const recentResults = results.slice(0, 3);
