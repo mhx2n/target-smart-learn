@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Radio, Trash2, KeyRound, Users as UsersIcon, Download, Trophy, X } from "lucide-react";
+import { Plus, Radio, Trash2, Download, Trophy, X, Crown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -11,17 +11,11 @@ interface LiveExam {
   start_time: string; end_time: string; duration: number;
   access_mode: string; status: string; show_leaderboard: boolean;
 }
-interface AccessCode { id: string; code: string; assigned_to_user_id: string | null; used_by_user_id: string | null; used_at: string | null; }
 interface Participant {
   id: string; user_id: string; score: number; max_score: number; correct: number; wrong: number;
   skipped: number; percentage: number; time_taken_seconds: number; status: string; submitted_at: string | null;
 }
-interface Profile { user_id: string; full_name: string | null; email: string | null; unique_code: string | null; batch_name: string | null; phone: string | null; }
-
-const randomCode = () => {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-};
+interface Profile { user_id: string; full_name: string | null; email: string | null; batch_name: string | null; phone: string | null; }
 
 const AdminLiveExams = () => {
   const { toast } = useToast();
@@ -30,16 +24,12 @@ const AdminLiveExams = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selected, setSelected] = useState<LiveExam | null>(null);
-  const [codes, setCodes] = useState<AccessCode[]>([]);
   const [parts, setParts] = useState<Participant[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
-  const [allUsers, setAllUsers] = useState<Profile[]>([]);
-  const [genCount, setGenCount] = useState(10);
-  const [assignedUserId, setAssignedUserId] = useState<string>("");
 
   const [form, setForm] = useState({
     title: "", description: "", exam_id: "", start_time: "", end_time: "",
-    duration: 60, access_mode: "code", show_leaderboard: true,
+    duration: 60, show_leaderboard: true,
   });
 
   const load = async () => {
@@ -50,21 +40,6 @@ const AdminLiveExams = () => {
     ]);
     if (e.data) setExams(e.data as ExamRow[]);
     if (l.data) setLiveExams(l.data as LiveExam[]);
-    const { data: users } = await supabase
-      .from("profiles")
-      .select("user_id,full_name,email,unique_code,batch_name,phone")
-      .order("created_at", { ascending: false });
-    if (users) {
-      const userRows = users as Profile[];
-      setAllUsers(userRows);
-      setProfiles((prev) => {
-        const next = { ...prev };
-        userRows.forEach((user) => {
-          next[user.user_id] = user;
-        });
-        return next;
-      });
-    }
     setLoading(false);
   };
 
@@ -72,19 +47,17 @@ const AdminLiveExams = () => {
 
   const loadDetail = async (le: LiveExam) => {
     setSelected(le);
-    const [c, p] = await Promise.all([
-      supabase.from("live_exam_access_codes").select("*").eq("live_exam_id", le.id).order("created_at", { ascending: false }),
-      supabase.from("live_exam_participants").select("*").eq("live_exam_id", le.id).order("score", { ascending: false }),
-    ]);
-    if (c.data) setCodes(c.data as AccessCode[]);
-    if (p.data) {
-      setParts(p.data as Participant[]);
-      const ids = Array.from(new Set((p.data as Participant[]).map(x => x.user_id)));
+    const { data } = await supabase.from("live_exam_participants").select("*").eq("live_exam_id", le.id).order("score", { ascending: false });
+    if (data) {
+      setParts(data as Participant[]);
+      const ids = Array.from(new Set((data as Participant[]).map((x) => x.user_id)));
       if (ids.length) {
-        const { data: pr } = await supabase.from("profiles").select("user_id,full_name,email,unique_code,batch_name,phone").in("user_id", ids);
+        const { data: pr } = await supabase.from("profiles").select("user_id,full_name,email,batch_name,phone").in("user_id", ids);
         const map: Record<string, Profile> = {};
         (pr || []).forEach((x: any) => { map[x.user_id] = x; });
         setProfiles(map);
+      } else {
+        setProfiles({});
       }
     }
   };
@@ -94,16 +67,20 @@ const AdminLiveExams = () => {
       return toast({ title: "সব তথ্য পূরণ করুন", variant: "destructive" });
     }
     const { error } = await supabase.from("live_exams").insert({
-      title: form.title, description: form.description, exam_id: form.exam_id,
+      title: form.title,
+      description: form.description,
+      exam_id: form.exam_id,
       start_time: new Date(form.start_time).toISOString(),
       end_time: new Date(form.end_time).toISOString(),
-      duration: Number(form.duration), access_mode: form.access_mode,
-      show_leaderboard: form.show_leaderboard, status: "scheduled",
+      duration: Number(form.duration),
+      access_mode: "open",
+      show_leaderboard: form.show_leaderboard,
+      status: "scheduled",
     });
     if (error) return toast({ title: "ত্রুটি", description: error.message, variant: "destructive" });
     toast({ title: "লাইভ পরীক্ষা তৈরি হয়েছে ✅" });
     setShowForm(false);
-    setForm({ title: "", description: "", exam_id: "", start_time: "", end_time: "", duration: 60, access_mode: "code", show_leaderboard: true });
+    setForm({ title: "", description: "", exam_id: "", start_time: "", end_time: "", duration: 60, show_leaderboard: true });
     load();
   };
 
@@ -121,40 +98,6 @@ const AdminLiveExams = () => {
     load();
   };
 
-  const generateCodes = async () => {
-    if (!selected) return;
-    const rows = Array.from({ length: genCount }, () => ({
-      live_exam_id: selected.id,
-      code: randomCode(),
-      assigned_to_user_id: assignedUserId || null,
-    }));
-    const { error } = await supabase.from("live_exam_access_codes").insert(rows);
-    if (error) return toast({ title: "ত্রুটি", description: error.message, variant: "destructive" });
-    toast({ title: `${genCount}টি কোড তৈরি হয়েছে ✅`, description: assignedUserId ? "নির্বাচিত ইউজারের নামে assign করা হয়েছে" : "কোডগুলো এখনই ব্যবহার করা যাবে" });
-    loadDetail(selected);
-  };
-
-  const deleteCode = async (id: string) => {
-    await supabase.from("live_exam_access_codes").delete().eq("id", id);
-    if (selected) loadDetail(selected);
-  };
-
-  const exportCodesPDF = () => {
-    if (!selected) return;
-    const doc = new jsPDF();
-    doc.text(`Access Codes - ${selected.title}`, 14, 14);
-    autoTable(doc, {
-      startY: 20,
-      head: [["#", "Code", "Used By", "Used At"]],
-      body: codes.map((c, i) => [
-        i + 1, c.code,
-        c.used_by_user_id ? (profiles[c.used_by_user_id]?.full_name || c.used_by_user_id.slice(0, 8)) : "—",
-        c.used_at ? new Date(c.used_at).toLocaleString() : "—",
-      ]),
-    });
-    doc.save(`access-codes-${selected.title}.pdf`);
-  };
-
   const exportLeaderboardPDF = () => {
     if (!selected) return;
     const doc = new jsPDF();
@@ -162,10 +105,10 @@ const AdminLiveExams = () => {
     const sorted = [...parts].sort((a, b) => b.score - a.score || a.time_taken_seconds - b.time_taken_seconds);
     autoTable(doc, {
       startY: 20,
-      head: [["Rank", "Name", "Code", "Batch", "Score", "Correct", "Wrong", "Skip", "%", "Time(s)"]],
+      head: [["Rank", "Name", "Batch", "Score", "Correct", "Wrong", "Skip", "%", "Time(s)"]],
       body: sorted.map((p, i) => {
         const pr = profiles[p.user_id];
-        return [i + 1, pr?.full_name || "—", pr?.unique_code || "—", pr?.batch_name || "—",
+        return [i + 1, pr?.full_name || "—", pr?.batch_name || "—",
           `${p.score}/${p.max_score}`, p.correct, p.wrong, p.skipped, p.percentage.toFixed(1), p.time_taken_seconds];
       }),
     });
@@ -179,7 +122,7 @@ const AdminLiveExams = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold mb-1 flex items-center gap-2"><Radio size={22} /> লাইভ পরীক্ষা</h1>
-          <p className="text-sm text-muted-foreground">লাইভ পরীক্ষা তৈরি, অ্যাক্সেস কোড ও র‍্যাঙ্কিং ম্যানেজ করুন</p>
+          <p className="text-sm text-muted-foreground">লাইভ পরীক্ষা তৈরি ও ফলাফলের র‍্যাঙ্কিং ম্যানেজ করুন</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center gap-1 hover:bg-primary/90">
           <Plus size={14} /> নতুন
@@ -197,7 +140,7 @@ const AdminLiveExams = () => {
             <option value="">পরীক্ষা সিলেক্ট করুন</option>
             {exams.map((x) => <option key={x.id} value={x.id}>{x.title} ({x.question_count}টি) {x.published ? "✓" : "• অপ্রকাশিত"}</option>)}
           </select>
-          <p className="text-[11px] text-muted-foreground -mt-1">💡 অপ্রকাশিত পরীক্ষাও সিলেক্ট করা যাবে — লাইভ শেষ হলে প্রকাশ করে প্র্যাকটিসে রাখতে পারেন।</p>
+          <p className="text-[11px] text-muted-foreground -mt-1 flex items-center gap-1.5"><Crown size={12} /> অ্যাক্সেস দিতে Admin → পরীক্ষা ব্যবস্থাপনা থেকে এই পরীক্ষার প্রিমিয়াম ব্যাচ সিলেক্ট করুন। কোনো কোড লাগবে না।</p>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-muted-foreground">শুরু</label>
@@ -210,25 +153,15 @@ const AdminLiveExams = () => {
                 value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-xs text-muted-foreground">সময়কাল (মিনিট)</label>
-              <input type="number" className="w-full glass-strong rounded-lg px-3 py-2 text-sm"
-                value={form.duration} onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })} />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground">অ্যাক্সেস</label>
-              <select className="w-full glass-strong rounded-lg px-3 py-2 text-sm"
-                value={form.access_mode} onChange={(e) => setForm({ ...form, access_mode: e.target.value })}>
-                <option value="code">কোড দিয়ে (পেইড)</option>
-                <option value="open">সবার জন্য (ফ্রি)</option>
-              </select>
-            </div>
+          <div>
+            <label className="text-xs text-muted-foreground">সময়কাল (মিনিট)</label>
+            <input type="number" className="w-full glass-strong rounded-lg px-3 py-2 text-sm"
+              value={form.duration} onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })} />
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={form.show_leaderboard}
               onChange={(e) => setForm({ ...form, show_leaderboard: e.target.checked })} />
-            লাইভ লিডারবোর্ড দেখাও
+            জমা দেওয়ার পরে র‍্যাঙ্কিং দেখাও
           </label>
           <div className="flex gap-2">
             <button onClick={createLiveExam} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold">তৈরি করো</button>
@@ -252,7 +185,6 @@ const AdminLiveExams = () => {
                       le.status === "ended" ? "bg-muted text-muted-foreground" :
                       "bg-warning/15 text-warning"
                     }`}>{le.status}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">{le.access_mode}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {new Date(le.start_time).toLocaleString()} → {new Date(le.end_time).toLocaleString()} • {le.duration} মিনিট
@@ -277,40 +209,6 @@ const AdminLiveExams = () => {
             <button onClick={() => setSelected(null)} className="p-1.5 hover:bg-muted rounded-lg"><X size={16} /></button>
           </div>
 
-          {selected.access_mode === "code" && (
-            <div>
-              <h3 className="text-sm font-bold mb-2 flex items-center gap-2"><KeyRound size={14} /> অ্যাক্সেস কোড ({codes.length})</h3>
-              <div className="flex gap-2 mb-3 flex-wrap">
-                <input type="number" min={1} max={500} value={genCount} onChange={(e) => setGenCount(Number(e.target.value))}
-                  className="w-24 glass-strong rounded-lg px-3 py-2 text-sm" />
-                  <select value={assignedUserId} onChange={(e) => setAssignedUserId(e.target.value)} className="min-w-56 glass-strong rounded-lg px-3 py-2 text-xs">
-                    <option value="">সবার জন্য জেনারেট (unassigned)</option>
-                    {allUsers.map((user) => (
-                      <option key={user.user_id} value={user.user_id}>
-                        {(user.full_name || user.email || "ইউজার")} {user.unique_code ? `• ${user.unique_code}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                <button onClick={generateCodes} className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">কোড জেনারেট</button>
-                <button onClick={exportCodesPDF} className="px-3 py-2 rounded-lg glass-strong text-xs flex items-center gap-1"><Download size={12} /> PDF</button>
-              </div>
-                <p className="text-[11px] text-muted-foreground mb-3">Student নিজের profile code না, এই exam access code দিয়েই live exam-এ ঢুকবে। চাইলে নির্দিষ্ট user-এর জন্য আলাদা code assign করতে পারবেন।</p>
-              <div className="max-h-64 overflow-auto space-y-1">
-                {codes.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-1.5 text-xs">
-                    <span className="font-mono font-bold">{c.code}</span>
-                      <span className="text-muted-foreground text-right">
-                        {c.assigned_to_user_id ? `Assigned: ${profiles[c.assigned_to_user_id]?.full_name || profiles[c.assigned_to_user_id]?.email || c.assigned_to_user_id.slice(0, 8)}` : "Open code"}
-                        <br />
-                        {c.used_by_user_id ? `Used: ${profiles[c.used_by_user_id]?.full_name || profiles[c.used_by_user_id]?.email || c.used_by_user_id.slice(0, 8)}` : "Unused"}
-                      </span>
-                    <button onClick={() => deleteCode(c.id)} className="text-destructive"><Trash2 size={12} /></button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-bold flex items-center gap-2"><Trophy size={14} /> লিডারবোর্ড ({parts.length})</h3>
@@ -320,7 +218,7 @@ const AdminLiveExams = () => {
               <table className="w-full text-xs">
                 <thead className="sticky top-0 bg-card">
                   <tr className="text-left border-b border-border">
-                    <th className="p-2">র‍্যাঙ্ক</th><th className="p-2">নাম</th><th className="p-2">কোড</th>
+                    <th className="p-2">র‍্যাঙ্ক</th><th className="p-2">নাম</th><th className="p-2">ব্যাচ</th>
                     <th className="p-2">স্কোর</th><th className="p-2">সঠিক</th><th className="p-2">ভুল</th><th className="p-2">%</th><th className="p-2">স্ট্যাটাস</th>
                   </tr>
                 </thead>
@@ -331,7 +229,7 @@ const AdminLiveExams = () => {
                       <tr key={p.id} className="border-b border-border/50">
                         <td className="p-2 font-bold">{i + 1}</td>
                         <td className="p-2">{pr?.full_name || "—"}<br /><span className="text-muted-foreground">{pr?.email}</span></td>
-                        <td className="p-2 font-mono">{pr?.unique_code || "—"}</td>
+                        <td className="p-2">{pr?.batch_name || "—"}</td>
                         <td className="p-2 font-semibold">{p.score}/{p.max_score}</td>
                         <td className="p-2 text-success">{p.correct}</td>
                         <td className="p-2 text-destructive">{p.wrong}</td>
