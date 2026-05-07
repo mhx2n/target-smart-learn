@@ -57,6 +57,20 @@ export const defaultLabels: Record<string, string> = {
   // Notices
   noticesTitle: "📢 নোটিস বোর্ড",
 
+  // Live Exam Page
+  liveExamBadge: "লাইভ এক্সাম",
+  liveExamHeroTitle: "লাইভ পরীক্ষা পোর্টাল",
+  liveExamHeroSubtitle: "আপনার জন্য নির্ধারিত পরীক্ষাগুলো এখানে দেখা যাবে। সময়মত যোগ দিন এবং সর্বোচ্চ ফলাফল নিশ্চিত করুন।",
+  liveExamStatNow: "এখন চলছে",
+  liveExamStatUpcoming: "আসছে",
+  liveExamSectionLive: "এখন চলছে",
+  liveExamSectionUpcoming: "আসন্ন পরীক্ষা",
+  liveExamEmptyTitle: "এখন কোনো লাইভ পরীক্ষা নেই",
+  liveExamEmptySubtitle: "নতুন পরীক্ষার জন্য পরে দেখুন",
+  liveExamJoinNow: "এখনই যোগ দিন",
+  liveExamWait: "শুরু হলে যোগ দিন",
+  liveExamJoining: "যোগ দিচ্ছে...",
+
   // Exam Details
   instructionsTitle: "নির্দেশাবলী",
   inst1: "প্রতিটি প্রশ্নের একটি সঠিক উত্তর আছে",

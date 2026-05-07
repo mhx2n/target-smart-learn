@@ -111,15 +111,16 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
 
       for (let i = 0; i < pages.length; i++) {
         if (i > 0) pdf.addPage();
-        const canvas = await html2canvas(pages[i], {
-          scale: 2,
+        const canvas = await html2canvas(pages[i], ({
+          scale: 3,
           useCORS: true,
           backgroundColor: "#ffffff",
           logging: false,
           windowWidth: PAGE_WIDTH,
-        });
-        const img = canvas.toDataURL("image/jpeg", 0.96);
-        pdf.addImage(img, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
+          letterRendering: true,
+        }) as any);
+        const img = canvas.toDataURL("image/png");
+        pdf.addImage(img, "PNG", 0, 0, pageW, pageH, undefined, "SLOW");
 
         const pageLinks = pages[i].querySelectorAll<HTMLElement>("[data-pdf-link]");
         pageLinks.forEach((node) => {

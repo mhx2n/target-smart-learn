@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Clock, Play, Radio, Sparkles, Trophy, Unlock } from "lucide-react";
 import { usePremiumAccess } from "@/hooks/usePremiumAccess";
+import { getLabel } from "@/lib/labels";
 
 interface LiveExam {
   id: string;
@@ -99,22 +100,20 @@ const StudentLiveExams = () => {
       <div className="relative overflow-hidden rounded-3xl p-6 md:p-8 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20">
         <div className="relative space-y-4">
           <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-            <Sparkles size={14} /> লাইভ এক্সাম
+            <Sparkles size={14} /> {getLabel("liveExamBadge")}
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl md:text-3xl font-extrabold">প্র্যাকটিস এক্সামের মতোই লাইভ পরীক্ষা</h1>
-            <p className="text-sm text-muted-foreground max-w-2xl">
-              এডমিন যেসব পরীক্ষা আপনার প্রিমিয়াম ব্যাচে দিবে, সেগুলো স্বয়ংক্রিয়ভাবে এখানে দেখা যাবে।
-            </p>
+            <h1 className="text-2xl md:text-3xl font-extrabold">{getLabel("liveExamHeroTitle")}</h1>
+            <p className="text-sm text-muted-foreground max-w-2xl">{getLabel("liveExamHeroSubtitle")}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 max-w-sm">
             <div className="glass-card-static p-3 text-center">
               <p className="text-xl font-bold">{liveNow.length}</p>
-              <p className="text-[11px] text-muted-foreground">এখন চলছে</p>
+              <p className="text-[11px] text-muted-foreground">{getLabel("liveExamStatNow")}</p>
             </div>
             <div className="glass-card-static p-3 text-center">
               <p className="text-xl font-bold">{upcoming.length}</p>
-              <p className="text-[11px] text-muted-foreground">আসছে</p>
+              <p className="text-[11px] text-muted-foreground">{getLabel("liveExamStatUpcoming")}</p>
             </div>
           </div>
         </div>
@@ -127,7 +126,7 @@ const StudentLiveExams = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
             </span>
-            এখন চলছে ({liveNow.length})
+            {getLabel("liveExamSectionLive")} ({liveNow.length})
           </h2>
           <div className="grid gap-3 md:grid-cols-2">
             {liveNow.map((exam) => (
@@ -139,15 +138,15 @@ const StudentLiveExams = () => {
 
       <div>
         <h2 className="text-base font-bold mb-3 flex items-center gap-2">
-          <Calendar size={16} className="text-primary" /> আসন্ন পরীক্ষা ({upcoming.length})
+          <Calendar size={16} className="text-primary" /> {getLabel("liveExamSectionUpcoming")} ({upcoming.length})
         </h2>
         {accessLoading ? (
           <div className="glass-card-static p-10 text-center text-sm text-muted-foreground">লোড হচ্ছে...</div>
         ) : upcoming.length === 0 && liveNow.length === 0 ? (
           <div className="glass-card-static p-10 text-center">
             <Trophy className="mx-auto text-muted-foreground/40 mb-3" size={40} />
-            <p className="text-sm font-medium mb-1">এখন কোনো লাইভ পরীক্ষা নেই</p>
-            <p className="text-xs text-muted-foreground">নতুন পরীক্ষার জন্য পরে দেখুন</p>
+            <p className="text-sm font-medium mb-1">{getLabel("liveExamEmptyTitle")}</p>
+            <p className="text-xs text-muted-foreground">{getLabel("liveExamEmptySubtitle")}</p>
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
@@ -215,7 +214,7 @@ function ExamCardLive({
         }`}
       >
         <Play size={14} />
-        {joining ? "যোগ দিচ্ছে..." : !isLive ? "শুরু হলে যোগ দিন" : "এখনই যোগ দিন"}
+        {joining ? getLabel("liveExamJoining") : !isLive ? getLabel("liveExamWait") : getLabel("liveExamJoinNow")}
       </button>
     </div>
   );
