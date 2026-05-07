@@ -109,18 +109,24 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
 
+      // Adaptive scale: fewer pages → sharper; many pages → memory-safe
+      const scale = pages.length > 20 ? 1.5 : pages.length > 10 ? 2 : 2.5;
       for (let i = 0; i < pages.length; i++) {
         if (i > 0) pdf.addPage();
         const canvas = await html2canvas(pages[i], ({
-          scale: 3,
+          scale,
           useCORS: true,
           backgroundColor: "#ffffff",
           logging: false,
           windowWidth: PAGE_WIDTH,
           letterRendering: true,
+          imageTimeout: 0,
         }) as any);
-        const img = canvas.toDataURL("image/png");
-        pdf.addImage(img, "PNG", 0, 0, pageW, pageH, undefined, "SLOW");
+        const img = canvas.toDataURL("image/jpeg", 0.92);
+        pdf.addImage(img, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
+        // free memory between pages
+        canvas.width = 0; canvas.height = 0;
+        await new Promise((r) => setTimeout(r, 0));
 
         const pageLinks = pages[i].querySelectorAll<HTMLElement>("[data-pdf-link]");
         pageLinks.forEach((node) => {

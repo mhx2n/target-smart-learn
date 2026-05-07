@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CheckCircle2, Send, Trophy, ChevronLeft, ChevronRight, Home } from "lucide-react";
+import { Clock, CheckCircle2, Send, Trophy, Home } from "lucide-react";
 import MathText from "@/components/MathText";
 import { resolveCorrectOptionText } from "@/lib/answerUtils";
 import { usePremiumAccess } from "@/hooks/usePremiumAccess";
@@ -27,7 +27,6 @@ const LiveExamAttempt = () => {
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [currentIdx, setCurrentIdx] = useState(0);
   const startedAtRef = useRef<Date | null>(null);
 
   // Post-submit ranking state
@@ -253,7 +252,6 @@ const LiveExamAttempt = () => {
   const mins = Math.floor(timeLeft / 60), secs = timeLeft % 60;
   const total = questions.length;
   const answered = Object.keys(answers).length;
-  const q = questions[currentIdx];
 
   return (
     <div className="min-h-screen pt-20 pb-20 px-4 max-w-3xl mx-auto">
@@ -262,7 +260,7 @@ const LiveExamAttempt = () => {
         <div className="flex items-center justify-between gap-3 max-w-3xl mx-auto">
           <div className="min-w-0">
             <p className="text-xs font-bold truncate">{liveExam.title}</p>
-            <p className="text-[10px] text-muted-foreground">প্রশ্ন {currentIdx + 1}/{total} • উত্তর {answered}/{total}</p>
+            <p className="text-[10px] text-muted-foreground">উত্তর {answered}/{total}</p>
           </div>
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono font-bold text-sm ${timeLeft < 60 ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"}`}>
             <Clock size={14} /> {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
@@ -270,63 +268,41 @@ const LiveExamAttempt = () => {
         </div>
       </div>
 
-      {q ? (
-        <div className="mt-4 glass-card-static p-5">
-          <p className="text-xs text-muted-foreground mb-2">প্রশ্ন {currentIdx + 1} / {total}</p>
-          <div className="text-base font-semibold mb-4 leading-relaxed"><MathText text={q.question} /></div>
-          <div className="space-y-2">
-            {q.options.map((opt, idx) => {
-              const selected = answers[q.id] === opt;
-              const locked = !!answers[q.id];
-              return (
-                <button key={idx} onClick={() => selectAnswer(q, opt)} disabled={locked}
-                  className={`w-full text-left p-3 rounded-xl border-2 transition-all text-sm ${
-                    selected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
-                  } ${locked && !selected ? "opacity-50 cursor-not-allowed" : ""}`}>
-                  <span className="font-bold mr-2">{String.fromCharCode(65 + idx)}.</span>
-                  <MathText text={opt} />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <div className="text-center text-muted-foreground py-10">এই পরীক্ষায় কোনো প্রশ্ন নেই।</div>
-      )}
-
-      {/* Question palette */}
-      <div className="mt-5 glass-card-static p-3">
-        <p className="text-[11px] text-muted-foreground mb-2">প্রশ্নে যান:</p>
-        <div className="grid grid-cols-8 sm:grid-cols-10 gap-1.5">
-          {questions.map((qq, i) => {
-            const done = !!answers[qq.id];
-            const isCurrent = i === currentIdx;
-            return (
-              <button key={qq.id} onClick={() => setCurrentIdx(i)}
-                className={`aspect-square rounded-md text-xs font-bold transition ${
-                  isCurrent ? "bg-primary text-primary-foreground" :
-                  done ? "bg-success/15 text-success" : "bg-muted text-muted-foreground hover:bg-muted/70"
-                }`}>
-                {i + 1}
-              </button>
-            );
-          })}
-        </div>
+      {/* All questions in scroll view */}
+      <div className="mt-4 space-y-4">
+        {questions.length === 0 && (
+          <div className="text-center text-muted-foreground py-10">এই পরীক্ষায় কোনো প্রশ্ন নেই।</div>
+        )}
+        {questions.map((q, qi) => {
+          const locked = !!answers[q.id];
+          return (
+            <div key={q.id} className="glass-card-static p-5">
+              <p className="text-xs text-muted-foreground mb-2">প্রশ্ন {qi + 1} / {total}</p>
+              <div className="text-base font-semibold mb-4 leading-relaxed"><MathText text={q.question} /></div>
+              <div className="space-y-2">
+                {q.options.map((opt, idx) => {
+                  const selected = answers[q.id] === opt;
+                  return (
+                    <button key={idx} onClick={() => selectAnswer(q, opt)} disabled={locked}
+                      className={`w-full text-left p-3 rounded-xl border-2 transition-all text-sm ${
+                        selected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+                      } ${locked && !selected ? "opacity-50 cursor-not-allowed" : ""}`}>
+                      <span className="font-bold mr-2">{String.fromCharCode(65 + idx)}.</span>
+                      <MathText text={opt} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Bottom nav */}
+      {/* Bottom submit */}
       <div className="fixed bottom-0 left-0 right-0 z-20 bg-background/95 backdrop-blur border-t border-border p-3">
-        <div className="max-w-3xl mx-auto flex items-center gap-2">
-          <button onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))} disabled={currentIdx === 0}
-            className="px-3 py-2 rounded-xl bg-muted text-sm font-semibold flex items-center gap-1 disabled:opacity-40">
-            <ChevronLeft size={14} /> পূর্ব
-          </button>
-          <button onClick={() => setCurrentIdx((i) => Math.min(total - 1, i + 1))} disabled={currentIdx >= total - 1}
-            className="flex-1 px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm font-semibold flex items-center justify-center gap-1 disabled:opacity-40">
-            পরবর্তী <ChevronRight size={14} />
-          </button>
-          <button onClick={() => handleSubmit(false)} className="px-4 py-2 rounded-xl bg-success text-success-foreground text-sm font-bold flex items-center gap-1">
-            <Send size={14} /> জমা
+        <div className="max-w-3xl mx-auto">
+          <button onClick={() => handleSubmit(false)} className="w-full px-4 py-3 rounded-xl bg-success text-success-foreground text-sm font-bold flex items-center justify-center gap-2">
+            <Send size={16} /> পরীক্ষা জমা দিন ({answered}/{total})
           </button>
         </div>
       </div>
