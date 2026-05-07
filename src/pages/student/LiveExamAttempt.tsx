@@ -104,7 +104,12 @@ const LiveExamAttempt = () => {
 
   // Timer tick — uses RAF-equivalent setInterval but recomputes from real time
   useEffect(() => {
-    if (!liveExam || !startedAtRef.current || submitted) return;
+    if (!liveExam || !participant || submitted) return;
+    // Ensure startedAtRef is in sync with the latest participant data
+    if (participant.started_at && !startedAtRef.current) {
+      startedAtRef.current = new Date(participant.started_at);
+    }
+    if (!startedAtRef.current) startedAtRef.current = new Date();
     const total = liveExam.duration * 60;
     const tick = () => {
       const elapsed = Math.floor((Date.now() - startedAtRef.current!.getTime()) / 1000);
@@ -116,7 +121,7 @@ const LiveExamAttempt = () => {
     const i = window.setInterval(tick, 1000);
     return () => window.clearInterval(i);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [liveExam, submitted]);
+  }, [liveExam, participant, submitted]);
 
   const loadRankings = async (liveExamId: string) => {
     const { data } = await supabase.from("live_exam_participants").select("*")
