@@ -39,6 +39,7 @@ const labelGroups: { title: string; keys: string[] }[] = [
   { title: "📝 পরীক্ষা", keys: ["examsPageTitle", "tabSections", "tabSubjects", "searchHint", "allSubjects", "diffAll", "diffEasy", "diffMedium", "diffHard", "noSections", "noExams", "examCount", "viewSection", "startExam", "questions", "minutes"] },
   { title: "📋 ফুটার", keys: ["quickLinks", "contact", "allRightsReserved"] },
   { title: "📊 অন্যান্য", keys: ["resultsTitle", "noticesTitle"] },
+  { title: "🔴 লাইভ এক্সাম পেজ", keys: ["liveExamBadge", "liveExamHeroTitle", "liveExamHeroSubtitle", "liveExamStatNow", "liveExamStatUpcoming", "liveExamSectionLive", "liveExamSectionUpcoming", "liveExamEmptyTitle", "liveExamEmptySubtitle", "liveExamJoinNow", "liveExamWait", "liveExamJoining"] },
 ];
 
 const AdminSiteSettings = () => {
