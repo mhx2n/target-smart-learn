@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Radio, Trash2, Download, Trophy, X, Crown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { registerBengaliFont, preloadBengaliFont } from "@/lib/pdfFont";
 
 interface ExamRow { id: string; title: string; question_count: number; duration: number; published: boolean; }
 interface LiveExam {
@@ -100,20 +101,65 @@ const AdminLiveExams = () => {
 
   const exportLeaderboardPDF = () => {
     if (!selected) return;
-    const doc = new jsPDF();
-    doc.text(`Leaderboard - ${selected.title}`, 14, 14);
-    const sorted = [...parts].sort((a, b) => b.score - a.score || a.time_taken_seconds - b.time_taken_seconds);
-    autoTable(doc, {
-      startY: 20,
-      head: [["Rank", "Name", "Batch", "Score", "Correct", "Wrong", "Skip", "%", "Time(s)"]],
-      body: sorted.map((p, i) => {
-        const pr = profiles[p.user_id];
-        return [i + 1, pr?.full_name || "—", pr?.batch_name || "—",
-          `${p.score}/${p.max_score}`, p.correct, p.wrong, p.skipped, p.percentage.toFixed(1), p.time_taken_seconds];
-      }),
-    });
-    doc.save(`leaderboard-${selected.title}.pdf`);
+    (async () => {
+      const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
+      await registerBengaliFont(doc);
+      const W = doc.internal.pageSize.getWidth();
+
+      // Header band
+      doc.setFillColor(37, 99, 235);
+      doc.rect(0, 0, W, 22, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("NotoBn", "bold");
+      doc.setFontSize(15);
+      doc.text(selected.title, 12, 10);
+      doc.setFont("NotoBn", "normal");
+      doc.setFontSize(10);
+      doc.text("চূড়ান্ত ফলাফল রিপোর্ট • Final Result Report", 12, 17);
+      doc.setTextColor(30, 41, 59);
+
+      const sorted = [...parts].sort((a, b) => b.score - a.score || a.time_taken_seconds - b.time_taken_seconds);
+      autoTable(doc, {
+        startY: 28,
+        head: [["র‍্যাঙ্ক", "নাম", "স্কোর", "সঠিক", "ভুল", "শতাংশ", "সময়"]],
+        body: sorted.map((p, i) => {
+          const pr = profiles[p.user_id];
+          const mm = Math.floor((p.time_taken_seconds || 0) / 60);
+          const ss = (p.time_taken_seconds || 0) % 60;
+          return [
+            String(i + 1),
+            pr?.full_name || "—",
+            `${p.score}/${p.max_score}`,
+            String(p.correct),
+            String(p.wrong),
+            `${p.percentage.toFixed(1)}%`,
+            `${mm}:${String(ss).padStart(2, "0")}`,
+          ];
+        }),
+        styles: { font: "NotoBn", fontSize: 10, cellPadding: 3, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.2 },
+        headStyles: { font: "NotoBn", fontStyle: "bold", fillColor: [37, 99, 235], textColor: 255, halign: "center" },
+        bodyStyles: { halign: "center", valign: "middle" },
+        columnStyles: { 1: { halign: "left", cellWidth: 60 } },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 10, right: 10 },
+      });
+
+      const pages = doc.getNumberOfPages();
+      for (let p = 1; p <= pages; p++) {
+        doc.setPage(p);
+        doc.setFont("NotoBn", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`পৃষ্ঠা ${p} / ${pages}`, W - 12, doc.internal.pageSize.getHeight() - 6, { align: "right" });
+        doc.text("Target — Smart Exam Platform", 12, doc.internal.pageSize.getHeight() - 6);
+      }
+
+      doc.save(`report-${selected.title.replace(/[\\/:*?"<>|]+/g, "_")}.pdf`);
+    })();
   };
+
+  // Preload font on mount so first export is fast
+  useEffect(() => { preloadBengaliFont().catch(() => undefined); }, []);
 
   const sortedParts = [...parts].sort((a, b) => b.score - a.score || a.time_taken_seconds - b.time_taken_seconds);
 
