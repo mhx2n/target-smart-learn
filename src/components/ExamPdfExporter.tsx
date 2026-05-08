@@ -50,6 +50,10 @@ const DEFAULT_CFG: PdfConfig = {
 const PAGE_WIDTH = 794;
 const PAGE_HEIGHT = 1123; // exact A4 ratio at 96dpi
 const PAGE_PADDING = 44;
+const HEADER_RESERVE = 130; // header (title + meta + border) approx
+const FOOTER_RESERVE = 70;  // footer band approx
+const COLUMN_GAP = 22;
+const QUESTION_GAP = 18;
 
 function normalizeUrl(u: string) {
   const t = u.trim();
@@ -155,12 +159,48 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
     }
   };
 
-  const pagedQuestions = useMemo(() => {
-    const perPage = cfg.twoColumn ? 10 : 6;
-    const chunks = [] as typeof exam.questions[];
-    for (let i = 0; i < exam.questions.length; i += perPage) chunks.push(exam.questions.slice(i, i + perPage));
-    return chunks.length ? chunks : [[]];
-  }, [exam.questions, cfg.twoColumn]);
+  // Measured pagination: render hidden, measure each block, then pack into pages.
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [pagedQuestions, setPagedQuestions] = useState<Exam["questions"][]>([[]]);
+
+  useEffect(() => {
+    // wait for layout & math render
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => {
+      const root = measureRef.current;
+      if (!root) return;
+      const blocks = Array.from(root.querySelectorAll<HTMLElement>("[data-q-block]"));
+      if (!blocks.length) { setPagedQuestions([[]]); return; }
+      const heights = blocks.map((b) => b.getBoundingClientRect().height);
+
+      const contentH = PAGE_HEIGHT - PAGE_PADDING * 2 - HEADER_RESERVE - FOOTER_RESERVE;
+      const columns = cfg.twoColumn ? 2 : 1;
+      const pages: Exam["questions"][] = [];
+      let current: Exam["questions"] = [];
+      let colUsed = 0; // height used in current column
+      let colIdx = 0;  // current column index 0..columns-1
+
+      const pushPage = () => { pages.push(current); current = []; colUsed = 0; colIdx = 0; };
+
+      for (let i = 0; i < exam.questions.length; i++) {
+        const h = heights[i] + QUESTION_GAP;
+        if (colUsed + h > contentH) {
+          // move to next column or page
+          if (colIdx + 1 < columns) {
+            colIdx++;
+            colUsed = 0;
+          } else {
+            pushPage();
+          }
+        }
+        // if a single block is taller than a column, still place it (will be clipped — but acceptable rare case)
+        current.push(exam.questions[i]);
+        colUsed += h;
+      }
+      if (current.length) pushPage();
+      setPagedQuestions(pages.length ? pages : [[]]);
+    }));
+    return () => cancelAnimationFrame(id);
+  }, [exam.questions, cfg.twoColumn, cfg.showAnswers, cfg.showExplanations, cfg.primaryColor, cfg.title, cfg.subtitle, cfg.logoDataUrl]);
 
   if (!open) return null;
 
@@ -255,6 +295,14 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
               <PdfPreview ref={previewRef} exam={exam} cfg={cfg} pagedQuestions={pagedQuestions} />
             </div>
 
+            {/* Hidden measurement pass: each question rendered at its real column width */}
+            <div ref={measureRef} className="fixed -left-[20000px] top-0 pointer-events-none" aria-hidden="true"
+              style={{ width: cfg.twoColumn ? (PAGE_WIDTH - PAGE_PADDING * 2 - COLUMN_GAP) / 2 : PAGE_WIDTH - PAGE_PADDING * 2, fontFamily: "Inter, Noto Sans Bengali, sans-serif", color: "#111827" }}>
+              {exam.questions.map((question, idx) => (
+                <QuestionBlock key={`m-${question.id || idx}`} question={question} index={idx} cfg={cfg} measure />
+              ))}
+            </div>
+
             <button onClick={generate} disabled={generating} className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50">
               {generating ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
               {generating ? "তৈরি হচ্ছে..." : "PDF ডাউনলোড"}
@@ -274,9 +322,13 @@ interface PdfPreviewProps {
 }
 
 const PdfPreview = forwardRef<HTMLDivElement, PdfPreviewProps>(({ exam, cfg, pagedQuestions }, ref) => {
+  let runningIndex = 0;
   return (
     <div ref={ref} className="pdf-export-preview" style={{ width: PAGE_WIDTH, color: "#111827", fontFamily: "Inter, Noto Sans Bengali, sans-serif" }}>
-      {pagedQuestions.map((questions, pageIndex) => (
+      {pagedQuestions.map((questions, pageIndex) => {
+        const pageStartIdx = runningIndex;
+        runningIndex += questions.length;
+        return (
         <div
           key={pageIndex}
           data-pdf-page
@@ -296,68 +348,76 @@ const PdfPreview = forwardRef<HTMLDivElement, PdfPreviewProps>(({ exam, cfg, pag
           <div
             style={{
               flex: 1,
+              minHeight: 0,
               display: cfg.twoColumn ? "block" : "grid",
               columnCount: cfg.twoColumn ? 2 : undefined,
-              columnGap: cfg.twoColumn ? 22 : undefined,
+              columnGap: cfg.twoColumn ? COLUMN_GAP : undefined,
+              columnFill: cfg.twoColumn ? ("auto" as any) : undefined,
               gridTemplateColumns: cfg.twoColumn ? undefined : "1fr",
               alignContent: "start",
               paddingTop: 22,
+              overflow: "hidden",
             }}
           >
             {questions.map((question, index) => {
-              const absoluteIndex = pageIndex * (cfg.twoColumn ? 10 : 6) + index;
-              const correct = resolveCorrectOptionText(question);
-              return (
-                <div key={question.id || `${pageIndex}-${index}`} style={{ breakInside: "avoid", pageBreakInside: "avoid", marginBottom: 18, display: "inline-block", width: "100%" } as any}>
-                  <div style={{ display: "grid", gridTemplateColumns: "32px 1fr", gap: 8, alignItems: "start", marginBottom: 10 }}>
-                    <div style={{ color: cfg.primaryColor, fontWeight: 800, fontSize: 17, lineHeight: "26px" }}>{absoluteIndex + 1}.</div>
-                    <div style={{ fontWeight: 700, fontSize: 15.5, lineHeight: "26px", wordBreak: "break-word" }}><MathText text={question.question} /></div>
-                  </div>
-                  <div style={{ display: "grid", gap: 7, paddingLeft: cfg.twoColumn ? 0 : 40 }}>
-                    {question.options.map((opt, optionIndex) => {
-                      const isCorrect = cfg.showAnswers && opt === correct;
-                      return (
-                        <div
-                          key={`${question.id}-${optionIndex}`}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "30px minmax(0, 1fr) auto",
-                            gap: 8,
-                            alignItems: "start",
-                            border: isCorrect ? "1.5px solid #16a34a" : "1px solid #dbe2ea",
-                            background: isCorrect ? "#dcfce7" : "#f8fafc",
-                            color: isCorrect ? "#166534" : "#1f2937",
-                            borderRadius: 10,
-                            padding: "8px 10px",
-                            boxSizing: "border-box",
-                            minHeight: 38,
-                            lineHeight: "21px",
-                          }}
-                        >
-                          <span style={{ fontWeight: 800, fontSize: 13, lineHeight: "21px" }}>{String.fromCharCode(65 + optionIndex)}.</span>
-                          <span style={{ fontWeight: isCorrect ? 700 : 500, fontSize: 13.5, lineHeight: "21px", wordBreak: "break-word", minWidth: 0 }}><MathText text={opt} /></span>
-                          {isCorrect && <span style={{ fontWeight: 800, fontSize: 11, lineHeight: "21px", whiteSpace: "nowrap" }}>✓ সঠিক</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {cfg.showExplanations && question.explanation && (
-                    <div style={{ marginTop: 8, marginLeft: cfg.twoColumn ? 0 : 40, padding: 10, borderRadius: 10, background: "#f1f5f9", color: "#475569", fontSize: 12.5, lineHeight: "20px" }}>
-                      <strong>ব্যাখ্যা: </strong><MathText text={question.explanation} />
-                    </div>
-                  )}
-                </div>
-              );
+              const absoluteIndex = pageStartIdx + index;
+              return <QuestionBlock key={question.id || `${pageIndex}-${index}`} question={question} index={absoluteIndex} cfg={cfg} />;
             })}
           </div>
           <PdfFooter cfg={cfg} page={pageIndex + 1} total={pagedQuestions.length} />
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 });
 
 PdfPreview.displayName = "PdfPreview";
+
+const QuestionBlock = ({ question, index, cfg, measure }: { question: Exam["questions"][number]; index: number; cfg: PdfConfig; measure?: boolean }) => {
+  const correct = resolveCorrectOptionText(question);
+  return (
+    <div data-q-block={measure ? "" : undefined} style={{ breakInside: "avoid", pageBreakInside: "avoid", marginBottom: QUESTION_GAP, display: "inline-block", width: "100%" } as any}>
+      <div style={{ display: "grid", gridTemplateColumns: "32px 1fr", gap: 8, alignItems: "start", marginBottom: 10 }}>
+        <div style={{ color: cfg.primaryColor, fontWeight: 800, fontSize: 17, lineHeight: "26px" }}>{index + 1}.</div>
+        <div style={{ fontWeight: 700, fontSize: 15.5, lineHeight: "26px", wordBreak: "break-word" }}><MathText text={question.question} /></div>
+      </div>
+      <div style={{ display: "grid", gap: 7, paddingLeft: cfg.twoColumn ? 0 : 40 }}>
+        {question.options.map((opt, optionIndex) => {
+          const isCorrect = cfg.showAnswers && opt === correct;
+          return (
+            <div
+              key={`${question.id}-${optionIndex}`}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "30px minmax(0, 1fr) auto",
+                gap: 8,
+                alignItems: "start",
+                border: isCorrect ? "1.5px solid #16a34a" : "1px solid #dbe2ea",
+                background: isCorrect ? "#dcfce7" : "#f8fafc",
+                color: isCorrect ? "#166534" : "#1f2937",
+                borderRadius: 10,
+                padding: "8px 10px",
+                boxSizing: "border-box",
+                minHeight: 38,
+                lineHeight: "21px",
+              }}
+            >
+              <span style={{ fontWeight: 800, fontSize: 13, lineHeight: "21px" }}>{String.fromCharCode(65 + optionIndex)}.</span>
+              <span style={{ fontWeight: isCorrect ? 700 : 500, fontSize: 13.5, lineHeight: "21px", wordBreak: "break-word", minWidth: 0 }}><MathText text={opt} /></span>
+              {isCorrect && <span style={{ fontWeight: 800, fontSize: 11, lineHeight: "21px", whiteSpace: "nowrap" }}>✓ সঠিক</span>}
+            </div>
+          );
+        })}
+      </div>
+      {cfg.showExplanations && question.explanation && (
+        <div style={{ marginTop: 8, marginLeft: cfg.twoColumn ? 0 : 40, padding: 10, borderRadius: 10, background: "#f1f5f9", color: "#475569", fontSize: 12.5, lineHeight: "20px" }}>
+          <strong>ব্যাখ্যা: </strong><MathText text={question.explanation} />
+        </div>
+      )}
+    </div>
+  );
+};
 
 const PdfHeader = ({ cfg, exam, page, total }: { cfg: PdfConfig; exam: Exam; page: number; total: number }) => (
   <div style={{ borderBottom: `3px solid ${cfg.primaryColor}`, paddingBottom: 12 }}>
