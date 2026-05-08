@@ -308,7 +308,7 @@ const PdfPreview = forwardRef<HTMLDivElement, PdfPreviewProps>(({ exam, cfg, pag
               const absoluteIndex = pageIndex * (cfg.twoColumn ? 10 : 6) + index;
               const correct = resolveCorrectOptionText(question);
               return (
-                <div key={question.id || `${pageIndex}-${index}`} style={{ breakInside: "avoid", WebkitColumnBreakInside: "avoid", pageBreakInside: "avoid", marginBottom: 18, display: "inline-block", width: "100%" }}>
+                <div key={question.id || `${pageIndex}-${index}`} style={{ breakInside: "avoid", pageBreakInside: "avoid", marginBottom: 18, display: "inline-block", width: "100%" } as any}>
                   <div style={{ display: "grid", gridTemplateColumns: "32px 1fr", gap: 8, alignItems: "start", marginBottom: 10 }}>
                     <div style={{ color: cfg.primaryColor, fontWeight: 800, fontSize: 17, lineHeight: "26px" }}>{absoluteIndex + 1}.</div>
                     <div style={{ fontWeight: 700, fontSize: 15.5, lineHeight: "26px", wordBreak: "break-word" }}><MathText text={question.question} /></div>
