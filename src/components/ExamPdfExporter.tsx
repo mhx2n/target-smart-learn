@@ -48,7 +48,7 @@ const DEFAULT_CFG: PdfConfig = {
 };
 
 const PAGE_WIDTH = 794;
-const PAGE_MIN_HEIGHT = 1123;
+const PAGE_HEIGHT = 1123; // exact A4 ratio at 96dpi
 const PAGE_PADDING = 44;
 
 function normalizeUrl(u: string) {
@@ -110,7 +110,7 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
       const pageH = pdf.internal.pageSize.getHeight();
 
       // Adaptive scale: fewer pages → sharper; many pages → memory-safe
-      const scale = pages.length > 20 ? 1.5 : pages.length > 10 ? 2 : 2.5;
+      const scale = pages.length > 20 ? 2 : pages.length > 10 ? 2.5 : 3;
       for (let i = 0; i < pages.length; i++) {
         if (i > 0) pdf.addPage();
         const canvas = await html2canvas(pages[i], ({
@@ -119,11 +119,13 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
           backgroundColor: "#ffffff",
           logging: false,
           windowWidth: PAGE_WIDTH,
+          width: PAGE_WIDTH,
+          height: PAGE_HEIGHT,
           letterRendering: true,
           imageTimeout: 0,
         }) as any);
-        const img = canvas.toDataURL("image/jpeg", 0.92);
-        pdf.addImage(img, "JPEG", 0, 0, pageW, pageH, undefined, "FAST");
+        const img = canvas.toDataURL("image/jpeg", 0.95);
+        pdf.addImage(img, "JPEG", 0, 0, pageW, pageH, undefined, "SLOW");
         // free memory between pages
         canvas.width = 0; canvas.height = 0;
         await new Promise((r) => setTimeout(r, 0));
@@ -280,7 +282,8 @@ const PdfPreview = forwardRef<HTMLDivElement, PdfPreviewProps>(({ exam, cfg, pag
           data-pdf-page
           style={{
             width: PAGE_WIDTH,
-            minHeight: PAGE_MIN_HEIGHT,
+            height: PAGE_HEIGHT,
+            overflow: "hidden",
             background: "#ffffff",
             padding: PAGE_PADDING,
             boxSizing: "border-box",
@@ -293,9 +296,10 @@ const PdfPreview = forwardRef<HTMLDivElement, PdfPreviewProps>(({ exam, cfg, pag
           <div
             style={{
               flex: 1,
-              display: "grid",
-              gridTemplateColumns: cfg.twoColumn ? "1fr 1fr" : "1fr",
-              gap: cfg.twoColumn ? 18 : 0,
+              display: cfg.twoColumn ? "block" : "grid",
+              columnCount: cfg.twoColumn ? 2 : undefined,
+              columnGap: cfg.twoColumn ? 22 : undefined,
+              gridTemplateColumns: cfg.twoColumn ? undefined : "1fr",
               alignContent: "start",
               paddingTop: 22,
             }}
@@ -304,7 +308,7 @@ const PdfPreview = forwardRef<HTMLDivElement, PdfPreviewProps>(({ exam, cfg, pag
               const absoluteIndex = pageIndex * (cfg.twoColumn ? 10 : 6) + index;
               const correct = resolveCorrectOptionText(question);
               return (
-                <div key={question.id || `${pageIndex}-${index}`} style={{ breakInside: "avoid", marginBottom: 18 }}>
+                <div key={question.id || `${pageIndex}-${index}`} style={{ breakInside: "avoid", pageBreakInside: "avoid", marginBottom: 18, display: "inline-block", width: "100%" } as any}>
                   <div style={{ display: "grid", gridTemplateColumns: "32px 1fr", gap: 8, alignItems: "start", marginBottom: 10 }}>
                     <div style={{ color: cfg.primaryColor, fontWeight: 800, fontSize: 17, lineHeight: "26px" }}>{absoluteIndex + 1}.</div>
                     <div style={{ fontWeight: 700, fontSize: 15.5, lineHeight: "26px", wordBreak: "break-word" }}><MathText text={question.question} /></div>
