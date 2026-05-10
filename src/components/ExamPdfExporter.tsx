@@ -7,7 +7,7 @@ import type { Exam } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { resolveCorrectOptionText } from "@/lib/answerUtils";
 import MathText from "@/components/MathText";
-import { preloadBengaliFont, registerBengaliFont } from "@/lib/pdfFont";
+import { registerBengaliFont } from "@/lib/pdfFont";
 
 interface Slot {
   text: string;
