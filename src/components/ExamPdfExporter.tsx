@@ -181,8 +181,8 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
   };
 
   const generateVectorPdf = async () => {
-    await registerBengaliFont();
     const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait", compress: true });
+    await registerBengaliFont(pdf);
     const pageW = pdf.internal.pageSize.getWidth();
     const pageH = pdf.internal.pageSize.getHeight();
     const margin = 34;
