@@ -513,6 +513,29 @@ const PdfPreview = forwardRef<HTMLDivElement, PdfPreviewProps>(({ exam, cfg, pag
             style={{
               flex: 1,
               minHeight: 0,
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {cfg.twoColumn && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  top: 22,
+                  bottom: 0,
+                  left: "50%",
+                  width: 1,
+                  background: `${cfg.primaryColor}55`,
+                  transform: "translateX(-0.5px)",
+                  zIndex: 2,
+                }}
+              />
+            )}
+            <div
+              style={{
+              height: "100%",
+              boxSizing: "border-box",
               display: cfg.twoColumn ? "block" : "grid",
               columnCount: cfg.twoColumn ? 2 : undefined,
               columnGap: cfg.twoColumn ? COLUMN_GAP : undefined,
@@ -528,6 +551,7 @@ const PdfPreview = forwardRef<HTMLDivElement, PdfPreviewProps>(({ exam, cfg, pag
               const absoluteIndex = pageStartIdx + index;
               return <QuestionBlock key={question.id || `${pageIndex}-${index}`} question={question} index={absoluteIndex} cfg={cfg} />;
             })}
+            </div>
           </div>
           <PdfFooter cfg={cfg} page={pageIndex + 1} total={pagedQuestions.length} />
         </div>
