@@ -286,7 +286,7 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
 
             <div className="rounded-xl border border-border bg-muted/20 p-3 overflow-auto">
               <div className="text-[11px] text-muted-foreground mb-2">প্রিভিউ</div>
-              <div className="origin-top-left scale-[0.42] sm:scale-[0.58] md:scale-[0.72] h-[480px] sm:h-[660px] md:h-[820px] w-[794px] pointer-events-none">
+              <div className="origin-top-left scale-[0.42] sm:scale-[0.58] md:scale-[0.72] h-[480px] sm:h-[660px] md:h-[820px] w-[794px] pointer-events-none" style={{ willChange: "transform", transform: "translateZ(0)" } as any}>
                 <PdfPreview exam={exam} cfg={cfg} pagedQuestions={pagedQuestions} />
               </div>
             </div>
