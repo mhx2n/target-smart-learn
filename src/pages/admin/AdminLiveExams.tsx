@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Radio, Trash2, Download, Trophy, X, Crown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { registerBengaliFont, preloadBengaliFont } from "@/lib/pdfFont";
 
 interface ExamRow { id: string; title: string; question_count: number; duration: number; published: boolean; }
 interface LiveExam {
@@ -103,83 +102,77 @@ const AdminLiveExams = () => {
     if (!selected) return;
     (async () => {
       const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
-      await registerBengaliFont(doc);
       const W = doc.internal.pageSize.getWidth();
+      const sorted = [...parts].sort((a, b) => b.score - a.score || a.time_taken_seconds - b.time_taken_seconds);
+      const submitted = parts.filter((p) => p.status === "submitted" || p.submitted_at);
+      const fmt = (d: string) => new Date(d).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
+      const timeText = (seconds = 0) => {
+        const mm = Math.floor(seconds / 60);
+        const ss = seconds % 60;
+        return `${mm}:${String(ss).padStart(2, "0")}`;
+      };
 
       // Header band
       doc.setFillColor(37, 99, 235);
       doc.rect(0, 0, W, 26, "F");
       doc.setTextColor(255, 255, 255);
-      doc.setFont("NotoBn", "bold");
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
       doc.text(selected.title, 12, 11);
-      doc.setFont("NotoBn", "normal");
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
-      doc.text("চূড়ান্ত ফলাফল রিপোর্ট • Final Result Report", 12, 18);
+      doc.text("Final Result Report", 12, 18);
       doc.setTextColor(30, 41, 59);
 
       // Exam info block
-      const fmt = (d: string) => new Date(d).toLocaleString();
-      const submitted = parts.filter((p) => p.status === "submitted" || p.submitted_at);
       const infoLines = [
-        `শুরু: ${fmt(selected.start_time)}`,
-        `শেষ: ${fmt(selected.end_time)}`,
-        `সময়কাল: ${selected.duration} মিনিট  •  মোট অংশগ্রহণকারী: ${parts.length}  •  সাবমিট: ${submitted.length}`,
+        `Exam: ${selected.title}`,
+        `Start: ${fmt(selected.start_time)}    End: ${fmt(selected.end_time)}`,
+        `Duration: ${selected.duration} min    Participants: ${parts.length}    Submitted: ${submitted.length}`,
       ];
-      doc.setFont("NotoBn", "normal");
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.setTextColor(51, 65, 85);
       let y = 33;
       infoLines.forEach((ln) => { doc.text(ln, 12, y); y += 5.2; });
 
-      // Show all participants (don't filter — admin needs full picture)
-      const sorted = [...parts].sort((a, b) => b.score - a.score || a.time_taken_seconds - b.time_taken_seconds);
       autoTable(doc, {
         startY: y + 3,
-        head: [["র‍্যাঙ্ক", "নাম", "স্কোর", "সঠিক", "ভুল", "শতাংশ", "সময়"]],
+        head: [["Rank", "Name", "Score", "Correct", "Wrong", "Percent", "Time", "Status"]],
         body: sorted.map((p, i) => {
           const pr = profiles[p.user_id];
-          const mm = Math.floor((p.time_taken_seconds || 0) / 60);
-          const ss = (p.time_taken_seconds || 0) % 60;
           return [
             String(i + 1),
-            pr?.full_name || "—",
+            pr?.full_name || "Unknown",
             `${p.score}/${p.max_score}`,
             String(p.correct),
             String(p.wrong),
             `${p.percentage.toFixed(1)}%`,
-            `${mm}:${String(ss).padStart(2, "0")}`,
+            timeText(p.time_taken_seconds || 0),
+            p.status || (p.submitted_at ? "submitted" : "started"),
           ];
         }),
-        styles: { font: "NotoBn", fontStyle: "normal", fontSize: 10, cellPadding: 3, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.2, overflow: "linebreak" },
-        headStyles: { font: "NotoBn", fontStyle: "bold", fillColor: [37, 99, 235], textColor: 255, halign: "center", valign: "middle" },
-        bodyStyles: { font: "NotoBn", fontStyle: "normal", halign: "center", valign: "middle", textColor: [30, 41, 59] },
-        columnStyles: { 1: { halign: "left", cellWidth: 60, font: "NotoBn", fontStyle: "normal" } },
+        styles: { font: "helvetica", fontStyle: "normal", fontSize: 9.5, cellPadding: 3, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.2, overflow: "linebreak" },
+        headStyles: { font: "helvetica", fontStyle: "bold", fillColor: [37, 99, 235], textColor: 255, halign: "center", valign: "middle" },
+        bodyStyles: { font: "helvetica", fontStyle: "normal", halign: "center", valign: "middle", textColor: [30, 41, 59] },
+        columnStyles: { 1: { halign: "left", cellWidth: 58 }, 7: { cellWidth: 22 } },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         margin: { left: 10, right: 10 },
-        // Force NotoBn on every cell so Bengali never falls back to Helvetica (renders blank)
-        didParseCell: (data) => {
-          data.cell.styles.font = "NotoBn";
-          data.cell.styles.fontStyle = data.section === "head" ? "bold" : "normal";
-        },
       });
 
       const pages = doc.getNumberOfPages();
       for (let p = 1; p <= pages; p++) {
         doc.setPage(p);
-        doc.setFont("NotoBn", "normal");
+        doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(100, 116, 139);
-        doc.text(`পৃষ্ঠা ${p} / ${pages}`, W - 12, doc.internal.pageSize.getHeight() - 6, { align: "right" });
+        doc.text(`Page ${p} / ${pages}`, W - 12, doc.internal.pageSize.getHeight() - 6, { align: "right" });
         doc.text("Target — Smart Exam Platform", 12, doc.internal.pageSize.getHeight() - 6);
       }
 
       doc.save(`report-${selected.title.replace(/[\\/:*?"<>|]+/g, "_")}.pdf`);
     })();
   };
-
-  // Preload font on mount so first export is fast
-  useEffect(() => { preloadBengaliFont().catch(() => undefined); }, []);
 
   const sortedParts = [...parts].sort((a, b) => b.score - a.score || a.time_taken_seconds - b.time_taken_seconds);
 
