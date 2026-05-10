@@ -53,7 +53,7 @@ const PAGE_PADDING = 44;
 const HEADER_RESERVE = 130; // header (title + meta + border) approx
 const FOOTER_RESERVE = 70;  // footer band approx
 const COLUMN_GAP = 22;
-const QUESTION_GAP = 18;
+const QUESTION_GAP = 12;
 
 function normalizeUrl(u: string) {
   const t = u.trim();
@@ -286,7 +286,7 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
 
             <div className="rounded-xl border border-border bg-muted/20 p-3 overflow-auto">
               <div className="text-[11px] text-muted-foreground mb-2">প্রিভিউ</div>
-              <div className="origin-top-left scale-[0.42] sm:scale-[0.58] md:scale-[0.72] h-[480px] sm:h-[660px] md:h-[820px] w-[794px] pointer-events-none">
+              <div className="origin-top-left scale-[0.42] sm:scale-[0.58] md:scale-[0.72] h-[480px] sm:h-[660px] md:h-[820px] w-[794px] pointer-events-none" style={{ willChange: "transform", transform: "translateZ(0)" } as any}>
                 <PdfPreview exam={exam} cfg={cfg} pagedQuestions={pagedQuestions} />
               </div>
             </div>
@@ -353,6 +353,7 @@ const PdfPreview = forwardRef<HTMLDivElement, PdfPreviewProps>(({ exam, cfg, pag
               columnCount: cfg.twoColumn ? 2 : undefined,
               columnGap: cfg.twoColumn ? COLUMN_GAP : undefined,
               columnFill: cfg.twoColumn ? ("auto" as any) : undefined,
+              columnRule: cfg.twoColumn ? `1px solid ${cfg.primaryColor}33` : undefined,
               gridTemplateColumns: cfg.twoColumn ? undefined : "1fr",
               alignContent: "start",
               paddingTop: 22,
@@ -378,11 +379,11 @@ const QuestionBlock = ({ question, index, cfg, measure }: { question: Exam["ques
   const correct = resolveCorrectOptionText(question);
   return (
     <div data-q-block={measure ? "" : undefined} style={{ breakInside: "avoid", pageBreakInside: "avoid", marginBottom: QUESTION_GAP, display: "inline-block", width: "100%" } as any}>
-      <div style={{ display: "grid", gridTemplateColumns: "32px 1fr", gap: 8, alignItems: "start", marginBottom: 10 }}>
-        <div style={{ color: cfg.primaryColor, fontWeight: 800, fontSize: 17, lineHeight: "26px" }}>{index + 1}.</div>
-        <div style={{ fontWeight: 700, fontSize: 15.5, lineHeight: "26px", wordBreak: "break-word" }}><MathText text={question.question} /></div>
+      <div style={{ display: "grid", gridTemplateColumns: "26px 1fr", gap: 6, alignItems: "start", marginBottom: 7 }}>
+        <div style={{ color: cfg.primaryColor, fontWeight: 800, fontSize: 13.5, lineHeight: "20px" }}>{index + 1}.</div>
+        <div style={{ fontWeight: 600, fontSize: 12.5, lineHeight: "20px", wordBreak: "break-word" }}><MathText text={question.question} /></div>
       </div>
-      <div style={{ display: "grid", gap: 7, paddingLeft: cfg.twoColumn ? 0 : 40 }}>
+      <div style={{ display: "grid", gap: 5, paddingLeft: cfg.twoColumn ? 0 : 32 }}>
         {question.options.map((opt, optionIndex) => {
           const isCorrect = cfg.showAnswers && opt === correct;
           return (
@@ -390,28 +391,28 @@ const QuestionBlock = ({ question, index, cfg, measure }: { question: Exam["ques
               key={`${question.id}-${optionIndex}`}
               style={{
                 display: "grid",
-                gridTemplateColumns: "30px minmax(0, 1fr) auto",
-                gap: 8,
+                gridTemplateColumns: "22px minmax(0, 1fr) auto",
+                gap: 6,
                 alignItems: "start",
-                border: isCorrect ? "1.5px solid #16a34a" : "1px solid #dbe2ea",
+                border: isCorrect ? "1.2px solid #16a34a" : "1px solid #dbe2ea",
                 background: isCorrect ? "#dcfce7" : "#f8fafc",
                 color: isCorrect ? "#166534" : "#1f2937",
-                borderRadius: 10,
-                padding: "8px 10px",
+                borderRadius: 8,
+                padding: "5px 8px",
                 boxSizing: "border-box",
-                minHeight: 38,
-                lineHeight: "21px",
+                minHeight: 28,
+                lineHeight: "17px",
               }}
             >
-              <span style={{ fontWeight: 800, fontSize: 13, lineHeight: "21px" }}>{String.fromCharCode(65 + optionIndex)}.</span>
-              <span style={{ fontWeight: isCorrect ? 700 : 500, fontSize: 13.5, lineHeight: "21px", wordBreak: "break-word", minWidth: 0 }}><MathText text={opt} /></span>
-              {isCorrect && <span style={{ fontWeight: 800, fontSize: 11, lineHeight: "21px", whiteSpace: "nowrap" }}>✓ সঠিক</span>}
+              <span style={{ fontWeight: 800, fontSize: 11, lineHeight: "17px" }}>{String.fromCharCode(65 + optionIndex)}.</span>
+              <span style={{ fontWeight: isCorrect ? 700 : 500, fontSize: 11.5, lineHeight: "17px", wordBreak: "break-word", minWidth: 0 }}><MathText text={opt} /></span>
+              {isCorrect && <span style={{ fontWeight: 800, fontSize: 9.5, lineHeight: "17px", whiteSpace: "nowrap" }}>✓</span>}
             </div>
           );
         })}
       </div>
       {cfg.showExplanations && question.explanation && (
-        <div style={{ marginTop: 8, marginLeft: cfg.twoColumn ? 0 : 40, padding: 10, borderRadius: 10, background: "#f1f5f9", color: "#475569", fontSize: 12.5, lineHeight: "20px" }}>
+        <div style={{ marginTop: 6, marginLeft: cfg.twoColumn ? 0 : 32, padding: 7, borderRadius: 8, background: "#f1f5f9", color: "#475569", fontSize: 10.5, lineHeight: "16px" }}>
           <strong>ব্যাখ্যা: </strong><MathText text={question.explanation} />
         </div>
       )}
