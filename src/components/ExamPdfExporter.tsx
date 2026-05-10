@@ -7,6 +7,7 @@ import type { Exam } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { resolveCorrectOptionText } from "@/lib/answerUtils";
 import MathText from "@/components/MathText";
+import { preloadBengaliFont, registerBengaliFont } from "@/lib/pdfFont";
 
 interface Slot {
   text: string;
@@ -54,6 +55,20 @@ const HEADER_RESERVE = 130; // header (title + meta + border) approx
 const FOOTER_RESERVE = 70;  // footer band approx
 const COLUMN_GAP = 22;
 const QUESTION_GAP = 12;
+const VECTOR_EXPORT_THRESHOLD = 60;
+
+function hexToRgb(hex: string): [number, number, number] {
+  const clean = hex.replace("#", "").trim();
+  const value = clean.length === 3
+    ? clean.split("").map((c) => c + c).join("")
+    : clean.padEnd(6, "0").slice(0, 6);
+  const num = parseInt(value, 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+function pdfText(value?: string) {
+  return (value || "—").replace(/\s+/g, " ").trim() || "—";
+}
 
 function normalizeUrl(u: string) {
   const t = u.trim();
