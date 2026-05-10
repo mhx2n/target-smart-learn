@@ -53,7 +53,7 @@ const PAGE_PADDING = 44;
 const HEADER_RESERVE = 130; // header (title + meta + border) approx
 const FOOTER_RESERVE = 70;  // footer band approx
 const COLUMN_GAP = 22;
-const QUESTION_GAP = 18;
+const QUESTION_GAP = 12;
 
 function normalizeUrl(u: string) {
   const t = u.trim();
