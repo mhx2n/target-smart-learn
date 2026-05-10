@@ -120,6 +120,11 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
     if (!previewRef.current) return;
     setGenerating(true);
     try {
+      if (exam.questions.length >= VECTOR_EXPORT_THRESHOLD) {
+        await generateVectorPdf();
+        return;
+      }
+
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       const pages = Array.from(previewRef.current.querySelectorAll<HTMLElement>("[data-pdf-page]"));
       if (!pages.length) throw new Error("PDF preview তৈরি হয়নি");
@@ -173,6 +178,149 @@ const Exporter = ({ exam, open, onClose }: { exam: Exam; open: boolean; onClose:
     } finally {
       setGenerating(false);
     }
+  };
+
+  const generateVectorPdf = async () => {
+    await registerBengaliFont();
+    const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait", compress: true });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 34;
+    const headerH = 88;
+    const footerH = 34;
+    const gap = cfg.twoColumn ? 18 : 0;
+    const columns = cfg.twoColumn ? 2 : 1;
+    const colW = (pageW - margin * 2 - gap) / columns;
+    const primary = hexToRgb(cfg.primaryColor);
+    const contentTop = margin + headerH;
+    const contentBottom = pageH - margin - footerH;
+    const maxY = contentBottom - 6;
+    let page = 1;
+    let col = 0;
+    let y = contentTop;
+
+    const setFont = (style: "normal" | "bold" = "normal", size = 9.5, color: [number, number, number] = [31, 41, 55]) => {
+      pdf.setFont("NotoBn", style);
+      pdf.setFontSize(size);
+      pdf.setTextColor(color[0], color[1], color[2]);
+    };
+
+    const slotLine = (slots: PdfConfig["header"] | PdfConfig["footer"], yPos: number) => {
+      setFont("normal", 8, [100, 116, 139]);
+      const values = [slots.left.text, slots.center.text, slots.right.text].map(pdfText);
+      pdf.text(values[0], margin, yPos, { maxWidth: (pageW - margin * 2) / 3 - 8 });
+      pdf.text(values[1], pageW / 2, yPos, { align: "center", maxWidth: (pageW - margin * 2) / 3 - 8 });
+      pdf.text(values[2], pageW - margin, yPos, { align: "right", maxWidth: (pageW - margin * 2) / 3 - 8 });
+    };
+
+    const drawChrome = () => {
+      pdf.setFillColor(255, 255, 255);
+      pdf.rect(0, 0, pageW, pageH, "F");
+      slotLine(cfg.header, margin + 9);
+      pdf.setDrawColor(primary[0], primary[1], primary[2]);
+      pdf.setLineWidth(2);
+      pdf.line(margin, margin + 22, pageW - margin, margin + 22);
+      setFont("bold", 18, primary);
+      pdf.text(pdfText(cfg.title || exam.title), margin, margin + 45, { maxWidth: pageW - margin * 2 - 92 });
+      setFont("normal", 9, [100, 116, 139]);
+      if (cfg.subtitle) pdf.text(pdfText(cfg.subtitle), margin, margin + 61, { maxWidth: pageW - margin * 2 - 92 });
+      pdf.text([`Time: ${exam.duration} min`, `Questions: ${exam.questions.length}`], pageW - margin, margin + 43, { align: "right" });
+      if (cfg.twoColumn) {
+        pdf.setDrawColor(203, 213, 225);
+        pdf.setLineWidth(0.6);
+        const x = margin + colW + gap / 2;
+        pdf.line(x, contentTop - 6, x, contentBottom - 2);
+      }
+      pdf.setDrawColor(primary[0], primary[1], primary[2]);
+      pdf.setLineWidth(0.8);
+      pdf.line(margin, pageH - margin - 20, pageW - margin, pageH - margin - 20);
+      slotLine(cfg.footer, pageH - margin - 7);
+      setFont("normal", 7.5, [148, 163, 184]);
+      pdf.text(`Page ${page}`, pageW / 2, pageH - margin + 7, { align: "center" });
+    };
+
+    const addPage = () => {
+      pdf.addPage();
+      page += 1;
+      col = 0;
+      y = contentTop;
+      drawChrome();
+    };
+
+    const nextColumnOrPage = () => {
+      if (cfg.twoColumn && col === 0) {
+        col = 1;
+        y = contentTop;
+      } else {
+        addPage();
+      }
+    };
+
+    const getX = () => margin + col * (colW + gap);
+
+    const split = (text: string, width: number, size: number, style: "normal" | "bold" = "normal") => {
+      pdf.setFont("NotoBn", style);
+      pdf.setFontSize(size);
+      return pdf.splitTextToSize(pdfText(text), width) as string[];
+    };
+
+    const estimateQuestionHeight = (question: Exam["questions"][number]) => {
+      let h = Math.max(15, split(question.question, colW - 22, 9.4, "bold").length * 12) + 7;
+      question.options.forEach((opt) => { h += Math.max(20, split(opt, colW - 42, 8.7).length * 10 + 9) + 4; });
+      if (cfg.showExplanations && question.explanation) h += split(question.explanation, colW - 18, 8).length * 10 + 14;
+      return h + QUESTION_GAP;
+    };
+
+    const drawQuestion = (question: Exam["questions"][number], index: number) => {
+      const x = getX();
+      const qLines = split(question.question, colW - 22, 9.4, "bold");
+      setFont("bold", 9.6, primary);
+      pdf.text(`${index + 1}.`, x, y + 9);
+      setFont("bold", 9.4, [17, 24, 39]);
+      pdf.text(qLines, x + 22, y + 9, { maxWidth: colW - 22, lineHeightFactor: 1.25 });
+      y += Math.max(15, qLines.length * 12) + 7;
+
+      const correct = resolveCorrectOptionText(question);
+      question.options.forEach((opt, optionIndex) => {
+        const isCorrect = cfg.showAnswers && opt === correct;
+        const lines = split(opt, colW - 42, 8.7);
+        const boxH = Math.max(20, lines.length * 10 + 9);
+        if (y + boxH > maxY) nextColumnOrPage();
+        const bx = getX();
+        pdf.setFillColor(isCorrect ? 220 : 248, isCorrect ? 252 : 250, isCorrect ? 231 : 252);
+        pdf.setDrawColor(isCorrect ? 22 : 219, isCorrect ? 163 : 226, isCorrect ? 74 : 234);
+        pdf.roundedRect(bx, y, colW, boxH, 4, 4, "FD");
+        setFont("bold", 8.6, isCorrect ? [22, 101, 52] : [31, 41, 55]);
+        pdf.text(`${String.fromCharCode(65 + optionIndex)}.`, bx + 7, y + 13);
+        setFont(isCorrect ? "bold" : "normal", 8.7, isCorrect ? [22, 101, 52] : [31, 41, 55]);
+        pdf.text(lines, bx + 28, y + 13, { maxWidth: colW - 42, lineHeightFactor: 1.18 });
+        y += boxH + 4;
+      });
+
+      if (cfg.showExplanations && question.explanation) {
+        const eLines = split(`Explanation: ${question.explanation}`, colW - 18, 8);
+        const eH = eLines.length * 10 + 12;
+        if (y + eH > maxY) nextColumnOrPage();
+        const ex = getX();
+        pdf.setFillColor(241, 245, 249);
+        pdf.roundedRect(ex, y, colW, eH, 4, 4, "F");
+        setFont("normal", 8, [71, 85, 105]);
+        pdf.text(eLines, ex + 8, y + 12, { maxWidth: colW - 18, lineHeightFactor: 1.18 });
+        y += eH + 5;
+      }
+      y += QUESTION_GAP;
+    };
+
+    drawChrome();
+    for (let i = 0; i < exam.questions.length; i++) {
+      const h = estimateQuestionHeight(exam.questions[i]);
+      if (y + h > maxY) nextColumnOrPage();
+      drawQuestion(exam.questions[i], i);
+      await new Promise((r) => (i % 25 === 0 ? setTimeout(r, 0) : r(undefined)));
+    }
+
+    pdf.save(`${safeFileName(cfg.title)}.pdf`);
+    toast({ title: "PDF তৈরি হয়েছে ✅" });
   };
 
   // Measured pagination: render hidden, measure each block, then pack into pages.
