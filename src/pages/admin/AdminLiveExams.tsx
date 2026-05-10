@@ -108,19 +108,34 @@ const AdminLiveExams = () => {
 
       // Header band
       doc.setFillColor(37, 99, 235);
-      doc.rect(0, 0, W, 22, "F");
+      doc.rect(0, 0, W, 26, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFont("NotoBn", "bold");
-      doc.setFontSize(15);
-      doc.text(selected.title, 12, 10);
+      doc.setFontSize(16);
+      doc.text(selected.title, 12, 11);
       doc.setFont("NotoBn", "normal");
       doc.setFontSize(10);
-      doc.text("চূড়ান্ত ফলাফল রিপোর্ট • Final Result Report", 12, 17);
+      doc.text("চূড়ান্ত ফলাফল রিপোর্ট • Final Result Report", 12, 18);
       doc.setTextColor(30, 41, 59);
 
+      // Exam info block
+      const fmt = (d: string) => new Date(d).toLocaleString();
+      const submitted = parts.filter((p) => p.status === "submitted" || p.submitted_at);
+      const infoLines = [
+        `শুরু: ${fmt(selected.start_time)}`,
+        `শেষ: ${fmt(selected.end_time)}`,
+        `সময়কাল: ${selected.duration} মিনিট  •  মোট অংশগ্রহণকারী: ${parts.length}  •  সাবমিট: ${submitted.length}`,
+      ];
+      doc.setFont("NotoBn", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(51, 65, 85);
+      let y = 33;
+      infoLines.forEach((ln) => { doc.text(ln, 12, y); y += 5.2; });
+
+      // Show all participants (don't filter — admin needs full picture)
       const sorted = [...parts].sort((a, b) => b.score - a.score || a.time_taken_seconds - b.time_taken_seconds);
       autoTable(doc, {
-        startY: 28,
+        startY: y + 3,
         head: [["র‍্যাঙ্ক", "নাম", "স্কোর", "সঠিক", "ভুল", "শতাংশ", "সময়"]],
         body: sorted.map((p, i) => {
           const pr = profiles[p.user_id];
@@ -136,12 +151,17 @@ const AdminLiveExams = () => {
             `${mm}:${String(ss).padStart(2, "0")}`,
           ];
         }),
-        styles: { font: "NotoBn", fontSize: 10, cellPadding: 3, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.2 },
-        headStyles: { font: "NotoBn", fontStyle: "bold", fillColor: [37, 99, 235], textColor: 255, halign: "center" },
-        bodyStyles: { halign: "center", valign: "middle" },
-        columnStyles: { 1: { halign: "left", cellWidth: 60 } },
+        styles: { font: "NotoBn", fontStyle: "normal", fontSize: 10, cellPadding: 3, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.2, overflow: "linebreak" },
+        headStyles: { font: "NotoBn", fontStyle: "bold", fillColor: [37, 99, 235], textColor: 255, halign: "center", valign: "middle" },
+        bodyStyles: { font: "NotoBn", fontStyle: "normal", halign: "center", valign: "middle", textColor: [30, 41, 59] },
+        columnStyles: { 1: { halign: "left", cellWidth: 60, font: "NotoBn", fontStyle: "normal" } },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         margin: { left: 10, right: 10 },
+        // Force NotoBn on every cell so Bengali never falls back to Helvetica (renders blank)
+        didParseCell: (data) => {
+          data.cell.styles.font = "NotoBn";
+          data.cell.styles.fontStyle = data.section === "head" ? "bold" : "normal";
+        },
       });
 
       const pages = doc.getNumberOfPages();
